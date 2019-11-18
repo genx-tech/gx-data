@@ -1,0 +1,50 @@
+{
+  "name": "@genx/data",
+  "version": "1.0.0",
+  "description": "Gen-X Suite data abstract layer.",
+  "main": "lib/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "doc": "jsdoc -c jsdoc.json -t ./node_modules/ink-docstrap/template -R README.md -d './docs/api' -r --verbose ./src",
+    "jison": "jison ./src/lang/grammar/oolong.jison -o ./src/lang/grammar/oolong.js && npm run build",
+    "test:all": "require-self && mocha test/*.mocha.js --recursive src/**/*.spec.js --timeout 5000",
+    "test:spec": "mocha --compilers js:@babel/register --recursive src/**/*.spec.js --timeout 5000",
+    "test": "npm run build && npm run test:all",
+    "cover": "npm run build:test && nyc --reporter=html --reporter=text mocha test/*.mocha.js --recursive src/**/*.spec.js --timeout 5000",
+    "bulid:clean": "rm -rf lib",
+    "build": "npm run bulid:clean && NODE_ENV=production babel src -d lib --copy-files && del lib/**/__test__"
+  },
+  "repository": "https://github.com/kitmi/k-suite/tree/master/packages/oolong",
+  "bugs": {
+    "url": "https://github.com/kitmi/k-suite/issues"
+  },
+  "author": "Rockie Guo <rockie@kitmi.com.au>",
+  "license": "MIT",
+  "nyc": {
+    "exclude": [
+      "babel.config.js",
+      "test",
+      "src"
+    ]
+  },
+  "peerDependencies": {
+    "@genx/app": "*",
+    "rk-utils": "*"
+  },
+  "devDependencies": {
+    "amqplib": "^0.5.3",
+    "hyperid": "^2.0.2",
+    "mysql2": "^1.6.4",
+    "shortid": "^2.2.14",
+    "uniqid": "^5.0.3"
+  },
+  "dependencies": {
+    "@genx/app": "^1.0.0",
+    "luxon": "^1.21.2",
+    "randomstring": "^1.1.5",
+    "rk-utils": "^2.2.6",
+    "validator": "^12.0.0"
+  }
+}

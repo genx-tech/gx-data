@@ -1,0 +1,17 @@
+# .npmignore 
+
+.babelrc
+.gitignore
+.gitattributes
+.travis.yml
+jsdoc.json
+babel.config.js
+*.log
+*.md
+src
+test
+examples
+docs
+coverage
+.nyc_output
+lib/**/__test__
