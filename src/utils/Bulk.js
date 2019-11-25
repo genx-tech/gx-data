@@ -20,7 +20,7 @@ class Bulk {
             let l = bulkItems.length;
             this.itemsPending += l;
 
-            Promise.resolve(this.bulkAction(bulkItems)).then(() => {
+            Promise.resolve(this.bulkAction(bulkItems)).then(async () => {
                 this.itemsDone += l;
 
                 if (this.onProgress) {

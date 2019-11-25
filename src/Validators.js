@@ -2,7 +2,7 @@
 
 const Util = require('rk-utils');
 const { _ } = Util;
-const { isNothing } = require('../utils/lang');
+const { isNothing } = require('./utils/lang');
 
 const validator = require('validator');
 

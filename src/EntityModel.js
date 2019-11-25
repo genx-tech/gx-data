@@ -2,7 +2,7 @@
 
 const HttpCode = require('http-status-codes');
 const { _, eachAsync_, getValueByPath, hasKeyByPath } = require('rk-utils');
-const Errors = require('./Errors');
+const Errors = require('./utils/Errors');
 const Generators = require('./Generators');
 const Types = require('./types');
 const { ValidationError, DatabaseError, ApplicationError } = Errors;

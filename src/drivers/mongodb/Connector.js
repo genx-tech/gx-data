@@ -43,13 +43,26 @@ class MongodbConnector extends Connector {
      * @property {bool} [options.createDatabase=false] - Flag to used when creating a database.
      * @returns {Promise.<Db>}
      */
-    async connect_() {
+    async connect_(options) {
         if (!this.client || !this.client.isConnected()) {
             let client = new MongoClient(this.connectionString, {useNewUrlParser: true});
             this.client = await client.connect();
         }       
 
         return this.client.db(this.database);
+    }
+    
+    /**
+     * Close a database connection.
+     * @param {Db} conn - MySQL connection.
+     */
+    async disconnect_(conn) {
+    }
+
+    async ping_() {  
+        return this.execute_(db => {
+            return db.listCollections(null, { nameOnly: true }).toArray();
+        });  
     }
 
     async execute_(dbExecutor) {
@@ -64,19 +77,6 @@ class MongodbConnector extends Connector {
         } finally {
             db && await this.disconnect_(db);
         }
-    }
-
-    /**
-     * Close a database connection.
-     * @param {Db} conn - MySQL connection.
-     */
-    async disconnect_(conn) {
-    }
-  
-    async ping_() {  
-        return this.execute_(db => {
-            return db.listCollections(null, { nameOnly: true }).toArray();
-        });  
     }
 
     /**

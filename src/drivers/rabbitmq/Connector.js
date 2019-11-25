@@ -2,6 +2,7 @@ const { Promise } = require('rk-utils');
 const { tryRequire } = require('../../utils/lib');
 const AmqpNode = tryRequire('amqplib');
 const Connector = require('../../Connector');
+const { Generators } = require('../../Generators');
 
 /**
  * A callback function to be called to handle a dequeued message.
@@ -9,6 +10,8 @@ const Connector = require('../../Connector');
  * @param {Channel} ch - MQ Channel object
  * @param {Message} msg - Message object
  */
+
+const MessageContentType = 'application/json';
 
 /**
  * Rabbitmq data storage connector.
@@ -22,16 +25,15 @@ class RabbitmqConnector extends Connector {
      * @property {boolean} [options.logMessage] - Flag to log queued message
      */
     constructor(connectionString, options) {        
-        super('rabbitmq', connectionString, options);         
+        super('rabbitmq', connectionString, options);  
     }
 
     /**
      * Close all connection initiated by this connector.
      */
     async end_() {
-        if (this.ch) {
-            await this.disconnect_(this.ch);
-        }
+        this.acitveConnections && await Promise.all(Object.values(this.acitveConnections).map(ch => ch.close()));
+        delete this.acitveConnections;
 
         if (this.conn) {
             await this.conn.close();
@@ -43,11 +45,12 @@ class RabbitmqConnector extends Connector {
     /**
      * Create a database connection based on the default connection string of the connector and given options.     
      * @param {Object} [options] - Extra options for the connection, optional.
-     * @property {bool} [options.multipleStatements=false] - Allow running multiple statements at a time.
-     * @property {bool} [options.createDatabase=false] - Flag to used when creating a database.
+     * @property {string} [options.queue] - Connection for queue, default ''
+     * @property {string} [options.exchange] - Connection for queue, default ''
+     * @property {string} [options.direction] - Connection for queue, default ''
      * @returns {Promise.<Db>}
      */
-    async connect_() {
+    async connect_(options) {
         if (!this.conn) {
             this.conn = await AmqpNode.connect(this.connectionString);
             this.log('verbose', `rabbitmq: successfully connected to "${this.getConnectionStringWithoutCredential()}".`);            
@@ -70,21 +73,33 @@ class RabbitmqConnector extends Connector {
                     this.log('info', 'rabbitmq: connection is unblocked.');
                 });
             }
-        }        
+        }     
+        
+        let opts = {            
+            direction: 'out',
+            ...options
+        };
 
-        if (!this.ch) {
-            this.ch = await this.conn.createChannel();
+        let chKey = opts.exchange ? (`[X]${opts.exchange}|${opts.direction}`) : (`[Q]${opts.queue}|${opts.direction}`);
 
-            this.ch.on('close', async () => {
-                return this.disconnect_(this.ch);
+        this.acitveConnections || (this.acitveConnections = {});
+        let ch = this.acitveConnections[chKey];
+
+        if (!ch) {
+            ch = await this.conn.createChannel();
+
+            ch.on('close', async () => {
+                return this.disconnect_(ch);
             });
 
-            this.ch.on('error', async err => {
+            ch.on('error', async err => {
                 this.log('error', `rabbitmq: channel error. ${err}`);
-                return this.disconnect_(this.ch);
+                return this.disconnect_(ch);
             });            
 
-            this.log('verbose', 'rabbitmq: new channel created.');            
+            this.acitveConnections[chKey] = ch;
+
+            this.log('verbose', `rabbitmq: new channel created for queue "${chKey}".`);            
         }
 
         return this.ch;
@@ -95,13 +110,13 @@ class RabbitmqConnector extends Connector {
      * @param {Db} conn - MySQL connection.
      */
     async disconnect_(ch) {
-        this.log('info', 'rabbitmq: channel closed.');
+        this.log('verbose', 'rabbitmq: channel closed.');
 
-        await ch.close();
+        if (this.acitveConnections) {
+            this.acitveConnections = _.omit(this.acitveConnections, conn => conn === ch);
+        }
 
-        if (this.ch === ch) {
-            delete this.ch;        
-        }                
+        return ch.close();        
     }
 
     async ping_() {
@@ -111,30 +126,27 @@ class RabbitmqConnector extends Connector {
     /**
      * Send a message to worker queue.
      * @see https://www.rabbitmq.com/tutorials/tutorial-two-javascript.html
-     * @param {*} queueName 
+     * @param {*} queue 
      * @param {*} obj 
      */
-    async sendToWorkers_(queueName, obj) {
-        if (typeof obj !== 'string') {
-            obj = JSON.stringify(obj);
-        }
+    async sendToWorkers_(queue, obj) {
+        let ch = await this.connect_({ queue, direction: 'out' });  
 
-        let ch = await this.connect_();  
-
-        await ch.assertQueue(queueName, {
+        await ch.assertQueue(queue, {
             durable: true
         });
 
-        let ret = await ch.sendToQueue(queueName, Buffer.from(obj), {
-            persistent: true
+        let ret = await ch.sendToQueue(queue, Buffer.from(JSON.stringify(obj)), {
+            persistent: true,
+            content_type: MessageContentType
         });
 
-        let logMsg = `rabbitmq: new message enqueued to [${queueName}].`;
+        let logMsg = `rabbitmq: new message enqueued to [${queue}].`;
 
         if (this.options.logMessage) {
-            this.log('info', logMsg, { msg: obj });
+            this.log('verbose', logMsg, { msg: obj });
         } else {
-            this.log('info', logMsg);
+            this.log('verbose', logMsg);
         }       
 
         return ret;
@@ -143,25 +155,25 @@ class RabbitmqConnector extends Connector {
     /**
      * Waiting for message from a queue by a worker.
      * @see https://www.rabbitmq.com/tutorials/tutorial-two-javascript.html
-     * @param {*} queueName 
+     * @param {*} queue 
      * @param {workerFunction} consumerMethod 
      */
-    async workerConsume_(queueName, consumerMethod) {        
-        let ch = await this.connect_();
+    async workerConsume_(queue, consumerMethod) {        
+        let ch = await this.connect_({ queue, direction: 'in' });
 
-        await ch.assertQueue(queueName, {
+        await ch.assertQueue(queue, {
             durable: true
         });
 
         await ch.prefetch(1);
 
-        let logMsg = `rabbitmq: new message dequeued from [${queueName}].`;
+        let logMsg = `rabbitmq: new message dequeued from [${queue}].`;
 
-        return ch.consume(queueName, (msg) => { 
+        return ch.consume(queue, (msg) => { 
             if (this.options.logMessage) {
-                this.log('info', logMsg, { msg: msg.content });
+                this.log('verbose', logMsg, { msg: msg.content });
             } else {
-                this.log('info', logMsg);
+                this.log('verbose', logMsg);
             }       
 
             return consumerMethod(ch, msg); 
@@ -179,24 +191,22 @@ class RabbitmqConnector extends Connector {
      * @param {*} routeKey 
      */
     async publish_(exchange, obj, routeKey) {
-        if (typeof obj !== 'string') {
-            obj = JSON.stringify(obj);
-        }
-
-        let ch = await this.connect_();   
+        let ch = await this.connect_({ exchange, direction: 'out' });   
 
         await ch.assertExchange(exchange, 'fanout', {
             durable: false
         });
 
-        let ret = await ch.publish(exchange, routeKey || '', Buffer.from(obj));
+        let ret = await ch.publish(exchange, routeKey || '', Buffer.from(JSON.stringify(obj)), {
+            content_type: MessageContentType
+        });
 
         let logMsg = `rabbitmq: new message published to exchange [${exchange}].`;
 
         if (this.options.logMessage) {
-            this.log('info', logMsg, { msg: obj });
+            this.log('verbose', logMsg, { msg: obj });
         } else {
-            this.log('info', logMsg);
+            this.log('verbose', logMsg);
         }       
 
         return ret;
@@ -209,7 +219,7 @@ class RabbitmqConnector extends Connector {
      * @param {*} routeKey 
      */
     async subscribe_(exchange, subscriberMethod, routeKey) {
-        let ch = await this.connect_();
+        let ch = await this.connect_({ exchange, direction: 'in' });
 
         await ch.assertExchange(exchange, 'fanout', {
             durable: false
@@ -225,9 +235,9 @@ class RabbitmqConnector extends Connector {
 
         return ch.consume(q.queue, (msg) => { 
             if (this.options.logMessage) {
-                this.log('info', logMsg, { msg: msg.content });
+                this.log('verbose', logMsg, { msg: msg.content });
             } else {
-                this.log('info', logMsg);
+                this.log('verbose', logMsg);
             }       
 
             return subscriberMethod(ch, msg); 

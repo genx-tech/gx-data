@@ -1,7 +1,7 @@
 "use strict";
 
 const { _ } = require('rk-utils');
-const { ApplicationError, RequestError } = require('./Errors');
+const { ApplicationError, RequestError } = require('./utils/Errors');
 
 module.exports = {
     datetimeAdd: function (model, context, startTime, duration) {
