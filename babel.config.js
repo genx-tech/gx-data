@@ -11,7 +11,6 @@ module.exports = function (api) {
         "sourceMaps": true
       },
       "production": {
-        "minified": true        
       }
     },
     "comments": false,

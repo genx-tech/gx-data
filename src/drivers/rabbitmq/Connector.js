@@ -102,7 +102,7 @@ class RabbitmqConnector extends Connector {
             this.log('verbose', `rabbitmq: new channel created for queue "${chKey}".`);            
         }
 
-        return this.ch;
+        return ch;
     }
 
     /**

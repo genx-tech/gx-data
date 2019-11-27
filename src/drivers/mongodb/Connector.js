@@ -31,6 +31,7 @@ class MongodbConnector extends Connector {
     async end_() {
         if (this.client && this.client.isConnected()) {
             await this.client.close();
+            this.log('verbose', `mongodb: successfully disconnected from "${this.getConnectionStringWithoutCredential()}".`);                      
         }
 
         delete this.client;
@@ -46,7 +47,8 @@ class MongodbConnector extends Connector {
     async connect_(options) {
         if (!this.client || !this.client.isConnected()) {
             let client = new MongoClient(this.connectionString, {useNewUrlParser: true});
-            this.client = await client.connect();
+            this.client = await client.connect(); 
+            this.log('verbose', `mongodb: successfully connected to "${this.getConnectionStringWithoutCredential()}".`);                      
         }       
 
         return this.client.db(this.database);
