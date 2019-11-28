@@ -2,15 +2,11 @@ module.exports = function (api) {
   let isProduction = api.env(["production"]); 
 
   return {
-    "env": {
-      "development": {
-        "sourceMaps": "inline",
-        "plugins": ["source-map-support"]
-      },
-      "test": {
-        "sourceMaps": true
-      },
+    "env": {      
       "production": {
+        "sourceMaps": "inline",
+        "plugins": ["source-map-support"],
+        "minified": true        
       }
     },
     "comments": false,
@@ -26,9 +22,7 @@ module.exports = function (api) {
     ],
     "ignore": [
       "node_modules",
-      "src/**/*.spec.js",
-      "src/lang/grammar/oolong.js",
-      "src/lang/grammar/test.js"
+      "src/**/*.spec.js"
     ], 
     "plugins": [
       ["contract", {
