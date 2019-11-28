@@ -948,4 +948,6 @@ class MySQLConnector extends Connector {
     }
 }
 
+MySQLConnector.driverLib = mysql;
+
 module.exports = MySQLConnector;

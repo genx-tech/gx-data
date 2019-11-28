@@ -15,7 +15,8 @@ module.exports = async (csvFile, options, transformer) => {
     const read = transformer ? () => {
         let record;
         while (record = parser.read()) {
-            output.push(transformer(record));
+            let transformed = transformer(record);
+            if (transformed) output.push(transformed);
         }
     } : () => {
         let record;

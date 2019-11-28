@@ -3,6 +3,7 @@ const { tryRequire } = require('../../utils/lib');
 const mongodb = tryRequire('mongodb');
 const { MongoClient, GridFSBucket } = mongodb;
 const Connector = require('../../Connector');
+const Generators = require('../../Generators');
 
 const UpdateOpsField = [ '$currentDate', '$inc', '$min', '$max', '$mul', '$rename', '$set', '$setOnInsert', '$unset' ];
 const UpdateOpsArray = [ '$addToSet', '$pop', '$pull', '$push', '$pullAll' ];
@@ -20,7 +21,9 @@ class MongodbConnector extends Connector {
      * @property {boolean} [options.usePreparedStatement] - 
      */
     constructor(connectionString, options) {        
-        super('mongodb', connectionString, options);         
+        super('mongodb', connectionString, options);    
+        
+        this.lockerField = this.options.lockerField || '__lock__';
     }
 
     findAll_ = this.find_;
@@ -167,6 +170,11 @@ class MongodbConnector extends Connector {
         return this.onCollection_(model, (coll) => coll.updateOne(condition, this._translateUpdate(data), options));
     }
 
+    async updateOneAndReturn_(model, data, condition, options) {     
+        let ret = await this.findOneAndUpdate_(model, data, condition, { ...options, upsert: false, returnOriginal: false });
+        return ret && ret.value;
+    }
+
     /**
      * Update an existing entity.
      * @param {string} model 
@@ -183,13 +191,13 @@ class MongodbConnector extends Connector {
 
             try {
                 do {
-                    current = await coll.findOneAndUpdate(condition, { $set: { __lock__: true } });
-                } while (current.value && current.value.__lock__);
+                    current = await coll.findOneAndUpdate(condition, { $set: { [this.lockerField]: true } });
+                } while (current.value && current.value[this.lockerField]);
 
                 if (current.value) {
                     locked = true;
                     
-                    return await coll.updateOne({ _id: current.value._id }, { $set: _.omit(data, [ '_id' ]), $unset: { __lock__: "" } }, { bypassDocumentValidation: true, ...options });    
+                    return await coll.updateOne({ _id: current.value._id }, { $set: _.omit(data, [ '_id' ]), $unset: { [this.lockerField]: "" } }, { bypassDocumentValidation: true, ...options });    
                 } 
 
                 try { 
@@ -205,7 +213,7 @@ class MongodbConnector extends Connector {
             } catch (error) {
                 
                 if (locked) {
-                    await coll.updateOne({ _id: current.value._id }, { $unset: { __lock__: "" } });    
+                    await coll.updateOne({ _id: current.value._id }, { $unset: { [this.lockerField]: "" } });    
                 }
 
                 throw error;
@@ -237,6 +245,28 @@ class MongodbConnector extends Connector {
         });
 
         return this.onCollection_(model, (coll) => coll.bulkWrite(ops, { bypassDocumentValidation: true, ordered: false, ...options }));
+    }
+
+    async updateManyAndReturn_(model, data, condition, options) {        
+        let lockerId = Generators.shortid();
+
+        return this.onCollection_(model, async (coll) => {
+            //1.update and set locker
+            let ret = await coll.updateMany(
+                { ...condition, [this.lockerField]: { $exists: false } }, // for all non-locked
+                { $set: { ...data, [this.lockerField]: lockerId } }, // lock it 
+                { ...options, upsert: false } );
+            
+            try {
+                //2.return all locked records
+                return await coll.find({ [this.lockerField]: lockerId }).toArray(); // return all locked
+            } finally {    
+                //3.remove lockers
+                if (ret.result.nModified > 0) { // unlock
+                    await coll.updateMany({ [this.lockerField]: lockerId }, { $unset: { [this.lockerField]: "" } }, { upsert: false });    
+                }
+            }
+        });         
     }
 
     /**
@@ -343,6 +373,10 @@ class MongodbConnector extends Connector {
         });
     }   
 
+    async aggregate_(model, pipeline, options) {
+        return this.onCollection_(model, (coll) => coll.aggregate(pipeline, options));
+    }
+
     async onCollection_(model, executor) {
         return this.execute_(db => executor(db.collection(model)));
     }
@@ -360,5 +394,7 @@ class MongodbConnector extends Connector {
         return ops;
     }
 }
+
+MongodbConnector.driverLib = mongodb;
 
 module.exports = MongodbConnector;

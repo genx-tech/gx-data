@@ -1,8 +1,7 @@
-const { Promise } = require('rk-utils');
+const { Promise, _ } = require('rk-utils');
 const { tryRequire } = require('../../utils/lib');
 const AmqpNode = tryRequire('amqplib');
 const Connector = require('../../Connector');
-const { Generators } = require('../../Generators');
 
 /**
  * A callback function to be called to handle a dequeued message.
@@ -31,8 +30,7 @@ class RabbitmqConnector extends Connector {
     /**
      * Close all connection initiated by this connector.
      */
-    async end_() {
-        this.acitveConnections && await Promise.all(Object.values(this.acitveConnections).map(ch => ch.close()));
+    async end_() {        
         delete this.acitveConnections;
 
         if (this.conn) {
@@ -55,13 +53,8 @@ class RabbitmqConnector extends Connector {
             this.conn = await AmqpNode.connect(this.connectionString);
             this.log('verbose', `rabbitmq: successfully connected to "${this.getConnectionStringWithoutCredential()}".`);            
 
-            this.conn.on('close', async () => {
-                return this.end_();
-            });
-
             this.conn.on('error', async err => {
                 this.log('error', `rabbitmq: connection error: ${err}}`);
-                return this.end_();
             });
 
             if (this.options.logger) {
@@ -88,13 +81,8 @@ class RabbitmqConnector extends Connector {
         if (!ch) {
             ch = await this.conn.createChannel();
 
-            ch.on('close', async () => {
-                return this.disconnect_(ch);
-            });
-
             ch.on('error', async err => {
                 this.log('error', `rabbitmq: channel error. ${err}`);
-                return this.disconnect_(ch);
             });            
 
             this.acitveConnections[chKey] = ch;
@@ -115,8 +103,6 @@ class RabbitmqConnector extends Connector {
         if (this.acitveConnections) {
             this.acitveConnections = _.omit(this.acitveConnections, conn => conn === ch);
         }
-
-        return ch.close();        
     }
 
     async ping_() {
@@ -171,7 +157,7 @@ class RabbitmqConnector extends Connector {
 
         return ch.consume(queue, (msg) => { 
             if (this.options.logMessage) {
-                this.log('verbose', logMsg, { msg: msg.content });
+                this.log('verbose', logMsg, { msg: msg.content.toString() });
             } else {
                 this.log('verbose', logMsg);
             }       
@@ -235,7 +221,7 @@ class RabbitmqConnector extends Connector {
 
         return ch.consume(q.queue, (msg) => { 
             if (this.options.logMessage) {
-                this.log('verbose', logMsg, { msg: msg.content });
+                this.log('verbose', logMsg, { msg: msg.content.toString() });
             } else {
                 this.log('verbose', logMsg);
             }       
@@ -247,5 +233,7 @@ class RabbitmqConnector extends Connector {
         });
     }
 }
+
+RabbitmqConnector.driverLib = AmqpNode;
 
 module.exports = RabbitmqConnector;

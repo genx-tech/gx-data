@@ -127,6 +127,14 @@ class Connector {
     }
 
     /**
+     * Client library.
+     * @member {object}
+     */
+    get driverLib() {
+        return this.constructor.driverLib;
+    }
+
+    /**
      * Write log.
      * @param  {...any} args 
      */
