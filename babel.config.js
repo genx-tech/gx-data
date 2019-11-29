@@ -3,9 +3,11 @@ module.exports = function (api) {
 
   return {
     "env": {      
-      "production": {
+      "development": {
         "sourceMaps": "inline",
-        "plugins": ["source-map-support"],
+        "plugins": ["source-map-support"]
+      },
+      "production": {
         "minified": true        
       }
     },
