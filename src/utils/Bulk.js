@@ -9,7 +9,8 @@ class Bulk {
         this.itemsPending = 0;
         this.itemsDone = 0;
         this.itemsError = 0;
-        this._buffer = [];              
+        this._buffer = [];  
+        this.batch = 0;            
     }
 
     flush() {        
@@ -20,7 +21,7 @@ class Bulk {
             let l = bulkItems.length;
             this.itemsPending += l;
 
-            Promise.resolve(this.bulkAction(bulkItems)).then(async () => {
+            Promise.resolve(this.bulkAction(bulkItems, this.batch++)).then(async () => {
                 this.itemsDone += l;
 
                 if (this.onProgress) {
@@ -46,6 +47,7 @@ class Bulk {
     }
 
     async waitToEnd_(interval, maxRounds) {
+        this.flush();
         return waitUntil_(() => this.itemsDone >= this.itemsPending, interval, maxRounds);
     }
 }

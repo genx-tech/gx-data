@@ -229,7 +229,7 @@ class MongodbConnector extends Connector {
             
             try {
                 //2.return all locked records
-                return await coll.find({ [this.lockerField]: lockerId }).toArray(); // return all locked
+                return await coll.find({ [this.lockerField]: lockerId }, { projection: { [this.lockerField]: 0 } }).toArray(); // return all locked
             } finally {    
                 //3.remove lockers
                 if (ret.result.nModified > 0) { // unlock

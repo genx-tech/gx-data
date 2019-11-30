@@ -18,6 +18,8 @@ module.exports = async (csvFile, options, transformer) => {
 
         transformSteam = transform((data, callback) => {
             transformer(data, line++).then(result => callback(null, result)).catch(error => callback(error));
+        }, {
+            parallel: 1
         });
     } else {
         output = [];
