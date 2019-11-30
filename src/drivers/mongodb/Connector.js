@@ -332,6 +332,10 @@ class MongodbConnector extends Connector {
                 } 
             }
 
+            if (this.options.logQuery) {
+                this.log('verbose', 'find ' + JSON.stringify({query, options: queryOptions}));
+            }
+
             let result = await coll.find(query, queryOptions).toArray();
 
             if (condition && condition.$totalCount) {
