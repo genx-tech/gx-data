@@ -76,6 +76,8 @@ class MongodbConnector extends Connector {
         try {
             db = await this.connect_();
 
+            console.log('before execute');
+
             return await dbExecutor(db);
         } catch(err) {            
             throw err;
@@ -104,7 +106,12 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async insertOne_(model, data, options) {
-        return this.onCollection_(model, (coll) => coll.insertOne(data, { bypassDocumentValidation: true, ...options }));
+        options = { bypassDocumentValidation: true, ...options };
+
+        if (this.options.logStatement) {
+            this.log('verbose', 'insertOne: ' + JSON.stringify({model, data, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.insertOne(data, options));
     }
 
     /**
@@ -114,7 +121,11 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async insertMany_(model, data, options) {
-        return this.onCollection_(model, (coll) => coll.insertMany(data, { bypassDocumentValidation: true, ordered: false, ...options }));
+        options = { bypassDocumentValidation: true, ordered: false, ...options };
+        if (this.options.logStatement) {
+            this.log('verbose', 'insertMany: ' + JSON.stringify({model, count: data.length, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.insertMany(data, options));
     }
 
     async insertOneIfNotExist_(model, data, options) {
@@ -130,34 +141,6 @@ class MongodbConnector extends Connector {
     }
 
     /**
-     * Replace (insert or update for exsisting) an entity and return original record.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} options 
-     */
-    async findOneAndReplace_(model, data, condition, options) {
-        return this.onCollection_(model, (coll) => coll.findOneAndReplace(condition, data, options));
-    }
-
-    /**
-     * Find a document and update it in one atomic operation. Requires a write lock for the duration of the operation.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} options 
-     */
-    async findOneAndUpdate_(model, data, condition, options) {     
-        return this.onCollection_(model, (coll) => coll.findOneAndUpdate(condition, this._translateUpdate(data), options));
-    }
-
-    async findOneAndDelete_(model, condition, options) {
-        return this.onCollection_(model, (coll) => coll.findOneAndDelete(condition, options));
-    }
-
-    async findOne_(model, condition, options) {
-        return this.onCollection_(model, (coll) => coll.findOne(condition, options));
-    }
-
-    /**
      * Update an existing entity.
      * @param {string} model 
      * @param {object} data 
@@ -165,10 +148,14 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async updateOne_(model, data, condition, options) { 
-        return this.onCollection_(model, (coll) => coll.updateOne(condition, this._translateUpdate(data), options));
+        data = this._translateUpdate(data);
+        if (this.options.logStatement) {
+            this.log('verbose', 'updateOne: ' + JSON.stringify({model, data, condition, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.updateOne(condition, data, options));
     }
 
-    async updateOneAndReturn_(model, data, condition, options) {     
+    async updateOneAndReturn_(model, data, condition, options) {            
         let ret = await this.findOneAndUpdate_(model, data, condition, { ...options, upsert: false, returnOriginal: false });
         return ret && ret.value;
     }
@@ -188,7 +175,13 @@ class MongodbConnector extends Connector {
             trans.$setOnInsert = { _id };
         }
 
-        return this.onCollection_(model, (coll) => coll.updateOne(condition, trans, { ...options, upsert: true }));
+        options = { ...options, upsert: true };
+
+        if (this.options.logStatement) {
+            this.log('verbose', 'updateOne: ' + JSON.stringify({model, data: trans, condition, options}));
+        }
+
+        return this.onCollection_(model, (coll) => coll.updateOne(condition, trans, options));
     }
 
     /**
@@ -214,11 +207,21 @@ class MongodbConnector extends Connector {
             };
         });
 
-        return this.onCollection_(model, (coll) => coll.bulkWrite(ops, { bypassDocumentValidation: true, ordered: false, ...options }));
+        options = { bypassDocumentValidation: true, ordered: false, ...options };
+
+        if (this.options.logStatement) {
+            this.log('verbose', 'bulkWrite: ' + JSON.stringify({model, count: ops.length, options}));
+        }
+
+        return this.onCollection_(model, (coll) => coll.bulkWrite(ops, options));
     }
 
     async updateManyAndReturn_(model, data, condition, options) {        
         let lockerId = Generators.shortid();
+
+        if (this.options.logStatement) {
+            this.log('verbose', 'updateMany+find+updateMany: ' + JSON.stringify({model, count: data.length, condition, options}));
+        }
 
         return this.onCollection_(model, async (coll) => {
             //1.update and set locker
@@ -247,6 +250,7 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async insertManyIfNotExist_(model, data, uniqueKeys, options) {
+        console.log('buggy: tofix');
         let ops = data.map(record => ({
             updateOne: { filter: { ..._.pick(record, uniqueKeys) }, update: { $setOnInsert: record }, upsert: true }
         }));
@@ -262,7 +266,12 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async updateMany_(model, data, condition, options) { 
-        return this.onCollection_(model, (coll) => coll.updateMany(condition, this._translateUpdate(data), options));
+        data = this._translateUpdate(data);
+        if (this.options.logStatement) {
+            this.log('verbose', 'updateMany: ' + JSON.stringify({model, count: data.length, condition, options}));
+        }
+
+        return this.onCollection_(model, (coll) => coll.updateMany(condition, data, options));
     }
 
     /**
@@ -271,7 +280,11 @@ class MongodbConnector extends Connector {
      * @param {object} data 
      * @param {*} options 
      */
-    async replaceOne_(model, data, condition, options) {  
+    async replaceOne_(model, data, condition, options) {
+        if (this.options.logStatement) {
+            this.log('verbose', 'replaceOne: ' + JSON.stringify({model, data, condition, options}));
+        }
+
         return this.onCollection_(model, (coll) => coll.replaceOne(condition, data, options));
     }
 
@@ -282,6 +295,10 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async deleteOne_(model, condition, options) {
+        if (this.options.logStatement) {
+            this.log('verbose', 'deleteOne: ' + JSON.stringify({model, condition, options}));
+        }
+
         return this.onCollection_(model, (coll) => coll.deleteOne(condition, options));
     }
 
@@ -292,7 +309,52 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async deleteMany_(model, condition, options) {
+        if (this.options.logStatement) {
+            this.log('verbose', 'deleteMany: ' + JSON.stringify({model, condition, options}));
+        }
         return this.onCollection_(model, (coll) => coll.deleteMany(condition, options));
+    }
+
+    /**
+     * Replace (insert or update for exsisting) an entity and return original record.
+     * @param {string} model 
+     * @param {object} data 
+     * @param {*} options 
+     */
+    async findOneAndReplace_(model, data, condition, options) {
+        if (this.options.logStatement) {
+            this.log('verbose', 'findOneAndReplace: ' + JSON.stringify({model, data, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.findOneAndReplace(condition, data, options));
+    }
+
+    /**
+     * Find a document and update it in one atomic operation. Requires a write lock for the duration of the operation.
+     * @param {string} model 
+     * @param {object} data 
+     * @param {*} options 
+     */
+    async findOneAndUpdate_(model, data, condition, options) {     
+        data = this._translateUpdate(data);
+        if (this.options.logStatement) {
+            this.log('verbose', 'findOneAndUpdate: ' + JSON.stringify({model, data, condition, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.findOneAndUpdate(condition, data, options));
+    }
+
+    async findOneAndDelete_(model, condition, options) {
+        if (this.options.logStatement) {
+            this.log('verbose', 'findOneAndDelete: ' + JSON.stringify({model, condition, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.findOneAndDelete(condition, options));
+    }
+
+    async findOne_(model, condition, options) {
+        if (this.options.logStatement) {
+            this.log('verbose', 'findOne: ' + JSON.stringify({model, condition, options}));
+        }
+
+        return this.onCollection_(model, (coll) => coll.findOne(condition, options));
     }
 
     /**
@@ -302,40 +364,40 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async find_(model, condition, options) {
-        return this.onCollection_(model, async coll => {
-            let queryOptions = {...options};
-            let query = {};
+        let queryOptions = {...options};
+        let query = {};
 
-            if (condition) {
-                let { $projection, $orderBy, $offset, $limit, $query, ...others } = condition;
+        if (condition) {
+            let { $projection, $orderBy, $offset, $limit, $query, ...others } = condition;
 
-                if ($projection) {
-                    queryOptions.projection = $projection;                
-                }
-
-                if ($orderBy) {
-                    queryOptions.sort = $orderBy;                
-                }
-
-                if ($offset) {
-                    queryOptions.skip = $offset;                
-                }
-
-                if ($limit) {
-                    queryOptions.limit = $limit;                
-                }
-
-                Object.assign(query, _.pickBy(others, (v,k) => k[0] !== '$'));
-
-                if ($query) {
-                    Object.assign(query, $query);
-                } 
+            if ($projection) {
+                queryOptions.projection = $projection;                
             }
 
-            if (this.options.logQuery) {
-                this.log('verbose', 'find ' + JSON.stringify({query, options: queryOptions}));
+            if ($orderBy) {
+                queryOptions.sort = $orderBy;                
             }
 
+            if ($offset) {
+                queryOptions.skip = $offset;                
+            }
+
+            if ($limit) {
+                queryOptions.limit = $limit;                
+            }
+
+            Object.assign(query, _.pickBy(others, (v,k) => k[0] !== '$'));
+
+            if ($query) {
+                Object.assign(query, $query);
+            } 
+        }
+
+        if (this.options.logStatement) {
+            this.log('verbose', 'find: ' + JSON.stringify({model, condition: query, options: queryOptions}));
+        }
+
+        return this.onCollection_(model, async coll => {            
             let result = await coll.find(query, queryOptions).toArray();
 
             if (condition && condition.$totalCount) {
@@ -347,8 +409,11 @@ class MongodbConnector extends Connector {
         });
     }   
 
-    async aggregate_(model, pipeline, options) {
-        return this.onCollection_(model, (coll) => coll.aggregate(pipeline, options));
+    async aggregate_(model, pipeline, options) {        
+        if (this.options.logStatement) {
+            this.log('verbose', 'aggregate: ' + JSON.stringify({model, pipeline, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.aggregate(pipeline, options).toArray());
     }
 
     async onCollection_(model, executor) {

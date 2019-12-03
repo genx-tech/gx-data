@@ -1,11 +1,16 @@
 "use strict";
 
 const validator = require('validator');
+const { _ } = require('rk-utils');
 
 exports.toBoolean = (value) => typeof value === 'boolean' ? value : validator.toBoolean(value, true);
 
-exports.toText = (value) => ((typeof raw !== 'string') ? value.toString() : value).trim();
+exports.toText = (value) => value && (typeof value !== 'string' ? value.toString() : value).trim();
 
-exports.toInt = (value, radix) => validator.toInt(value, radix); 
+exports.toInt = (value, radix) => _.isInteger(value) ? value : parseInt(value, radix); 
 
-exports.toFloat = (value) => validator.toFloat(value); 
+exports.toFloat = (value) => _.isFinite(value) ? value : validator.toFloat(value); 
+
+exports.jsonToBase64 = (obj) => Buffer.from(JSON.stringify(obj)).toString("base64");       
+
+exports.base64ToJson = (base64) => JSON.parse(Buffer.from(base64, 'base64').toString('ascii'));

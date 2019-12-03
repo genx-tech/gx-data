@@ -1,6 +1,6 @@
 "use strict";
 
-const validator = require('validator');
+const Convertors = require('../Convertors');
 const _ = require('rk-utils')._;
 const any = require('./any');
 
@@ -9,7 +9,7 @@ module.exports = {
 
     alias: [ 'int' ],
 
-    sanitize: (value, info, i18n) => _.isInteger(value) ? value : validator.toInt(value),
+    sanitize: (value, info, i18n) => Convertors.toInt(value),
 
     defaultValue: 0,
 

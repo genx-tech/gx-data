@@ -33,7 +33,7 @@ class MySQLConnector extends Connector {
      * @param {string} name 
      * @param {object} options 
      * @property {boolean} [options.usePreparedStatement] - Flat to use prepared statement to improve query performance. 
-     * @property {boolean} [options.logSQLStatement] - Flag to log executed SQL statement.
+     * @property {boolean} [options.logStatement] - Flag to log executed SQL statement.
      */
     constructor(connectionString, options) {        
         super('mysql', connectionString, options);
@@ -171,7 +171,7 @@ class MySQLConnector extends Connector {
             conn = await this._getConnection_(options);
 
             if (this.options.usePreparedStatement || (options && options.usePreparedStatement)) {
-                if (this.options.logSQLStatement) {
+                if (this.options.logStatement) {
                     this.log('verbose', conn.format(sql, params));
                 }
 
@@ -184,7 +184,7 @@ class MySQLConnector extends Connector {
                 return rows1;
             }
 
-            if (this.options.logSQLStatement) {
+            if (this.options.logStatement) {
                 this.log('verbose', conn.format(sql, params));
             }
 

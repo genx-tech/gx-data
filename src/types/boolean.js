@@ -1,6 +1,6 @@
 "use strict";
 
-const validator = require('validator');
+const Convertors = require('../Convertors');
 const any = require('./any');
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
 
     alias: [ 'bool' ],
 
-    sanitize: (value, info, i18n) => typeof value === 'string' ? validator.toBoolean(value, true) : !!value,
+    sanitize: (value, info, i18n) => Convertors.toBoolean(value),
 
     defaultValue: false,
 

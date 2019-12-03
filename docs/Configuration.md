@@ -7,7 +7,7 @@
   "mysql": {
       "fooBar": {
           "connection": "mysql://root:root@localhost/test-db",
-          "logSQLStatement": true,
+          "logStatement": true,
           "reverseRules": "reverseRules.js",
           "saveDatabaseMeta": true
       }

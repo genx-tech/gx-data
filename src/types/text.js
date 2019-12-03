@@ -1,5 +1,6 @@
 "use strict";
 
+const Convertors = require('../Convertors');
 const randomstring = require("randomstring");
 const any = require('./any');
 
@@ -8,7 +9,7 @@ module.exports = {
 
     alias: [ 'string', 'char' ],
 
-    sanitize: (value, info, i18n) => value && (typeof value !== 'string' ? value.toString() : value).trim(),
+    sanitize: (value, info, i18n) => Convertors.toText(value),
 
     defaultValue: '',
 

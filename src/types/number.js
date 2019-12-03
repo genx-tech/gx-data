@@ -1,6 +1,6 @@
 "use strict";
 
-const _ = require('rk-utils')._;
+const Convertors = require('../Convertors');
 const any = require('./any');
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
 
     alias: [ 'float', 'decimal', 'double' ],
 
-    sanitize: (value, info, i18n) => _.isFinite(value) ? value : _.toNumber(value),
+    sanitize: (value, info, i18n) => Convertors.toFloat(value),
 
     defaultValue: 0,
 

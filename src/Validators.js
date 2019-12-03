@@ -3,6 +3,7 @@
 const Util = require('rk-utils');
 const { _ } = Util;
 const { isNothing } = require('./utils/lang');
+const { tryRequire } = require('./utils/lib');
 
 const validator = require('validator');
 
@@ -94,3 +95,19 @@ module.exports.notNull = function (value) {
 module.exports.notNullIf = function (value, condition) {
     return !condition || !isNothing(value);
 };
+
+/**
+ * Validate an obj with condition like mongo-style query
+ * @param {*} obj 
+ * @param {array|object} condition 
+ * @returns {boolean}
+ */
+function validate(obj, condition) {    
+    const { Query } = tryRequire('mingo');
+    let query = new Query(condition);
+    
+    // test if an object matches query
+    return query.test(obj);
+}
+
+module.exports.validate = validate;
