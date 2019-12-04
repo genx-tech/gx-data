@@ -76,8 +76,6 @@ class MongodbConnector extends Connector {
         try {
             db = await this.connect_();
 
-            console.log('before execute');
-
             return await dbExecutor(db);
         } catch(err) {            
             throw err;
