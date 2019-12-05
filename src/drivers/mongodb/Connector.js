@@ -164,6 +164,7 @@ class MongodbConnector extends Connector {
      * @param {object} data 
      * @param {*} condition 
      * @param {*} options 
+     * @param {object} dataOnInsert - Shared data on insert
      */
     async upsertOne_(model, data, condition, options, dataOnInsert) { 
         let trans = this._translateUpdate(data);
