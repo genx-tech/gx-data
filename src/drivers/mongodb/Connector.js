@@ -165,12 +165,16 @@ class MongodbConnector extends Connector {
      * @param {*} condition 
      * @param {*} options 
      */
-    async upsertOne_(model, data, condition, options) { 
+    async upsertOne_(model, data, condition, options, dataOnInsert) { 
         let trans = this._translateUpdate(data);
         let { _id, ...others } = trans.$set; 
         if (!_.isNil(_id)) {
             trans.$set = others;
             trans.$setOnInsert = { _id };
+        }
+
+        if (!_.isEmpty(dataOnInsert)) {
+            trans.$setOnInsert = { ...trans.$setOnInsert, ...dataOnInsert };
         }
 
         options = { ...options, upsert: true };
@@ -186,9 +190,11 @@ class MongodbConnector extends Connector {
      * Update many entities.
      * @param {string} model 
      * @param {object} data - Array of record with _id
+     * @param {array} uniqueKeys - Unique keys in the data record used as filter
      * @param {*} options 
+     * @param {object} dataOnInsert - Shared data on insert
      */
-    async upsertMany_(model, data, uniqueKeys, options) { 
+    async upsertMany_(model, data, uniqueKeys, options, dataOnInsert) { 
         let ops = data.map(record => {
             let { _id, ...updateData } = record;
 
@@ -197,7 +203,9 @@ class MongodbConnector extends Connector {
             };
 
             if (_id) {
-                updateOp.$setOnInsert = { _id };
+                updateOp.$setOnInsert = { _id, ...dataOnInsert };
+            } else if (!_.isEmpty(dataOnInsert)) {
+                updateOp.$setOnInsert = dataOnInsert;
             }
 
             return {
