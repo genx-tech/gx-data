@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "amqplib": "^0.5.3",
-    "csv-parse": "^4.8.2",
+    "fast-csv": "^3.4.0",
     "hyperid": "^2.0.2",
     "mysql2": "^1.6.4",
     "shortid": "^2.2.14",

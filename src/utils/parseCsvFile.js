@@ -2,51 +2,29 @@ const { fs, Promise } = require('rk-utils');
 const { tryRequire } = require('./lib');
 
 module.exports = async (csvFile, options, transformer) => {
-    const parse = tryRequire('csv-parse');    
+    const csv = tryRequire('fast-csv');    
 
     const readStream = fs.createReadStream(csvFile);
-    const parser = parse({
-        columns: true,
+    const parser = csv.parse({
+        headers: true,
+        trim: true,
         ...options
     });
 
-    let transformSteam, output;
+    let transformWithCallback, output;
 
     if (transformer) {
-        const transform = tryRequire('stream-transform');
         let line = 0;
-
-        transformSteam = transform((data, callback) => {
-            transformer(data, line++).then(result => callback(null, result)).catch(error => callback(error));
-        }, {
-            parallel: 1
-        });
+        transformWithCallback = (data, callback) => transformer(data, line++).then(result => callback(null, result)).catch(error => callback(error));
     } else {
         output = [];
     }   
 
-    return new Promise((resolve, reject) => {
-        // Catch any error
-        parser.on('error', reject); 
-
-        if (!transformSteam) {
-            parser.on('readable', () => {   
-                let record;
-                             
-                while (record = parser.read()) {
-                    output.push(record);
-                }
-            });
-            
-            // When we are done, test that the parsed output matched what expected
-            parser.on('end', () => resolve(output));
-
-            readStream.pipe(parser);
+    return new Promise((resolve, reject) => {        
+        if (!transformWithCallback) {
+            readStream.pipe(parser.on('error', reject).on('data', (record) => output.push(record)).on('end', () => resolve(output)));
         } else {
-            transformSteam.on('error', reject);
-            transformSteam.on('finish', resolve);
-
-            readStream.pipe(parser).pipe(transformSteam);
+            readStream.pipe(parser.transform(transformWithCallback).on('error', reject).on('data', row => {}).on('end', () => resolve()));
         }     
     });    
 };

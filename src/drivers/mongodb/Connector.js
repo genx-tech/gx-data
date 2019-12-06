@@ -199,9 +199,7 @@ class MongodbConnector extends Connector {
         let ops = data.map(record => {
             let { _id, ...updateData } = record;
 
-            let updateOp = {
-                $set: updateData
-            };
+            let updateOp = this._translateUpdate(updateData);
 
             if (_id) {
                 updateOp.$setOnInsert = { _id, ...dataOnInsert };
