@@ -5,7 +5,7 @@ const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
 
 const { DateTime } = require('luxon');
 const EntityModel = require('../../EntityModel');
-const { ApplicationError, RequestError } = require('../../Errors');
+const { ApplicationError, DatabaseError, InvalidArgument } = require('../../Errors');
 const Types = require('../../types');
 
 /**
@@ -91,9 +91,9 @@ class MySQLEntityModel extends EntityModel {
             let errorCode = error.code;
 
             if (errorCode === 'ER_NO_REFERENCED_ROW_2') {
-                throw new RequestError('The new entity is referencing to an unexisting entity. Detail: ' + error.message);
+                throw new DatabaseError('The new entity is referencing to an unexisting entity. Detail: ' + error.message);
             } else if (errorCode === 'ER_DUP_ENTRY') {
-                throw new RequestError(error.message + ` while creating a new "${this.meta.name}".`);
+                throw new DatabaseError(error.message + ` while creating a new "${this.meta.name}".`);
             }
 
             throw error;
@@ -107,9 +107,9 @@ class MySQLEntityModel extends EntityModel {
             let errorCode = error.code;
 
             if (errorCode === 'ER_NO_REFERENCED_ROW_2') {
-                throw new RequestError('The entity to be updated is referencing to an unexisting entity. Detail: ' + error.message);
+                throw new DatabaseError('The entity to be updated is referencing to an unexisting entity. Detail: ' + error.message);
             } else if (errorCode === 'ER_DUP_ENTRY') {
-                throw new RequestError(error.message + ` while updating an existing "${this.meta.name}".`);
+                throw new DatabaseError(error.message + ` while updating an existing "${this.meta.name}".`);
             }
 
             throw error;
@@ -375,7 +375,7 @@ class MySQLEntityModel extends EntityModel {
             //direct association
             let assocInfo = { ...this.meta.associations[assoc] };   
             if (_.isEmpty(assocInfo)) {
-                throw new RequestError(`Entity "${this.meta.name}" does not have the association "${assoc}".`)
+                throw new InvalidArgument(`Entity "${this.meta.name}" does not have the association "${assoc}".`)
             }
             
             result = cache[assoc] = assocTable[assoc] = { ...this._translateSchemaNameToDb(assocInfo) };
@@ -391,7 +391,7 @@ class MySQLEntityModel extends EntityModel {
             let entity = baseNode.model || this.db.model(baseNode.entity);
             let assocInfo = { ...entity.meta.associations[last] };
             if (_.isEmpty(assocInfo)) {
-                throw new RequestError(`Entity "${entity.meta.name}" does not have the association "${assoc}".`);
+                throw new InvalidArgument(`Entity "${entity.meta.name}" does not have the association "${assoc}".`);
             }
 
             result = { ...entity._translateSchemaNameToDb(assocInfo, this.db) };
@@ -631,7 +631,7 @@ class MySQLEntityModel extends EntityModel {
                 return eachAsync_(data, item => assocModel.create_({ ...item, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, context.options, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
-                    throw new RequestError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
+                    throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
                 }
 
                 if (!assocMeta.assoc) {
@@ -667,7 +667,7 @@ class MySQLEntityModel extends EntityModel {
                 return eachAsync_(data, item => assocModel.replaceOne_({ ...item, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, null, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
-                    throw new RequestError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
+                    throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
                 }
 
                 if (!assocMeta.assoc) {

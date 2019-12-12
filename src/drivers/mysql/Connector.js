@@ -2,7 +2,7 @@ const { _, eachAsync_, setValueByPath } = require('rk-utils');
 const { tryRequire } = require('../../utils/lib');
 const mysql = tryRequire('mysql2/promise');
 const Connector = require('../../Connector');
-const { ApplicationError, RequestError } = require('../../utils/Errors');
+const { ApplicationError, InvalidArgument } = require('../../utils/Errors');
 const { isQuoted, isPrimitive } = require('../../utils/lang');
 const ntol = require('number-to-letter');
 
@@ -241,7 +241,7 @@ class MySQLConnector extends Connector {
      */
     async update_(model, data, query, queryOptions, connOptions) {    
         if (_.isEmpty(data)) {
-            throw new RequestError('Data record is empty.', { model, query });
+            throw new InvalidArgument('Data record is empty.', { model, query });
         }
         
         let params = [], aliasMap = { [model]: 'A' }, joinings, hasJoining = false, joiningParams = []; 
@@ -583,7 +583,7 @@ class MySQLConnector extends Connector {
             let alias = aliasMap[mainEntity + '.' + parts.join('.')];
             if (!alias) {
                 let msg = `Unknown column reference: ${fieldName}`;                
-                throw new RequestError(msg);
+                throw new InvalidArgument(msg);
             }            
 
             return alias + '.' + mysql.escapeId(actualFieldName);

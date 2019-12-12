@@ -1,8 +1,8 @@
 "use strict";
 
-const { Errors: { RequestError, ApplicationError }, Helpers: { withErrorCode } } = require('@genx/app');
+const { Errors: { InvalidArgument, GeneralError, ApplicationError }, Helpers: { withProps, withArgFill } } = require('@genx/app');
 
-exports.RequestError = RequestError;
+exports.InvalidArgument = InvalidArgument;
 exports.ApplicationError = ApplicationError;
-exports.ValidationError = withErrorCode(RequestError, 'E_INVALID_DATA');
-exports.DatabaseError = withErrorCode(ApplicationError, 'E_DATABASE');
+exports.ValidationError = withArgFill(withProps(GeneralError, { expose: true }), 2, 'E_INVALID_DATA');
+exports.DatabaseError = withArgFill(ApplicationError, 2, 'E_DATABASE');

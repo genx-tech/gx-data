@@ -5,7 +5,7 @@ const { _, eachAsync_, getValueByPath, hasKeyByPath } = require('rk-utils');
 const Errors = require('./utils/Errors');
 const Generators = require('./Generators');
 const Types = require('./types');
-const { ValidationError, DatabaseError, ApplicationError } = Errors;
+const { ValidationError, DatabaseError, ApplicationError, InvalidArgument } = Errors;
 const Features = require('./entityFeatures');
 const Rules = require('../enum/Rules');
 
@@ -1193,7 +1193,7 @@ class EntityModel {
 
                 if (value.oorType === 'SessionVariable') {
                     if (!variables) {
-                        throw new ApplicationError('Variables context missing.');
+                        throw new InvalidArgument('Variables context missing.');
                     }
 
                     if ((!variables.session || !(value.name in  variables.session)) && !value.optional) {
@@ -1205,17 +1205,17 @@ class EntityModel {
                             errArgs.push(value.missingStatus || HttpCode.BAD_REQUEST);
                         }
 
-                        throw new RequestError(...errArgs);
+                        throw new ValidationError(...errArgs);
                     }
 
                     return variables.session[value.name];
                 } else if (value.oorType === 'QueryVariable') {
                     if (!variables) {
-                        throw new ApplicationError('Variables context missing.');
+                        throw new InvalidArgument('Variables context missing.');
                     }
 
                     if (!variables.query || !(value.name in variables.query)) {                        
-                        throw new ApplicationError(`Query parameter "${value.name}" in configuration not found.`);
+                        throw new InvalidArgument(`Query parameter "${value.name}" in configuration not found.`);
                     }
                     
                     return variables.query[value.name];

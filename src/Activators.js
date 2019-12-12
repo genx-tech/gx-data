@@ -1,7 +1,7 @@
 "use strict";
 
 const { _ } = require('rk-utils');
-const { ApplicationError, RequestError } = require('./utils/Errors');
+const { ApplicationError, InvalidArgument } = require('./utils/Errors');
 
 module.exports = {
     datetimeAdd: function (model, context, startTime, duration) {
@@ -69,7 +69,7 @@ module.exports = {
             }
 
             if (!remoteEntity) {
-                throw new RequestError(`Unable to find the "${assocMeta.entity}" with [${assocMeta.key}=${assocValue}].`);
+                throw new ApplicationError(`Unable to find the "${assocMeta.entity}" with [${assocMeta.key}=${assocValue}].`);
             }
 
             context.populated || (context.populated = {});

@@ -4,6 +4,7 @@ const mongodb = tryRequire('mongodb');
 const { MongoClient, GridFSBucket } = mongodb;
 const Connector = require('../../Connector');
 const Generators = require('../../Generators');
+const { InvalidArgument } = require('../../utils/Errors');
 
 const UpdateOpsField = [ '$currentDate', '$inc', '$min', '$max', '$mul', '$rename', '$set', '$setOnInsert', '$unset' ];
 const UpdateOpsArray = [ '$addToSet', '$pop', '$pull', '$push', '$pullAll' ];
@@ -356,20 +357,18 @@ class MongodbConnector extends Connector {
 
     async findOne_(model, condition, options) {
         let queryOptions = {...options};
-        let query = {};
+        let query;
 
-        if (condition) {
+        if (!_.isEmpty(condition)) {
             let { $projection, $query, ...others } = condition;
 
             if ($projection) {
                 queryOptions.projection = $projection;                
             }
 
-            Object.assign(query, _.pickBy(others, (v,k) => k[0] !== '$'));
-
-            if ($query) {
-                Object.assign(query, $query);
-            } 
+            query = { ...others, ...$query };
+        } else {
+            throw new InvalidArgument('findOne requires non-empty query condition.');
         }
 
         if (this.options.logStatement) {
@@ -387,10 +386,10 @@ class MongodbConnector extends Connector {
      */
     async find_(model, condition, options) {
         let queryOptions = {...options};
-        let query = {};
+        let query, requireTotalCount;
 
-        if (condition) {
-            let { $projection, $orderBy, $offset, $limit, $query, ...others } = condition;
+        if (!_.isEmpty(condition)) {
+            let { $projection, $totalCount, $orderBy, $offset, $limit, $query, ...others } = condition;
 
             if ($projection) {
                 queryOptions.projection = $projection;                
@@ -408,11 +407,11 @@ class MongodbConnector extends Connector {
                 queryOptions.limit = $limit;                
             }
 
-            Object.assign(query, _.pickBy(others, (v,k) => k[0] !== '$'));
-
-            if ($query) {
-                Object.assign(query, $query);
-            } 
+            query = { ...others, ...$query };
+            requireTotalCount = $totalCount;
+        } else {
+            query = {};
+            requireTotalCount = false;
         }
 
         if (this.options.logStatement) {
@@ -422,7 +421,7 @@ class MongodbConnector extends Connector {
         return this.onCollection_(model, async coll => {            
             let result = await coll.find(query, queryOptions).toArray();
 
-            if (condition && condition.$totalCount) {
+            if (requireTotalCount) {
                 let totalCount = await coll.find(query).count();
                 return [ result, totalCount ];
             }
