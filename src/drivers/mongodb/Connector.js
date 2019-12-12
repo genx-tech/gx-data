@@ -376,7 +376,7 @@ class MongodbConnector extends Connector {
             this.log('verbose', 'findOne: ' + JSON.stringify({model, condition: query, options: queryOptions}));
         }
 
-        return this.onCollection_(model, (coll) => coll.findOne(condition, options));
+        return this.onCollection_(model, (coll) => coll.findOne(query, queryOptions));
     }
 
     /**
