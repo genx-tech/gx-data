@@ -2,7 +2,7 @@ module.exports = function (api) {
   let isProduction = api.env(["production"]); 
 
   return {
-    "env": {      
+    "env": {
       "development": {
         "sourceMaps": "inline",
         "plugins": ["source-map-support"]
@@ -11,17 +11,18 @@ module.exports = function (api) {
         "minified": true        
       }
     },
-    "comments": false,
     "presets": [
       [
         "@babel/env",
         {      
           "targets": {     
-            "node": "8.11.4"
-          }
+            "node": "12.13.1"
+          },
+          "exclude": [ "@babel/plugin-transform-regenerator" ]
         }
       ]
     ],
+    "comments": false,
     "ignore": [
       "node_modules",
       "src/**/*.spec.js"
@@ -38,7 +39,12 @@ module.exports = function (api) {
         }
       }],      
       ["@babel/plugin-proposal-decorators", {"legacy": true}],
-      ["@babel/plugin-proposal-class-properties", { "loose": true }]
+      ["@babel/plugin-proposal-class-properties", { "loose": true }],
+      "@babel/plugin-proposal-nullish-coalescing-operator",
+      "@babel/plugin-proposal-optional-chaining",
+      "@babel/plugin-proposal-logical-assignment-operators",
+      ["@babel/plugin-proposal-pipeline-operator", { "proposal": "minimal" }],
+      "@babel/plugin-proposal-partial-application"
     ]
   };
 }
