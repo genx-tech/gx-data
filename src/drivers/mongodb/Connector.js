@@ -181,7 +181,7 @@ class MongodbConnector extends Connector {
         options = { ...options, upsert: true };
 
         if (this.options.logStatement) {
-            this.log('verbose', 'updateOne: ' + JSON.stringify({model, data: trans, condition, options}));
+            this.log('verbose', 'upsertOne: ' + JSON.stringify({model, data: trans, condition, options}));
         }
 
         return this.onCollection_(model, (coll) => coll.updateOne(condition, trans, options));
@@ -355,8 +355,25 @@ class MongodbConnector extends Connector {
     }
 
     async findOne_(model, condition, options) {
+        let queryOptions = {...options};
+        let query = {};
+
+        if (condition) {
+            let { $projection, $query, ...others } = condition;
+
+            if ($projection) {
+                queryOptions.projection = $projection;                
+            }
+
+            Object.assign(query, _.pickBy(others, (v,k) => k[0] !== '$'));
+
+            if ($query) {
+                Object.assign(query, $query);
+            } 
+        }
+
         if (this.options.logStatement) {
-            this.log('verbose', 'findOne: ' + JSON.stringify({model, condition, options}));
+            this.log('verbose', 'findOne: ' + JSON.stringify({model, condition: query, options: queryOptions}));
         }
 
         return this.onCollection_(model, (coll) => coll.findOne(condition, options));
