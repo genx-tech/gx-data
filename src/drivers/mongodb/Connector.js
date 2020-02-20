@@ -169,7 +169,7 @@ class MongodbConnector extends Connector {
      */
     async upsertOne_(model, data, condition, options, dataOnInsert) { 
         let trans = this._translateUpdate(data);
-        let { _id, ...others } = trans.$set; 
+        let { _id, ...others } = trans.$set || {}; 
         if (!_.isNil(_id)) {
             trans.$set = others;
             trans.$setOnInsert = { _id };
