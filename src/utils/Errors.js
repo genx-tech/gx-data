@@ -1,8 +1,20 @@
 "use strict";
 
-const { Errors: { InvalidArgument, GeneralError, ApplicationError }, Helpers: { withProps, withArgFill } } = require('@genx/app');
+const { Errors: { InvalidArgument, ApplicationError, ExposableError } } = require('@genx/app');
+const HttpCode = require('http-status-codes');
+
+class ValidationError extends ExposableError {
+    constructor(message, info) {
+        super(message, info, HttpCode.BAD_REQUEST, 'E_INVALID_DATA');
+    }
+} 
+
+class DatabaseError extends ApplicationError {
+    constructor(message, info) {
+        super(message, info, 'E_DATABASE');
+    }
+}
 
 exports.InvalidArgument = InvalidArgument;
-exports.ApplicationError = ApplicationError;
-exports.ValidationError = withArgFill(withProps(GeneralError, { expose: true }), 2, 'E_INVALID_DATA');
-exports.DatabaseError = withArgFill(ApplicationError, 2, 'E_DATABASE');
+exports.ValidationError = ValidationError;
+exports.DatabaseError = DatabaseError;

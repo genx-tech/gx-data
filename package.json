@@ -42,8 +42,9 @@
     "stream-transform": "^2.0.1",
     "uniqid": "^5.0.3"
   },
-  "dependencies": {    
+  "dependencies": {
     "date-fns": "^2.8.1",
+    "http-status-codes": "^1.4.0",
     "immutable": "^4.0.0-rc.12",
     "luxon": "^1.21.2",
     "number-to-letter": "^1.0.1",
