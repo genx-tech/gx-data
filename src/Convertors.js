@@ -17,13 +17,13 @@ exports.base64ToJson = (base64) => JSON.parse(Buffer.from(base64, 'base64').toSt
 
 exports.textToDate = require('date-fns/parse');
 
-exports.toKvTableByProp = (arrayOfObjects, property) => arrayOfObjects.reduce((table, obj) => {
-    table[obj[property]] = obj;
+exports.toKVPairs = (arrayOfObjects, property, transformer) => arrayOfObjects.reduce((table, obj) => {
+    table[obj[property]] = transformer ? transformer(obj) : obj;
     return table;
 }, {});
 
-const remapKeys = (arrayOfObjects, mapping) => {
-    if (Array.isArray(arrayOfObjects)) return _.map(arrayOfObjects, obj => remapKeys(obj, mapping));
+const mapKeysDeep = (arrayOfObjects, mapping) => {
+    if (Array.isArray(arrayOfObjects)) return _.map(arrayOfObjects, obj => mapKeysDeep(obj, mapping));
 
     let newObj = {};
      _.forOwn(arrayOfObjects, (v, k) => {
@@ -31,7 +31,7 @@ const remapKeys = (arrayOfObjects, mapping) => {
         if (!nk) {  
             newObj[k] = v;
         } else if (Array.isArray(nk)) {
-            newObj[nk[0]] = remapKeys(v, nk[1]);
+            newObj[nk[0]] = mapKeysDeep(v, nk[1]);
         } else {
             newObj[nk] = v;
         }
@@ -40,4 +40,4 @@ const remapKeys = (arrayOfObjects, mapping) => {
     return newObj;
 };
 
-exports.remapKeys = remapKeys;
+exports.mapKeysDeep = mapKeysDeep;
