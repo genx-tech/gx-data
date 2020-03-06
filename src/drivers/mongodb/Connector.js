@@ -437,6 +437,13 @@ class MongodbConnector extends Connector {
         return this.onCollection_(model, (coll) => coll.aggregate(pipeline, options).toArray());
     }
 
+    async distinct_(model, field, query, options) {        
+        if (this.options.logStatement) {
+            this.log('verbose', 'distinct: ' + JSON.stringify({model, field, query, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.distinct(field, query, options));
+    }    
+
     async onCollection_(model, executor) {
         return this.execute_(db => executor(db.collection(model)));
     }
