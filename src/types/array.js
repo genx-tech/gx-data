@@ -5,35 +5,45 @@ const { isNothing } = require('../utils/lang');
 const any = require('./any');
 const { ValidationError } = require('../utils/Errors');
 
+function sanitize(value, info, i18n, prefix) {
+    let raw = value;
+
+    if (typeof value === 'string') {
+        let trimmed = value.trim();
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            value = sanitize(JSON.parse(trimmed), info, i18n, prefix);
+        }
+    }
+
+    if (Array.isArray(value)) {
+        if (info.elementSchema) {
+            const Validators = require('../Validators');
+            return value.map((a, i) => Validators.validateObjectBySchema(a, info.elementSchema, i18n, prefix + `[${i}]`));
+        }
+
+        return value;
+    }    
+
+    throw new ValidationError('Invalid array value', { value: raw, field: info });
+}
+
 module.exports = {
     name: 'array',
 
     alias: [ 'list' ],
 
-    sanitize: (value, info, i18n) => {
-        if (Array.isArray(value)) return value;
-
-        if (typeof value === 'string') {
-            let trimmed = value.trim();
-            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-                return JSON.parse(trimmed);
-            }       
-            
-            throw new ValidationError(`Invalid array format: ${value}`);
-        }
-
-        return [ value ];
-    },
+    sanitize: sanitize,
 
     defaultValue: [],
 
-    generate: (info, i18n) => null,
+    generate: (info, i18n) => ([]),
 
     serialize: (value) => isNothing(value) ? null : JSON.stringify(value),
 
     qualifiers: any.qualifiers.concat([
         'csv',
-        'of'
+        'of',
+        'elementSchema'
     ]),
 
     toCsv: (data, separator = ',') => data.map(

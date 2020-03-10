@@ -40,7 +40,8 @@
     "mysql2": "^1.6.4",
     "shortid": "^2.2.14",
     "stream-transform": "^2.0.1",
-    "uniqid": "^5.0.3"
+    "uniqid": "^5.0.3",
+    "winston": "git+https://github.com/kitmi/winston.git"
   },
   "dependencies": {
     "date-fns": "^2.8.1",

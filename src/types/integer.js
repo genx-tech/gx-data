@@ -1,7 +1,8 @@
 "use strict";
 
 const Convertors = require('../Convertors');
-const _ = require('rk-utils')._;
+const { _ } = require('rk-utils');
+const { ValidationError } = require('../utils/Errors');
 const any = require('./any');
 
 module.exports = {
@@ -9,7 +10,15 @@ module.exports = {
 
     alias: [ 'int' ],
 
-    sanitize: (value, info, i18n) => Convertors.toInt(value),
+    sanitize: (value, info, i18n) => {
+        let raw = value;
+        value = Convertors.toInt(value);
+        if (isNaN(value)) {
+            throw new ValidationError('Invalid integer value', { value: raw, field: info });
+        }
+
+        return value;
+    },
 
     defaultValue: 0,
 

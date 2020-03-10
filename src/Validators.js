@@ -4,7 +4,7 @@ const Util = require('rk-utils');
 const { _ } = Util;
 const { isNothing } = require('./utils/lang');
 const { tryRequire } = require('./utils/lib');
-
+const { ValidationError } = require('./utils/Errors');
 const validator = require('validator');
 
 module.exports = _.pick(validator, [ 
@@ -111,3 +111,41 @@ function validate(obj, condition) {
 }
 
 module.exports.validate = validate;
+
+function validateObjectBySchema(raw, schema, i18n, prefix) {   
+    let latest = {};
+    const Types = require('./types');
+
+    _.forOwn(schema, (fieldInfo, fieldName) => {
+        if (fieldName in raw) {
+            let value = raw[fieldName];
+            
+            //sanitize first
+            if (isNothing(value)) {
+                if (!fieldInfo.optional) {
+                    throw new ValidationError(`Value of property "${prefix ? prefix + '.' : ''}${fieldName}" cannot be null`);
+                }
+
+                latest[fieldName] = fieldInfo.default ?? null;
+            } else {
+                if (fieldInfo.type) {
+                    latest[fieldName] = Types.sanitize(value, fieldInfo, i18n, (prefix ? prefix + '.' : '') + fieldName);
+                } else {                    
+                    latest[fieldName] = value;
+                }
+            }
+
+            return;
+        }       
+
+        if (!fieldInfo.optional) {
+            throw new ValidationError(`Missing required property "${prefix ? prefix + '.' : ''}${fieldName}"`);
+        }        
+
+        latest[fieldName] = fieldInfo.default ?? null;
+    });
+
+    return latest;
+}
+
+module.exports.validateObjectBySchema = validateObjectBySchema;

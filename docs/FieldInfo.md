@@ -1,6 +1,32 @@
 # Field Meta Information
 
-## constrains
+* any
+    * code
+    * optional
+    * default
+    * auto
+    * readOnly
+    * writeOnce
+    * forceUpdate
 
-* createByDb
+* int
+    * bytes
+    * digits    
+    * unsigned
 
+* number    
+    * exact
+    * totalDigits
+    * decimalDigits
+
+* text
+    * fixedLength
+    * maxLength
+    * encoding
+
+* object
+    * schema
+
+* array
+    * elementSchema
+    * of 

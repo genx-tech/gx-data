@@ -31,13 +31,13 @@ const Types = {
         'freezeAfterNonDefault',
     ]),
 
-    sanitize: function (value, info, i18n) {
+    sanitize: function (value, info, ...others) {
         pre: {
             Types.Builtin.has(info.type), `Unknown primitive type: "${info.type}"."`;
         }
     
         let typeObjerct = Types[info.type];
-        return typeObjerct.sanitize(value, info, i18n);
+        return typeObjerct.sanitize(value, info, ...others);
     } 
 };
 

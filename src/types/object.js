@@ -2,6 +2,7 @@
 
 const _ = require('rk-utils')._;
 const { isNothing } = require('../utils/lang');
+const { ValidationError } = require('../utils/Errors');
 const any = require('./any');
 
 module.exports = {
@@ -9,27 +10,33 @@ module.exports = {
 
     alias: [ 'json' ],
 
-    sanitize: (value, info, i18n) => {
-        if (_.isPlainObject(value)) return value;
-        if (Array.isArray(value)) return value;
-        if (_.isObjectLike(value)) return _.toPlainObject(value);
+    sanitize: (value, info, i18n, prefix) => {
+        let raw = value;
+        let type = typeof value;
 
-        if (typeof value === 'string') {
-            let trimmed = value.trim();
-            if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-                return JSON.parse(trimmed);
-            }
+        if (type === 'string') {
+            value = JSON.parse(value);
         }
 
-        return value;
+        if (type !== 'object') {
+            throw new ValidationError('Invalid object value', { value: raw, feild: info });
+        }
+
+        if (info.schema) {
+            const Validators = require('../Validators');
+            return Validators.validateObjectBySchema(value, info.schema, i18n, prefix);
+        }
+        
+        return _.toPlainObject(value);
     },
 
     defaultValue: {},
 
-    generate: (info, i18n) => null,
+    generate: (info, i18n) => ({}),
 
     serialize: (value) => isNothing(value) ? null : JSON.stringify(value),
 
     qualifiers: any.qualifiers.concat([
+        'schema'
     ])
 };

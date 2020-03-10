@@ -4,7 +4,7 @@ module.exports = function (api) {
   return {
     "env": {
       "development": {
-        "sourceMaps": "inline",
+        "sourceMaps": "both",
         "plugins": ["source-map-support"]
       },
       "production": {
@@ -24,8 +24,7 @@ module.exports = function (api) {
     ],
     "comments": false,
     "ignore": [
-      "node_modules",
-      "src/**/*.spec.js"
+      "node_modules"
     ], 
     "plugins": [
       ["contract", {
