@@ -4,7 +4,7 @@ const mongodb = tryRequire('mongodb');
 const { MongoClient, GridFSBucket } = mongodb;
 const Connector = require('../../Connector');
 const Generators = require('../../Generators');
-const { InvalidArgument } = require('../../utils/Errors');
+const { InvalidArgument, DatabaseError } = require('../../utils/Errors');
 
 const UpdateOpsField = [ '$currentDate', '$inc', '$min', '$max', '$mul', '$rename', '$set', '$setOnInsert', '$unset' ];
 const UpdateOpsArray = [ '$addToSet', '$pop', '$pull', '$push', '$pullAll' ];
@@ -28,6 +28,18 @@ class MongodbConnector extends Connector {
     }
 
     findAll_ = this.find_;
+
+    /**
+     * Throw db error if no record inserted
+     * @param {insertOneWriteOpResultObject} opReturn 
+     */
+    ensureInsertOne(opReturn) {
+        if (opReturn.result.ok !== 1 || opReturn.result.n !== 1) {
+            throw new DatabaseError('Insert operation failed');
+        }
+
+        return opReturn.insertedId;
+    }
 
     /**
      * Close all connection initiated by this connector.
@@ -110,6 +122,7 @@ class MongodbConnector extends Connector {
         if (this.options.logStatement) {
             this.log('verbose', 'insertOne: ' + JSON.stringify({model, data, options}));
         }
+
         return this.onCollection_(model, (coll) => coll.insertOne(data, options));
     }
 
@@ -127,6 +140,12 @@ class MongodbConnector extends Connector {
         return this.onCollection_(model, (coll) => coll.insertMany(data, options));
     }
 
+    /**
+     * Create a new entity if not exist.
+     * @param {string} model 
+     * @param {*} data 
+     * @param {*} options 
+     */
     async insertOneIfNotExist_(model, data, options) {
         try {
             return await this.insertOne_(model, data, options)
@@ -154,6 +173,13 @@ class MongodbConnector extends Connector {
         return this.onCollection_(model, (coll) => coll.updateOne(condition, data, options));
     }
 
+    /**
+     * Update an existing entity and return the updated record.
+     * @param {string} model 
+     * @param {*} data 
+     * @param {*} condition 
+     * @param {*} options 
+     */
     async updateOneAndReturn_(model, data, condition, options) {            
         let ret = await this.findOneAndUpdate_(model, data, condition, { ...options, upsert: false, returnOriginal: false });
         return ret && ret.value;
@@ -185,7 +211,37 @@ class MongodbConnector extends Connector {
             this.log('verbose', 'upsertOne: ' + JSON.stringify({model, data: trans, condition, options}));
         }
 
-        return this.onCollection_(model, (coll) => coll.updateOne(condition, trans, options));
+        return this.onCollection_(model, (coll) => coll.updateOne(condition, trans, options));        
+    }
+
+    /**
+     * Upsert an entity and return updated.
+     * @param {string} model 
+     * @param {object} data 
+     * @param {*} condition 
+     * @param {*} options 
+     * @param {object} dataOnInsert - Shared data on insert
+     */
+    async upsertOneAndReturn_(model, data, condition, options, dataOnInsert) { 
+        let trans = this._translateUpdate(data);
+        let { _id, ...others } = trans.$set || {}; 
+        if (!_.isNil(_id)) {
+            trans.$set = others;
+            trans.$setOnInsert = { _id };
+        }
+
+        if (!_.isEmpty(dataOnInsert)) {
+            trans.$setOnInsert = { ...trans.$setOnInsert, ...dataOnInsert };
+        }
+
+        options = { ...options, upsert: true, returnOriginal: false };
+
+        if (this.options.logStatement) {
+            this.log('verbose', 'upsertOne: ' + JSON.stringify({model, data: trans, condition, options}));
+        }
+
+        let ret = await this.onCollection_(model, (coll) => coll.findOneAndUpdate(condition, trans, options));
+        return ret && ret.value;
     }
 
     /**
@@ -222,6 +278,13 @@ class MongodbConnector extends Connector {
         return this.onCollection_(model, (coll) => coll.bulkWrite(ops, options));
     }
 
+    /**
+     * Update many entities and return updated.
+     * @param {*} model 
+     * @param {*} data 
+     * @param {*} condition 
+     * @param {*} options 
+     */
     async updateManyAndReturn_(model, data, condition, options) {        
         let lockerId = Generators.shortid();
 
@@ -443,6 +506,13 @@ class MongodbConnector extends Connector {
         }
         return this.onCollection_(model, (coll) => coll.distinct(field, query, options));
     }    
+
+    async count_(model, query, options) {
+        if (this.options.logStatement) {
+            this.log('verbose', 'count: ' + JSON.stringify({model, query, options}));
+        }
+        return this.onCollection_(model, (coll) => coll.countDocuments(query, options));        
+    }
 
     async onCollection_(model, executor) {
         return this.execute_(db => executor(db.collection(model)));
