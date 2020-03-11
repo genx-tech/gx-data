@@ -35,10 +35,20 @@ class MongodbConnector extends Connector {
      */
     ensureInsertOne(opReturn) {
         if (opReturn.result.ok !== 1 || opReturn.result.n !== 1) {
-            throw new DatabaseError('Insert operation failed');
+            throw new DatabaseError('Mongodb "insertOne" operation failed');
         }
 
         return opReturn.insertedId;
+    }
+
+    /**
+     * Throw db error if no record updated
+     * @param {updateWriteOpResultObject} opReturn 
+     */
+    ensureUpdateOne(opReturn, enforceUpdated) {
+        if (opReturn.result.ok !== 1 || (enforceUpdated && opReturn.result.nModified !== 1)) {
+            throw new DatabaseError('Mongodb "updateOne" operation failed');
+        }
     }
 
     /**
