@@ -127,8 +127,6 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async insertOne_(model, data, options) {
-        options = { bypassDocumentValidation: true, ...options };
-
         if (this.options.logStatement) {
             this.log('verbose', 'insertOne: ' + JSON.stringify({model, data, options}));
         }
@@ -143,7 +141,7 @@ class MongodbConnector extends Connector {
      * @param {*} options 
      */
     async insertMany_(model, data, options) {
-        options = { bypassDocumentValidation: true, ordered: false, ...options };
+        options = { ordered: false, ...options };
         if (this.options.logStatement) {
             this.log('verbose', 'insertMany: ' + JSON.stringify({model, count: data.length, options}));
         }
@@ -279,7 +277,7 @@ class MongodbConnector extends Connector {
             };
         });
 
-        options = { bypassDocumentValidation: true, ordered: false, ...options };
+        options = { ordered: false, ...options };
 
         if (this.options.logStatement) {
             this.log('verbose', 'bulkWrite: ' + JSON.stringify({model, count: ops.length, options}));
@@ -334,7 +332,7 @@ class MongodbConnector extends Connector {
             updateOne: { filter: { ..._.pick(record, uniqueKeys) }, update: { $setOnInsert: record }, upsert: true }
         }));
 
-        return this.onCollection_(model, (coll) => coll.bulkWrite(ops, { bypassDocumentValidation: true, ordered: false, ...options }));
+        return this.onCollection_(model, (coll) => coll.bulkWrite(ops, { ordered: false, ...options }));
     }
 
     /**
