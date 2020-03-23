@@ -20,6 +20,8 @@ module.exports = {
             //skip
         } else if (type !== 'object') {
             throw new ValidationError('Invalid object value', { value: raw, feild: info });
+        } else {
+            value = _.toPlainObject(value);
         }
 
         if (info.schema) {
@@ -27,7 +29,7 @@ module.exports = {
             return Validators.validateObjectBySchema(value, info.schema, i18n, prefix);
         }
         
-        return _.toPlainObject(value);
+        return value;
     },
 
     defaultValue: {},
