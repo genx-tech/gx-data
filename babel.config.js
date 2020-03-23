@@ -1,3 +1,5 @@
+const targetLTSVersion = "12.0";
+
 module.exports = function (api) {  
   let isProduction = api.env(["production"]); 
 
@@ -16,7 +18,7 @@ module.exports = function (api) {
         "@babel/env",
         {      
           "targets": {     
-            "node": "12.13.1"
+            "node": targetLTSVersion
           },
           "exclude": [ "@babel/plugin-transform-regenerator" ]
         }
@@ -42,8 +44,7 @@ module.exports = function (api) {
       "@babel/plugin-proposal-nullish-coalescing-operator",
       "@babel/plugin-proposal-optional-chaining",
       "@babel/plugin-proposal-logical-assignment-operators",
-      ["@babel/plugin-proposal-pipeline-operator", { "proposal": "minimal" }],
-      "@babel/plugin-proposal-partial-application"
+      ["@babel/plugin-proposal-pipeline-operator", { "proposal": "minimal" }]
     ]
   };
 }

@@ -8,6 +8,7 @@ const Generators = require('./Generators');
 const Processors = require('./Processors');
 const Validators = require('./Validators');
 const Errors = require('./utils/Errors');
+const DbModel = require('./DbModel');
 
 module.exports = { 
     Types, 
@@ -18,11 +19,11 @@ module.exports = {
     Generators,
     Processors, 
     Validators,
+    DbModel,
     Utils: { 
         Lang: require('./utils/lang'), 
         Bulk: require('./utils/Bulk'), 
         parseCsvFile:require('./utils/parseCsvFile'), 
         download: require('./utils/download') 
-    },
-    getEntityModelOfDriver: driver => require('./drivers/' + driver + '/EntityModel')
+    }        
 };

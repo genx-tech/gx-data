@@ -37,7 +37,7 @@
     "amqplib": "^0.5.3",
     "fast-csv": "^3.4.0",
     "hyperid": "^2.0.2",
-    "mysql2": "^1.6.4",
+    "mysql2": "^2.1.0",
     "shortid": "^2.2.14",
     "stream-transform": "^2.0.1",
     "uniqid": "^5.0.3",

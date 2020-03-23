@@ -122,8 +122,8 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
             
             //sanitize first
             if (isNothing(value)) {
-                if (!fieldInfo.optional) {
-                    throw new ValidationError(`Value of property "${prefix ? prefix + '.' : ''}${fieldName}" cannot be null`);
+                if (!fieldInfo.optional && isNothing(fieldInfo.default)) {
+                    throw new ValidationError(`Value of property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}" cannot be null`);
                 }
 
                 latest[fieldName] = fieldInfo.default ?? null;
@@ -139,7 +139,7 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
         }       
 
         if (!fieldInfo.optional) {
-            throw new ValidationError(`Missing required property "${prefix ? prefix + '.' : ''}${fieldName}"`);
+            throw new ValidationError(`Missing required property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}"`);
         }        
 
         latest[fieldName] = fieldInfo.default ?? null;

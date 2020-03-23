@@ -1,9 +1,9 @@
 "use strict";
 
 const { _ } = require('rk-utils');
-const Rules = require('../../enum/Rules');
+const Rules = require('../enum/Rules');
 const { DATETIME } = require('../types');
-const { ApplicationError } = require('../Errors')
+const { ApplicationError } = require('../utils/Errors')
 
 function getConnector(entityModel, feature) {
     let app = entityModel.db.app;

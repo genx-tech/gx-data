@@ -5,7 +5,7 @@ const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
 
 const { DateTime } = require('luxon');
 const EntityModel = require('../../EntityModel');
-const { ApplicationError, DatabaseError, InvalidArgument } = require('../../Errors');
+const { ApplicationError, DatabaseError, InvalidArgument } = require('../../utils/Errors');
 const Types = require('../../types');
 
 /**

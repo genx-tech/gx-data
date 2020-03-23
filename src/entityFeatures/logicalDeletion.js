@@ -1,7 +1,7 @@
 "use strict";
 
-const Rules = require('../../enum/Rules');
-const { mergeCondition } = require('../../utils/lang');
+const Rules = require('../enum/Rules');
+const { mergeCondition } = require('../utils/lang');
 const Generators = require('../Generators');
 
 /**

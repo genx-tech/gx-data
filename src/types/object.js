@@ -16,9 +16,9 @@ module.exports = {
 
         if (type === 'string') {
             value = JSON.parse(value);
-        }
-
-        if (type !== 'object') {
+        } else if (type === 'boolean' || type === 'number') {
+            //skip
+        } else if (type !== 'object') {
             throw new ValidationError('Invalid object value', { value: raw, feild: info });
         }
 

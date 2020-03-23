@@ -1,6 +1,6 @@
 "use strict";
 
-const Rules = require('../../enum/Rules');
+const Rules = require('../enum/Rules');
 const Generators = require('../Generators');
 
 /**

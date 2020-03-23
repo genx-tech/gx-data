@@ -7,9 +7,9 @@ const Generators = require('./Generators');
 const Types = require('./types');
 const { ValidationError, DatabaseError, ApplicationError, InvalidArgument } = Errors;
 const Features = require('./entityFeatures');
-const Rules = require('../enum/Rules');
+const Rules = require('./enum/Rules');
 
-const { isNothing } = require('../utils/lang');
+const { isNothing } = require('./utils/lang');
 
 const NEED_OVERRIDE = 'Should be overrided by driver-specific subclass.';
 
@@ -820,11 +820,12 @@ class EntityModel {
 
                     try {
                         latest[fieldName] = Types.sanitize(value, fieldInfo, i18n);
-                    } catch (error) {
+                    } catch (error) {                        
                         throw new ValidationError(`Invalid "${fieldName}" value of "${name}" entity.`, {
                             entity: name,
                             fieldInfo: fieldInfo,
-                            error: error.message || error.stack 
+                            error: error.stack,
+                            value 
                         });
                     }    
                 }

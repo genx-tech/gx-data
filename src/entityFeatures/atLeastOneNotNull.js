@@ -2,8 +2,8 @@
 
 const Util = require('rk-utils');
 const { _ } = Util;
-const { ValidationError } = require('../Errors');
-const Rules = require('../../enum/Rules');
+const { ValidationError } = require('../utils/Errors');
+const Rules = require('../enum/Rules');
 
 /**
  * A rule specifies at least one field not null, e.g. email or mobile.
