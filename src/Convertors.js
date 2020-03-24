@@ -5,7 +5,14 @@ const { _ } = require('rk-utils');
 
 exports.toBoolean = (value) => typeof value === 'boolean' ? value : validator.toBoolean(value, true);
 
-exports.toText = (value) => value && (typeof value !== 'string' ? value.toString() : value).trim();
+exports.toText = (value, noTrim) => {
+    if (value) {
+        value = typeof value !== 'string' ? value.toString() : value;
+        return noTrim ? value : value.trim();
+    }
+    
+    return value;
+};
 
 exports.toInt = (value, radix) => _.isInteger(value) ? value : parseInt(value, radix); 
 

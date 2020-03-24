@@ -2,7 +2,7 @@
 
 const Types = require('..');
 
-describe.only('unit:types:object', function () {    
+describe('unit:types:object', function () {    
     let obj = {
         'intKey': 100,
         'strKey': 'string',

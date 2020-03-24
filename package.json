@@ -9,7 +9,7 @@
   "scripts": {
     "doc": "jsdoc -c jsdoc.json -t ./node_modules/ink-docstrap/template -R README.md -d './docs/api' -r --verbose ./src",
     "jison": "jison ./src/lang/grammar/oolong.jison -o ./src/lang/grammar/oolong.js && npm run build",
-    "test": "mocha ---require @babel/register --recursive src/**/*.spec.js --timeout 5000",
+    "test": "mocha --require @babel/register --recursive src/**/*.spec.js --timeout 5000",
     "cover": "npm run build:test && nyc --reporter=html --reporter=text mocha test/*.mocha.js --recursive src/**/*.spec.js --timeout 5000",
     "bulid:clean": "rm -rf lib",
     "build:prod": "npm run bulid:clean && NODE_ENV=production babel src -d lib --copy-files && del lib/**/__test__",
@@ -27,6 +27,13 @@
       "test",
       "src"
     ]
+  },
+  "mocha": {
+    "require": [
+      "@babel/register",
+      "should"
+    ],
+    "timeout": 30000
   },
   "peerDependencies": {
     "@genx/app": "*",
