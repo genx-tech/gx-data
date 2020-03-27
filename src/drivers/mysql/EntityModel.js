@@ -609,19 +609,31 @@ class MySQLEntityModel extends EntityModel {
         return [ raw, assocs ];        
     }
 
-    static async _createAssocs_(context, assocs) {
+    static async _createAssocs_(context, assocs, beforeEntityCreate) {
         let meta = this.meta.associations;
-        let keyValue = context.return[this.meta.keyField];
+        let keyValue;
+        
+        if (!beforeEntityCreate) {
+            keyValue = context.return[this.meta.keyField];
 
-        if (_.isNil(keyValue)) {
-            throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
+            if (_.isNil(keyValue)) {
+                throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
+            }
         }
 
-        return eachAsync_(assocs, async (data, anchor) => {
+        let pendingAssocs = {};
+        let finished = {};
+
+        await eachAsync_(assocs, async (data, anchor) => {            
             let assocMeta = meta[anchor];
             if (!assocMeta) {
                 throw new ApplicationError(`Unknown association "${anchor}" of entity "${this.meta.name}".`);
             }                        
+
+            if (!beforeEntityCreate || (assocMeta.type !== 'refersTo' && assocMeta.type !== 'belongsTo')) {
+                pendingAssocs[anchor] = data;
+                return;
+            }
 
             let assocModel = this.db.model(assocMeta.entity);
 
@@ -641,8 +653,16 @@ class MySQLEntityModel extends EntityModel {
                 data = { [assocMeta.assoc]: data };
             }
 
-            return assocModel.create_({ ...data, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, context.options, context.connOptions);  
+            if (!beforeEntityCreate && assocMeta.field) {
+                data = { ...data, [assocMeta.field]: keyValue };
+            } 
+
+            let created = await assocModel.create_(data, context.options, context.connOptions);  
+
+            finished[anchor] = created[assocMeta.field];
         });
+
+        return [ finished, pendingAssocs ];
     }
 
     static async _updateAssocs_(context, assocs) {

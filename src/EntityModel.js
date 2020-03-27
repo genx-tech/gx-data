@@ -354,6 +354,20 @@ class EntityModel {
         };       
         
         let needCreateAssocs = !_.isEmpty(associations);
+        if (needCreateAssocs) {            
+            const [ finished, pendingAssocs ] = await this._createAssocs_(context, associations, true /* before create */);            
+            
+            _.forOwn(finished, (refFieldValue, localField) => {
+                if (_.isNil(raw[localField])) {
+                    raw[localField] = refFieldValue;
+                } else {
+                    throw new ValidationError(`Association data ":${localField}" of entity "${this.meta.name}" conflicts with input value of field "${localField}".`);
+                }
+            });
+
+            associations = pendingAssocs;
+            needCreateAssocs = !_.isEmpty(associations);
+        }
 
         if (!(await this.beforeCreate_(context))) {
             return context.return;
