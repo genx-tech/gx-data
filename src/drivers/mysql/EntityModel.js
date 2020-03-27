@@ -630,7 +630,7 @@ class MySQLEntityModel extends EntityModel {
                 throw new ApplicationError(`Unknown association "${anchor}" of entity "${this.meta.name}".`);
             }                        
 
-            if (!beforeEntityCreate || (assocMeta.type !== 'refersTo' && assocMeta.type !== 'belongsTo')) {
+            if (beforeEntityCreate && assocMeta.type !== 'refersTo' && assocMeta.type !== 'belongsTo') {
                 pendingAssocs[anchor] = data;
                 return;
             }
