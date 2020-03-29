@@ -330,7 +330,8 @@ class MySQLConnector extends Connector {
 
         if (sqlInfo.hasJoining) {
             connOptions = { ...connOptions, rowsAsArray: true };
-            result = await this.execute_(sqlInfo.sql, sqlInfo.params, connOptions);  
+            result = await this.execute_(sqlInfo.sql, sqlInfo.params, connOptions);              
+
             let reverseAliasMap = _.reduce(sqlInfo.aliasMap, (result, alias, nodePath) => {
                 result[alias] = nodePath.split('.').slice(1).map(n => ':' + n);
                 return result;
@@ -593,7 +594,7 @@ class MySQLConnector extends Connector {
                 dev: {
                     console.log(mainEntity, aliasKey, aliasMap);                
                 }
-                let msg = `Unknown column reference: ${fieldName}`;                
+                let msg = `Unknown column reference: ${fieldName}. Please check $association value.`;                
                 throw new InvalidArgument(msg);
             }            
 

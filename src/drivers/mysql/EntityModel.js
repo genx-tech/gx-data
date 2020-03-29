@@ -532,7 +532,11 @@ class MySQLEntityModel extends EntityModel {
                         rowObject[objKey] = [ subObject ];
                     }
                 } else if (subObject && _.isNil(subObject[key])) {
-                    subObject = rowObject[objKey] = null;
+                    if (subAssocs) {
+                        subIndex.subIndexes = buildSubIndexes(subObject, subAssocs);
+                    }
+
+                    return;
                 }
 
                 if (subObject) {
@@ -565,10 +569,10 @@ class MySQLEntityModel extends EntityModel {
                     let bucket = tableCache[col.table];                    
                     if (bucket) {
                         //already nested inside 
-                        bucket[col.name] = value;                                
+                        bucket[col.name] = value;
                     } else {
                         let nodePath = aliasMap[col.table];
-                        if (nodePath) {
+                        if (nodePath) {                            
                             let subObject = { [col.name]: value };
                             tableCache[col.table] = subObject;
                             setValueByPath(result, nodePath, subObject);
@@ -579,7 +583,7 @@ class MySQLEntityModel extends EntityModel {
                 return result;
             }, rowObject);     
             
-            let rowKey = rowObject[this.meta.keyField];
+            let rowKey = rowObject[self.meta.keyField];
             let existingRow = mainIndex[rowKey];
             if (existingRow) {
                 mergeRecord(existingRow, rowObject, hierarchy, []);
