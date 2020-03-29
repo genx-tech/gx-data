@@ -427,7 +427,7 @@ class MySQLConnector extends Connector {
 
         result.sql = sql;
 
-        //console.dir(result, { depth: 10, colors: true });
+        //console.dir(result, { depth: 10, colors: true }); 
         
         return result;
     }
@@ -495,14 +495,16 @@ class MySQLConnector extends Connector {
 
             let { entity, subAssocs } = assocInfo;            
             let aliasKey = parentAliasKey + '.' + anchor;
-            aliasMap[aliasKey] = alias; 
-
-            joinings.push(`${joinType} ${mysql.escapeId(entity)} ${alias} ON ${this._joinCondition(on, params, null, parentAliasKey, aliasMap)}`);
-            
-            if (subAssocs) {                
+            aliasMap[aliasKey] = alias;             
+           
+            if (subAssocs) {    
                 let subJoinings = this._joinAssociations(subAssocs, aliasKey, alias, aliasMap, startId, params);
                 startId += subJoinings.length;
+
+                joinings.push(`${joinType} ${mysql.escapeId(entity)} ${alias} ON ${this._joinCondition(on, params, null, parentAliasKey, aliasMap)}`);
                 joinings = joinings.concat(subJoinings);
+            } else {
+                joinings.push(`${joinType} ${mysql.escapeId(entity)} ${alias} ON ${this._joinCondition(on, params, null, parentAliasKey, aliasMap)}`);
             }
         });
 
@@ -585,8 +587,12 @@ class MySQLConnector extends Connector {
         let parts = fieldName.split('.');
         if (parts.length > 1) {
             let actualFieldName = parts.pop();
-            let alias = aliasMap[mainEntity + '.' + parts.join('.')];
+            let aliasKey = mainEntity + '.' + parts.join('.');
+            let alias = aliasMap[aliasKey];
             if (!alias) {
+                dev: {
+                    console.log(mainEntity, aliasKey, aliasMap);                
+                }
                 let msg = `Unknown column reference: ${fieldName}`;                
                 throw new InvalidArgument(msg);
             }            

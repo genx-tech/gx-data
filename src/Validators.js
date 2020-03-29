@@ -142,7 +142,9 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
             throw new ValidationError(`Missing required property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}"`);
         }        
 
-        latest[fieldName] = fieldInfo.default ?? null;
+        if ('default' in fieldInfo) {
+            latest[fieldName] = fieldInfo.default
+        }
     });
 
     return latest;
