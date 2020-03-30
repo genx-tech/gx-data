@@ -54,7 +54,7 @@
     "date-fns": "^2.8.1",
     "http-status-codes": "^1.4.0",
     "immutable": "^4.0.0-rc.12",
-    "luxon": "^1.21.2",
+    "luxon": "^1.22.0",
     "number-to-letter": "^1.0.1",
     "randomstring": "^1.1.5",
     "rk-utils": "^2.2.6",

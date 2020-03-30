@@ -5,7 +5,7 @@ const { _, eachAsync_, getValueByPath, hasKeyByPath } = require('rk-utils');
 const Errors = require('./utils/Errors');
 const Generators = require('./Generators');
 const Types = require('./types');
-const { ValidationError, DatabaseError, ApplicationError, InvalidArgument } = Errors;
+const { ValidationError, DatabaseError, InvalidArgument } = Errors;
 const Features = require('./entityFeatures');
 const Rules = require('./enum/Rules');
 
@@ -432,7 +432,7 @@ class EntityModel {
      */
     static async updateOne_(data, updateOptions, connOptions) {
         if (updateOptions && updateOptions.$bypassReadOnly) {
-            throw new ApplicationError('Unexpected usage.', { 
+            throw new InvalidArgument('Unexpected usage.', { 
                 entity: this.meta.name, 
                 reason: '$bypassReadOnly option is not allow to be set from public update_ method.',
                 updateOptions
@@ -450,7 +450,7 @@ class EntityModel {
      */
     static async updateMany_(data, updateOptions, connOptions) {
         if (updateOptions && updateOptions.$bypassReadOnly) {
-            throw new ApplicationError('Unexpected usage.', { 
+            throw new InvalidArgument('Unexpected usage.', { 
                 entity: this.meta.name, 
                 reason: '$bypassReadOnly option is not allow to be set from public update_ method.',
                 updateOptions
@@ -466,7 +466,12 @@ class EntityModel {
         if (!updateOptions) {
             let conditionFields = this.getUniqueKeyFieldsFrom(data);
             if (_.isEmpty(conditionFields)) {
-                throw new ApplicationError('Primary key value(s) or at least one group of unique key value(s) is required for updating an entity.');
+                throw new InvalidArgument(
+                    'Primary key value(s) or at least one group of unique key value(s) is required for updating an entity.', {
+                        entity: this.meta.name,
+                        data
+                    }
+                );
             }
             updateOptions = { $query: _.pick(data, conditionFields) };
             data = _.omit(data, conditionFields);
@@ -570,7 +575,11 @@ class EntityModel {
         if (!updateOptions) {
             let conditionFields = this.getUniqueKeyFieldsFrom(data);
             if (_.isEmpty(conditionFields)) {
-                throw new ApplicationError('Primary key value(s) or at least one group of unique key value(s) is required for replacing an entity.');
+                throw new InvalidArgument(
+                    'Primary key value(s) or at least one group of unique key value(s) is required for replacing an entity.', {
+                        entity: this.meta.name,
+                        data
+                    });
             }
             
             updateOptions = { ...updateOptions, $query: _.pick(data, conditionFields) };
@@ -631,7 +640,10 @@ class EntityModel {
         deleteOptions = this._prepareQueries(deleteOptions, forSingleRecord /* for single record */);
 
         if (_.isEmpty(deleteOptions.$query)) {
-            throw new ApplicationError('Empty condition is not allowed for deleting an entity.');
+            throw new InvalidArgument('Empty condition is not allowed for deleting an entity.', { 
+                entity: this.meta.name,
+                deleteOptions 
+            });
         }
 
         let context = { 
@@ -732,7 +744,7 @@ class EntityModel {
                 throw new ValidationError('One of the unique key field as query condition is null. Condition: ' + JSON.stringify(condition));
             }
 
-            throw new ApplicationError('Single record operation requires at least one unique key value pair in the query condition.', { 
+            throw new InvalidArgument('Single record operation requires at least one unique key value pair in the query condition.', { 
                     entity: this.meta.name,                     
                     condition
                 }
@@ -1028,7 +1040,10 @@ class EntityModel {
     static _prepareQueries(options, forSingleRecord = false) {
         if (!_.isPlainObject(options)) {
             if (forSingleRecord && Array.isArray(this.meta.keyField)) {
-                throw new ApplicationError('Cannot use a singular value as condition to query against a entity with combined primary key.');
+                throw new InvalidArgument('Cannot use a singular value as condition to query against a entity with combined primary key.', {
+                    entity: this.meta.name,   
+                    keyFields: this.meta.keyField          
+                });
             }
 
             return options ? { $query: { [this.meta.keyField]: this._translateValue(options) } } : {};
@@ -1159,7 +1174,10 @@ class EntityModel {
                 keyField = context.options.$toDictionary; 
 
                 if (!(keyField in this.meta.fields)) {
-                    throw new ApplicationError(`The key field "${keyField}" provided to index the cached dictionary is not a field of entity "${this.meta.name}".`);
+                    throw new InvalidArgument(`The key field "${keyField}" provided to index the cached dictionary is not a field of entity "${this.meta.name}".`, {
+                        entity: this.meta.name,
+                        inputKeyField: keyField
+                    });
                 }
             }
 
@@ -1208,7 +1226,9 @@ class EntityModel {
 
                 if (value.oorType === 'SessionVariable') {
                     if (!variables) {
-                        throw new InvalidArgument('Variables context missing.');
+                        throw new InvalidArgument('Variables context missing.', {
+                            entity: this.meta.name
+                        });
                     }
 
                     if ((!variables.session || !(value.name in  variables.session)) && !value.optional) {
@@ -1226,11 +1246,15 @@ class EntityModel {
                     return variables.session[value.name];
                 } else if (value.oorType === 'QueryVariable') {
                     if (!variables) {
-                        throw new InvalidArgument('Variables context missing.');
+                        throw new InvalidArgument('Variables context missing.', {
+                            entity: this.meta.name
+                        });
                     }
 
                     if (!variables.query || !(value.name in variables.query)) {                        
-                        throw new InvalidArgument(`Query parameter "${value.name}" in configuration not found.`);
+                        throw new InvalidArgument(`Query parameter "${value.name}" in configuration not found.`, {
+                            entity: this.meta.name
+                        });
                     }
                     
                     return variables.query[value.name];

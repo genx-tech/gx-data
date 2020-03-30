@@ -65,8 +65,8 @@ class MySQLEntityModel extends EntityModel {
             return value ? 1 : 0;
         }
 
-        if (info.type === 'datetime' && value instanceof DateTime) {
-            return value.toISO({ includeOffset: false });
+        if (info.type === 'datetime') {
+            return Types.DATETIME.serialize(value);
         }
 
         if (info.type === 'array' && Array.isArray(value)) {

@@ -11,39 +11,38 @@ module.exports = {
 
     alias: [ 'date', 'time', 'timestamp' ],
 
-    sanitize: (value, info, i18n) => {
-        if (value instanceof Date) {
-            return i18n ? i18n.datetime.fromJSDate(value) : DateTime.fromJSDate(value);
-        } 
+    sanitize: (value, info, i18n) => {   
+        if (value instanceof Date) return value;
 
-        if (value instanceof DateTime) {
-            return value;
-        }
+        let type = typeof value;
         
-        if (typeof value === 'string') {
-            return i18n ? i18n.datetime.fromISO(value) : DateTime.fromISO(value, {setZone: true});
+        if (type === 'string' && info.fromFormat) {
+            return i18n ? i18n.datetime.fromISO(value, info.fromFormat) : DateTime.fromFormat(value, info.fromFormat, {setZone: true});
         } 
         
-        if (typeof value === 'number') {
+        if (type === 'number') {
             return i18n ? i18n.datetime.fromMillis(value) : DateTime.fromMillis(value);
         } 
         
-        if (_.isPlainObject(value)) {
-            return i18n ? i18n.datetime.fromObject(value) : DateTime.fromObject(value);
-        }        
-        
-        throw new TypeError(`Invalid datetime: ${value}`);
+        return value;
     },
 
     defaultValue: 0,
 
     generate: (info, i18n) => i18n ? i18n.now() : DateTime.local(),
 
-    serialize: value => value.toISO({ includeOffset: false }),
+    serialize: value => {
+        if (value.toISO) {
+            return value.toISO({ includeOffset: false }); 
+        }
+
+        return value;
+    },
 
     qualifiers: any.qualifiers.concat([
         'timezone',
         'dateOnly',
-        'timeOnly'
+        'timeOnly',
+        'fromFormat'
     ])
 };
