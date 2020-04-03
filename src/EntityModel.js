@@ -388,7 +388,9 @@ class EntityModel {
                 return false;
             }
 
-            context.latest = Object.freeze(context.latest);
+            dev: {
+                context.latest = Object.freeze(context.latest);
+            }
 
             context.result = await this.db.connector.create_(
                 this.meta.name, 
@@ -521,7 +523,9 @@ class EntityModel {
                 return false;
             }
 
-            context.latest = Object.freeze(context.latest);
+            dev: {
+                context.latest = Object.freeze(context.latest);
+            }
 
             context.result = await this.db.connector.update_(
                 this.meta.name, 
