@@ -1,6 +1,6 @@
 "use strict";
 
-const { Errors: { InvalidArgument, ExposableError } } = require('@genx/app');
+const { Errors: { InvalidArgument, ExposableError, ApplicationError } } = require('@genx/app');
 const HttpCode = require('http-status-codes');
 
 class ValidationError extends ExposableError {
@@ -18,3 +18,4 @@ class DatabaseError extends ExposableError {
 exports.InvalidArgument = InvalidArgument;
 exports.ValidationError = ValidationError;
 exports.DatabaseError = DatabaseError;
+exports.ApplicationError = ApplicationError;

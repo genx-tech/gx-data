@@ -799,7 +799,7 @@ class EntityModel {
 
                 //field value given in raw data
                 if (fieldInfo.readOnly) {
-                    if (!isUpdating || !opOptions.$bypassReadOnly.has(fieldName)) {
+                    if (!opOptions.$migration && (!isUpdating || !opOptions.$bypassReadOnly.has(fieldName))) {
                         //read only, not allow to set by input value
                         throw new ValidationError(`Read-only field "${fieldName}" is not allowed to be set by manual input.`, {
                             entity: name,                        

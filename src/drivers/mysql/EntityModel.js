@@ -415,9 +415,6 @@ class MySQLEntityModel extends EntityModel {
             let [ schemaName, entityName ] = assoc.entity.split('.', 2);
 
             let app = this.db.app;
-            if (!app) {
-                throw new ApplicationError('Cross db association requires the db object have access to other db object.');
-            }
 
             let refDb = app.db(schemaName);
             if (!refDb) {                
