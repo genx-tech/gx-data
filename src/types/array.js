@@ -9,9 +9,13 @@ function sanitize(value, info, i18n, prefix) {
     let raw = value;
 
     if (typeof value === 'string') {
-        let trimmed = value.trim();
-        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-            value = sanitize(JSON.parse(trimmed), info, i18n, prefix);
+        if (info.csv) {
+            return value;
+        } else {
+            let trimmed = value.trim();
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                value = sanitize(JSON.parse(trimmed), info, i18n, prefix);
+            }
         }
     }
 
@@ -38,7 +42,8 @@ module.exports = {
 
     generate: (info, i18n) => ([]),
 
-    serialize: (value) => isNothing(value) ? null : JSON.stringify(value),
+    //when it's csv, should call toCsv in driver specific EntityModel
+    serialize: (value) => isNothing(value) ? null :  JSON.stringify(value),
 
     qualifiers: any.qualifiers.concat([
         'csv',
