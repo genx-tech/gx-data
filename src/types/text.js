@@ -44,6 +44,10 @@ module.exports = {
             randOpt.charset = info.allowedChars;
         }
 
+        if (info.caps) {
+            randOpt.capitalization = info.caps;
+        }
+
         return randomstring.generate(randOpt);
     },  
 
@@ -54,6 +58,7 @@ module.exports = {
         'maxLength',
         'encoding',
         'allowedChars',
+        'caps',
         'noTrim'
     ])
 };
