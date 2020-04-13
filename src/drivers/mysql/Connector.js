@@ -684,6 +684,10 @@ class MySQLConnector extends Connector {
                     if (k && k[0] === '$') {
                         // operator
                         switch (k) {
+                            case '$exist':
+                            case '$exists':
+                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + (v ? ' IS NOT NULL' : 'IS NULL');
+
                             case '$eq':
                             case '$equal':
     
