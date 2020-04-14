@@ -155,7 +155,7 @@ class MySQLConnector extends Connector {
     async rollback_(conn) {
         await conn.rollback();
         
-        this.log('debug', 'Rollbacks a transaction.');
+        this.log('verbose', 'Rollbacks a transaction.');
         return this.disconnect_(conn);
     }
 

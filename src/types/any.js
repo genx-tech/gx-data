@@ -14,6 +14,8 @@ module.exports = {
         'freezeAfterNonDefault',
         'comment',
         'displayName',
-        'generator'
+        'generator',
+        'constraintOnUpdate',
+        'constraintOnDelete'
     ])
 };

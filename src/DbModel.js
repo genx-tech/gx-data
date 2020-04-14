@@ -1,4 +1,8 @@
-const { _, pascalCase } = require('rk-utils');
+const { _, pascalCase, sleep_ } = require('rk-utils');
+const { DatabaseError } = require('./utils/Errors');
+
+const retryFailed = error => [ false, error ];
+const retryOK = (result) => [ true, result ];
 
 class DbModel {
     constructor(app, connector, i18n) {     
@@ -19,9 +23,16 @@ class DbModel {
         let modelClassName = pascalCase(entityName);
         if (this._modelCache[modelClassName]) return this._modelCache[modelClassName];
 
-        let entitySpecMixin = this.loadModel(modelClassName);
-        const BaseEntityModel = require(`./drivers/${this.driver}/EntityModel`); 
-        const modelClass = entitySpecMixin(this, BaseEntityModel);
+        let entityCustomClassFactory = this.loadCustomModel(modelClassName); 
+        let entityClassFactory = this.loadModel(modelClassName);
+        
+        let BaseEntityModel = require(`./drivers/${this.driver}/EntityModel`); 
+        if (entityCustomClassFactory) {
+            BaseEntityModel = entityCustomClassFactory(BaseEntityModel);
+        }
+
+        const modelClass = entityClassFactory(BaseEntityModel);
+        modelClass.db = this;
 
         this._modelCache[entityName] = modelClass;
         if (modelClassName !== entityName) {
@@ -36,6 +47,29 @@ class DbModel {
             let Model = this.model(entityName);
             return Model.baseClasses && Model.baseClasses.indexOf(baseEntityName) > -1;
         });
+    }
+
+    async retry_(transactionName, transaction, maxRetry, interval) {
+        let i = 0;
+        if (maxRetry == null) maxRetry = 3;
+
+        while (i++ < maxRetry) {
+            const [ finished, result ] = await transaction(retryOK, retryFailed);
+
+            if (finished) {
+                return result;
+            }
+
+            if (i === maxRetry) {
+                throw new DatabaseError(`Unable to complete expected transaction after retried ${maxRetry} times.`, result);
+            }
+
+            this.app.logException('warn', result, `Unable to complete "${transactionName}" and will try ${maxRetry-i} more times after ${interval||0} ms.`);
+
+            if (interval != null) {
+                await sleep_(interval);
+            }
+        }        
     }
 
     async close_() {
