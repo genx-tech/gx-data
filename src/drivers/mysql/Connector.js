@@ -947,7 +947,7 @@ class MySQLConnector extends Connector {
         if (Array.isArray(orderBy)) return 'ORDER BY ' + orderBy.map(by => this._escapeIdWithAlias(by, hasJoining, aliasMap)).join(', ');
 
         if (_.isPlainObject(orderBy)) {
-            return 'ORDER BY ' + _.map(orderBy, (asc, col) => this._escapeIdWithAlias(col, hasJoining, aliasMap) + (asc ? '' : ' DESC')).join(', '); 
+            return 'ORDER BY ' + _.map(orderBy, (asc, col) => this._escapeIdWithAlias(col, hasJoining, aliasMap) + (asc === false || asc == '-1' ? ' DESC' : '')).join(', '); 
         }
 
         throw new ApplicationError(`Unknown order by syntax: ${JSON.stringify(orderBy)}`);
