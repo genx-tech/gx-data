@@ -4,6 +4,7 @@ const HttpCode = require('http-status-codes');
 const { _, eachAsync_, getValueByPath, hasKeyByPath } = require('rk-utils');
 const Errors = require('./utils/Errors');
 const Generators = require('./Generators');
+const Convertors = require('./Convertors');
 const Types = require('./types');
 const { ValidationError, DatabaseError, InvalidArgument } = Errors;
 const Features = require('./entityFeatures');
@@ -190,13 +191,10 @@ class EntityModel {
         return this.cached_(this.meta.keyField, associations, connOptions);
     }
 
-    static toDictionary(entityCollection, key) {
+    static toDictionary(entityCollection, key, transformer) {
         key || (key = this.meta.keyField);
 
-        return entityCollection.reduce((dict, v) => {
-            dict[v[key]] = v;
-            return dict;
-        }, {});
+        return Convertors.toKVPairs(entityCollection, key, transformer);
     }
     
     /**
@@ -352,30 +350,28 @@ class EntityModel {
             options: createOptions,
             connOptions
         };       
-        
-        let needCreateAssocs = !_.isEmpty(associations);
-        if (needCreateAssocs) {            
-            const [ finished, pendingAssocs ] = await this._createAssocs_(context, associations, true /* before create */);            
-            
-            _.forOwn(finished, (refFieldValue, localField) => {
-                if (_.isNil(raw[localField])) {
-                    raw[localField] = refFieldValue;
-                } else {
-                    throw new ValidationError(`Association data ":${localField}" of entity "${this.meta.name}" conflicts with input value of field "${localField}".`);
-                }
-            });
-
-            associations = pendingAssocs;
-            needCreateAssocs = !_.isEmpty(associations);
-        }
 
         if (!(await this.beforeCreate_(context))) {
             return context.return;
-        }
+        }        
 
         let success = await this._safeExecute_(async (context) => { 
-            if (needCreateAssocs) {
+            let needCreateAssocs = !_.isEmpty(associations);
+            if (needCreateAssocs) {  
                 await this.ensureTransaction_(context);                       
+
+                const [ finished, pendingAssocs ] = await this._createAssocs_(context, associations, true /* before create */);            
+                
+                _.forOwn(finished, (refFieldValue, localField) => {
+                    if (_.isNil(raw[localField])) {
+                        raw[localField] = refFieldValue;
+                    } else {
+                        throw new ValidationError(`Association data ":${localField}" of entity "${this.meta.name}" conflicts with input value of field "${localField}".`);
+                    }
+                });
+
+                associations = pendingAssocs;
+                needCreateAssocs = !_.isEmpty(associations);
             }
 
             await this._prepareEntityData_(context);          
@@ -486,9 +482,7 @@ class EntityModel {
             rawOptions,
             options: this._prepareQueries(updateOptions, forSingleRecord /* for single record */),            
             connOptions
-        };       
-        
-        let needCreateAssocs = !_.isEmpty(associations);
+        };               
 
         let toUpdate;
 
@@ -501,6 +495,8 @@ class EntityModel {
         if (!toUpdate) {
             return context.return;
         }
+
+        let needCreateAssocs = !_.isEmpty(associations);
         
         let success = await this._safeExecute_(async (context) => {
             if (needCreateAssocs) {
