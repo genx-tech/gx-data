@@ -4,6 +4,8 @@ const { DatabaseError } = require('./utils/Errors');
 const retryFailed = error => [ false, error ];
 const retryOK = (result) => [ true, result ];
 
+const directReturn = a => a;
+
 class DbModel {
     constructor(app, connector, i18n) {     
         this.app = app;
@@ -49,7 +51,11 @@ class DbModel {
         });
     }
 
-    async retry_(transactionName, transaction, maxRetry, interval) {
+    async retry_(transactionName, transaction, connOptions, maxRetry, interval) {
+        if (connOptions && connOptions.connection) {
+            return transaction(directReturn, directReturn);
+        }
+
         let i = 0;
         if (maxRetry == null) maxRetry = 3;
 
