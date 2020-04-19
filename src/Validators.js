@@ -116,6 +116,10 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
     let latest = {};
     const Types = require('./types');
 
+    if (schema.type && schema.type !== 'object') {
+        return Types.sanitize(raw, schema, i18n, prefix);
+    }
+
     _.forOwn(schema, (fieldInfo, fieldName) => {
         if (fieldName in raw) {
             let value = raw[fieldName];
