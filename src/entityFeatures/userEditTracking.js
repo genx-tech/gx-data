@@ -22,6 +22,7 @@ function addUpdatedBy_(entityModel, feature, context) {
         throw new InvalidArgument(`Context "${feature.uidSource}" not found.`)
     }
     context.latest[feature.fields.updatedBy] = uid;
+    context.latest[feature.fields.revision] = entityModel.queryBinExpr(entityModel.queryColumn(feature.fields.revision), '+', 1);
     return true;
 }
 

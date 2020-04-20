@@ -12,14 +12,14 @@ module.exports = {
     alias: [ 'string', 'char' ],
 
     sanitize: (value, info, i18n) => {        
-        value = Convertors.toText(value, info.noTrim);
+        value = Convertors.toText(value, info && info.noTrim);
 
         if (!_.isNil(value)) {
-            if (info.fixedLength && value.length !== info.fixedLength) {
+            if (info && info.fixedLength && value.length !== info.fixedLength) {
                 throw new ValidationError(`The length of the ${info.name || 'text'} value is not correct (expected: ${info.fixedLength}, actual: ${value.length}).`, { value, feild: info })
             }
 
-            if (info.maxLength && value.length > info.maxLength) {
+            if (info && info.maxLength && value.length > info.maxLength) {
                 throw new ValidationError(`The length of the ${info.name || 'text'} value exceeds max limit (maximum: ${info.maxLength}, actual: ${value.length}).`, { value, feild: info })
             }
         }
