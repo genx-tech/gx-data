@@ -4,7 +4,8 @@ const Rules = require('../enum/Rules');
 const { InvalidArgument } = require('../utils/Errors');
 
 function addCreatedBy_(entityModel, feature, context) {
-    if (context.options.$migration && context.latest[feature.fields.createdBy] != null) {
+    if (context.options.$migration) {
+        context.latest[feature.fields.createdBy] = feature.migrationUser;
         return true;
     }
 
