@@ -32,3 +32,7 @@ exports.makeDataSourceName = (driver, schema) => (driver + '.' + schema);
 exports.extractDriverAndConnectorName = id => id.split('.');
 exports.mergeCondition = mergeCondition;
 exports.SupportedDrivers = Object.freeze(SupportedDrivers);
+
+exports.$col = (name) => ({ oorType: 'ColumnReference', name });
+exports.$expr = (left, op, right) =>({ oorType: 'BinaryExpression', left, op, right });
+exports.$f = (name, ...args) => ({ oorType: 'Function', name, args });

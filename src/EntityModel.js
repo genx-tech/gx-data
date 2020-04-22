@@ -51,30 +51,6 @@ class EntityModel {
         return Array.isArray(this.meta.keyField) ? _.pick(data, this.meta.keyField) : data[this.meta.keyField];
     }
 
-    static queryColumn(name) {
-        return {
-            oorType: 'ColumnReference',
-            name
-        }; 
-    }
-
-    static queryBinExpr(left, op, right) {
-        return {
-            oorType: 'BinaryExpression',
-            left,
-            op,
-            right
-        }; 
-    }
-
-    static queryFunction(name, ...args) {
-        return {
-            oorType: 'Function',
-            name,
-            args
-        };
-    }
-
     /**
      * Get field names array of a unique key from input data.
      * @param {object} data - Input data.
@@ -836,7 +812,12 @@ class EntityModel {
                         });
                     }
 
-                    latest[fieldName] = null;
+                    if (fieldInfo['default']) {
+                        //has default setting in meta data
+                        latest[fieldName] = fieldInfo['default'];
+                    } else {
+                        latest[fieldName] = null;
+                    }
                 } else {
                     if (_.isPlainObject(value) && value.oorType) {
                         latest[fieldName] = value;
@@ -889,7 +870,6 @@ class EntityModel {
                 if (fieldInfo.hasOwnProperty('default')) {
                     //has default setting in meta data
                     latest[fieldName] = fieldInfo.default;
-
                 } else if (fieldInfo.optional) {
                     return;
                 } else if (fieldInfo.auto) {
@@ -1262,7 +1242,7 @@ class EntityModel {
                     return this._translateSymbolToken(value.name);
                 } 
 
-                throw new Error('Not impletemented yet. ' + value.oorType);
+                throw new Error('Not implemented yet. ' + value.oorType);
             }
 
             return _.mapValues(value, (v, k) => this._translateValue(v, variables, skipSerialize, arrayToInOperator && k[0] !== '$'));

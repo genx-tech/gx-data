@@ -542,13 +542,13 @@ class MySQLConnector extends Connector {
             }
             
             return _.map(condition, (value, key) => {
-                if (key === '$all' || key === '$and') {
+                if (key === '$all' || key === '$and' || key.startsWith('$and_')) { // for avoiding dupliate, $or_1, $or_2 is valid
                     assert: Array.isArray(value) || _.isPlainObject(value), '"$and" operator value should be an array or plain object.';                    
 
                     return '(' + this._joinCondition(value, params, 'AND', hasJoining, aliasMap) + ')';
                 }
     
-                if (key === '$any' || key === '$or' || key.startsWith('$or_')) {
+                if (key === '$any' || key === '$or' || key.startsWith('$or_')) { // for avoiding dupliate, $or_1, $or_2 is valid
                     assert: Array.isArray(value) || _.isPlainObject(value), '"$or" operator value should be an array or plain object.';       
                     
                     return '(' + this._joinCondition(value, params, 'OR', hasJoining, aliasMap) + ')';
@@ -571,7 +571,13 @@ class MySQLConnector extends Connector {
                     assert: typeof value === 'string', 'Unsupported condition!';
 
                     return 'NOT (' + condition + ')';                    
-                }                
+                }    
+                
+                if ((key === '$expr' || key.startsWith('$expr_')) && value.oorType && value.oorType === 'BinaryExpression') {
+                    let left = this._packValue(value.left, params, hasJoining, aliasMap);
+                    let right = this._packValue(value.right, params, hasJoining, aliasMap);
+                    return left + ` ${value.op} ` + right;
+                }
 
                 return this._wrapCondition(key, value, params, hasJoining, aliasMap);
             }).join(` ${joinOperator} `);
