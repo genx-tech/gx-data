@@ -3,6 +3,7 @@
 const _ = require('rk-utils')._;
 const { DateTime } = require('luxon');
 const any = require('./any');
+const { ValidationError } = require('../utils/Errors');
 
 module.exports = {
     name: 'datetime',
@@ -11,18 +12,32 @@ module.exports = {
 
     alias: [ 'date', 'time', 'timestamp' ],
 
-    sanitize: (value, info, i18n) => {   
-        if (value instanceof Date) return value;
+    sanitize: (value, info, i18n) => {           
+        let opts = { zone: i18n?.timezone || 'local' };
 
-        let type = typeof value;
+        let raw = value;
+
+        if (value instanceof Date) {
+            value = DateTime.fromJSDate(value, opts);
+        } else {
+            let type = typeof value;
         
-        if (type === 'string' && info.fromFormat) {
-            return i18n ? i18n.datetime.fromISO(value, info.fromFormat) : DateTime.fromFormat(value, info.fromFormat, {setZone: true});
-        } 
+            if (type === 'string' && !info.dontParse) {
+                if (info.inputFormat) {
+                    value = DateTime.fromFormat(value, info.inputFormat, opts);
+                } else {
+                    value = DateTime.fromISO(value, opts);
+                }
+            } else if (type === 'number') {
+                value = DateTime.fromMillis(value, opts);
+            } else if (type !== 'object' || value.constructor.name !== 'DateTime') {
+                throw new ValidationError('Invalid datetime object.', { value: raw, field: info });
+            }             
+        }
         
-        if (type === 'number') {
-            return i18n ? i18n.datetime.fromMillis(value) : DateTime.fromMillis(value);
-        } 
+        if (!value.isValid) {
+            throw new ValidationError('Invalid datetime object.', { value: raw, field: info });
+        }
         
         return value;
     },
@@ -43,6 +58,7 @@ module.exports = {
         'timezone',
         'dateOnly',
         'timeOnly',
-        'fromFormat'
+        'inputFormat',
+        'dontParse'
     ])
 };
