@@ -5,6 +5,8 @@ const { isNothing } = require('../utils/lang');
 const { ValidationError } = require('../utils/Errors');
 const any = require('./any');
 
+const jsonStarter = new Set('"', '[', '{');
+
 module.exports = {
     name: 'object',
 
@@ -15,7 +17,11 @@ module.exports = {
         let type = typeof value;
 
         if (type === 'string') {
-            value = JSON.parse(value);
+            if (value.length === 0) {
+                value = '';
+            } else if (jsonStarter.has(value[0])) {
+                value = JSON.parse(value);
+            } 
         } else if (type === 'boolean' || type === 'number') {
             //skip
         } else if (type !== 'object') {
