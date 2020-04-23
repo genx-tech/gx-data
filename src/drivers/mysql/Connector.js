@@ -229,7 +229,7 @@ class MySQLConnector extends Connector {
 
         const { insertIgnore, ...restOptions } = options || {};
 
-        let sql = `INSERT ${insertIgnore && "IGNORE "}INTO ?? SET ?`;
+        let sql = `INSERT ${insertIgnore ? "IGNORE ":""}INTO ?? SET ?`;
         let params = [ model ];
         params.push(data);
 
@@ -259,7 +259,7 @@ class MySQLConnector extends Connector {
 
         const { insertIgnore, ...restOptions } = options || {};
 
-        let sql = `INSERT ${insertIgnore && "IGNORE "}INTO ?? (${fields.map(f => this.escapeId(f)).join(', ')}) VALUES ?`;
+        let sql = `INSERT ${insertIgnore ? "IGNORE ":""}INTO ?? (${fields.map(f => this.escapeId(f)).join(', ')}) VALUES ?`;
         let params = [ model ];
         params.push(data);
 
