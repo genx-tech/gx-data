@@ -166,7 +166,7 @@ class MySQLConnector extends Connector {
      * @param {object} params - Parameters to be placed into the SQL statement.
      * @param {object} [options] - Execution options.
      * @property {boolean} [options.usePreparedStatement] - Whether to use prepared statement which is cached and re-used by connection.
-     * @property {boolean} [options.rowsAsArray] - To receive rows as array of columns instead of hash with column name as key.
+     * @property {boolean} [options.rowsAsArray] - To receive rows as array of columns instead of hash with column name as key.     
      * @property {MySQLConnection} [options.connection] - Existing connection.
      */
     async execute_(sql, params, options) {        
@@ -227,11 +227,43 @@ class MySQLConnector extends Connector {
             throw new ApplicationError(`Creating with empty "${model}" data.`);
         }
 
-        let sql = 'INSERT INTO ?? SET ?';
+        const { insertIgnore, ...restOptions } = options || {};
+
+        let sql = `INSERT ${insertIgnore && "IGNORE "}INTO ?? SET ?`;
         let params = [ model ];
         params.push(data);
 
-        return this.execute_(sql, params, options); 
+        return this.execute_(sql, params, restOptions); 
+    }
+
+    async insertMany_(model, fields, data, options) {
+        if (!data || _.isEmpty(data)) {
+            throw new ApplicationError(`Creating with empty "${model}" data.`);
+        }
+
+        if (!Array.isArray(data)) {
+            throw new ApplicationError('"data" to bulk insert should be an array of records.');
+        }
+
+        if (!Array.isArray(fields)) {
+            throw new ApplicationError('"fields" to bulk insert should be an array of field names.');
+        }
+
+        dev: {
+            data.forEach(row => {
+                if (!Array.isArray(row)) {
+                    throw new ApplicationError('Element of "data" array to bulk insert should be an array of record values.');
+                }
+            });
+        }
+
+        const { insertIgnore, ...restOptions } = options || {};
+
+        let sql = `INSERT ${insertIgnore && "IGNORE "}INTO ?? (${fields.map(f => this.escapeId(f)).join(', ')}) VALUES ?`;
+        let params = [ model ];
+        params.push(data);
+
+        return this.execute_(sql, params, restOptions); 
     }
 
     insertOne_ = this.create_;

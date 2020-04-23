@@ -52,6 +52,14 @@ class EntityModel {
     }
 
     /**
+     * 
+     * @param {*} data 
+     */
+    static fieldMeta(name) {
+        return _.omit(this.meta.fields[name], ['default']);
+    }
+
+    /**
      * Get field names array of a unique key from input data.
      * @param {object} data - Input data.
      */
