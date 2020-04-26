@@ -649,7 +649,11 @@ class MySQLEntityModel extends EntityModel {
             if (assocMeta.list) {
                 data = _.castArray(data);
 
-                return eachAsync_(data, item => assocModel.create_({ ...item, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, context.options, context.connOptions));
+                if (!assocMeta.field) {
+                    throw new ApplicationError(`Missing "field" property in the metadata of association "${anchor}" of entity "${this.meta.name}".`);
+                }
+
+                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: keyValue }, context.options, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
                     throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
@@ -706,7 +710,9 @@ class MySQLEntityModel extends EntityModel {
                     throw new ApplicationError(`Missing "field" property in the metadata of association "${anchor}" of entity "${this.meta.name}".`);
                 }
 
-                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: keyValue }, { $upsert: true }, context.connOptions));
+                await assocModel.deleteMany_({ [assocMeta.field]: keyValue }, context.connOptions);
+
+                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: keyValue }, null, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
                     throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
@@ -725,8 +731,10 @@ class MySQLEntityModel extends EntityModel {
                 return assocModel.updateOne_(data, null, context.connOptions);              
             }
 
+            await assocModel.deleteMany_({ [assocMeta.field]: keyValue }, context.connOptions);
+
             if (forSingleRecord) {
-                return assocModel.create_({ ...data, [assocMeta.field]: keyValue }, { $upsert: true }, context.connOptions);              
+                return assocModel.create_({ ...data, [assocMeta.field]: keyValue }, null, context.connOptions);              
             }
 
             throw new Error('update associated data for multiple records not implemented');
