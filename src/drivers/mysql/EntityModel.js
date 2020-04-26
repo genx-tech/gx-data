@@ -5,7 +5,7 @@ const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
 
 const { DateTime } = require('luxon');
 const EntityModel = require('../../EntityModel');
-const { ApplicationError, DatabaseError, InvalidArgument } = require('../../utils/Errors');
+const { ApplicationError, DatabaseError, ValidationError, InvalidArgument } = require('../../utils/Errors');
 const Types = require('../../types');
 
 /**
@@ -34,11 +34,11 @@ class MySQLEntityModel extends EntityModel {
      * @param {object} name - Name of the symbol token 
      */
     static _translateSymbolToken(name) {
-        if (name === 'now') {
+        if (name === 'NOW') {
             return this.db.connector.raw('NOW()');
         } 
         
-        throw new Error('not support');
+        throw new Error('not support: ' + name);
     }
 
     /**
@@ -130,7 +130,7 @@ class MySQLEntityModel extends EntityModel {
             
             options = { 
                 ...context.options, 
-                $query: { [this.meta.keyField]: this.valueOfKey(entity) }, 
+                $query: { [this.meta.keyField]: super.valueOfKey(entity) }, 
                 $existing: entity 
             };
 
@@ -597,11 +597,22 @@ class MySQLEntityModel extends EntityModel {
     }
 
     static _extractAssociations(data) {
-        let raw = {}, assocs = {};
+        const raw = {}, assocs = {};
+        const meta = this.meta.associations;
         
         _.forOwn(data, (v, k) => {
             if (k.startsWith(':')) {
-                assocs[k.substr(1)] = v;
+                const anchor = k.substr(1);
+                const assocMeta = meta[anchor];
+                if (!assocMeta) {
+                    throw new ValidationError(`Unknown association "${anchor}" of entity "${this.meta.name}".`);
+                }     
+
+                if ((assocMeta.type === 'refersTo' || assocMeta.type === 'belongsTo') && (anchor in data)) {
+                    throw new ValidationError(`Association data ":${localField}" of entity "${this.meta.name}" conflicts with input value of field "${localField}".`);
+                }
+
+                assocs[anchor] = v;
             } else {
                 raw[k] = v;
             }
@@ -611,7 +622,7 @@ class MySQLEntityModel extends EntityModel {
     }
 
     static async _createAssocs_(context, assocs, beforeEntityCreate) {
-        let meta = this.meta.associations;
+        const meta = this.meta.associations;
         let keyValue;
         
         if (!beforeEntityCreate) {
@@ -622,14 +633,11 @@ class MySQLEntityModel extends EntityModel {
             }
         }
 
-        let pendingAssocs = {};
-        let finished = {};
+        const pendingAssocs = {};
+        const finished = {};
 
         await eachAsync_(assocs, async (data, anchor) => {            
-            let assocMeta = meta[anchor];
-            if (!assocMeta) {
-                throw new ApplicationError(`Unknown association "${anchor}" of entity "${this.meta.name}".`);
-            }                        
+            let assocMeta = meta[anchor];                        
 
             if (beforeEntityCreate && assocMeta.type !== 'refersTo' && assocMeta.type !== 'belongsTo') {
                 pendingAssocs[anchor] = data;
@@ -655,37 +663,50 @@ class MySQLEntityModel extends EntityModel {
             }
 
             if (!beforeEntityCreate && assocMeta.field) {
+                //hasMany or hasOne
                 data = { ...data, [assocMeta.field]: keyValue };
             } 
 
             let created = await assocModel.create_(data, context.options, context.connOptions);  
 
-            finished[anchor] = created[assocMeta.field];
+            finished[anchor] = beforeEntityCreate ? created[assocMeta.field] : created[assocMeta.key];
         });
 
         return [ finished, pendingAssocs ];
     }
 
-    static async _updateAssocs_(context, assocs) {
-        let meta = this.meta.associations;
-        let keyValue = context.return[this.meta.keyField];
+    static async _updateAssocs_(context, assocs, beforeEntityUpdate, forSingleRecord) {
+        const meta = this.meta.associations;
+        let keyValue;
+        
+        if (!beforeEntityUpdate) {
+            keyValue = context.return[this.meta.keyField];
 
-        if (_.isNil(keyValue)) {
-            throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
+            if (_.isNil(keyValue)) {
+                throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
+            }
         }
 
-        return eachAsync_(assocs, async (data, anchor) => {
+        const pendingAssocs = {};
+
+        await eachAsync_(assocs, async (data, anchor) => {
             let assocMeta = meta[anchor];
-            if (!assocMeta) {
-                throw new ApplicationError(`Unknown association "${anchor}" of entity "${this.meta.name}".`);
-            }                        
+            
+            if (beforeEntityUpdate && assocMeta.type !== 'refersTo' && assocMeta.type !== 'belongsTo') {
+                pendingAssocs[anchor] = data;
+                return;
+            }
 
             let assocModel = this.db.model(assocMeta.entity);
 
             if (assocMeta.list) {
                 data = _.castArray(data);
 
-                return eachAsync_(data, item => assocModel.replaceOne_({ ...item, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, null, context.connOptions));
+                if (!assocMeta.field) {
+                    throw new ApplicationError(`Missing "field" property in the metadata of association "${anchor}" of entity "${this.meta.name}".`);
+                }
+
+                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: keyValue }, { $upsert: true }, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
                     throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
@@ -695,11 +716,25 @@ class MySQLEntityModel extends EntityModel {
                     throw new ApplicationError(`The associated field of relation "${anchor}" does not exist in the entity meta data.`);
                 }
 
+                //connected by
                 data = { [assocMeta.assoc]: data };
             }
 
-            return assocModel.replaceOne_({ ...data, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, null, context.connOptions);  
+            if (beforeEntityUpdate) {
+                //refersTo or belongsTo                
+                return assocModel.updateOne_(data, null, context.connOptions);              
+            }
+
+            if (forSingleRecord) {
+                return assocModel.create_({ ...data, [assocMeta.field]: keyValue }, { $upsert: true }, context.connOptions);              
+            }
+
+            throw new Error('update associated data for multiple records not implemented');
+
+            //return assocModel.replaceOne_({ ...data, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, null, context.connOptions);  
         });
+
+        return pendingAssocs;
     }
 }
 

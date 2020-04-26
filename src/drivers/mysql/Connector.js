@@ -236,6 +236,32 @@ class MySQLConnector extends Connector {
         return this.execute_(sql, params, restOptions); 
     }
 
+    /**
+     * Create a new entity or update the old one if duplicate key found.
+     * @param {string} model 
+     * @param {object} data 
+     * @param {*} options 
+     */
+    async upsertOne_(model, data, uniqueKeys, options) {
+        if (!data || _.isEmpty(data)) {
+            throw new ApplicationError(`Creating with empty "${model}" data.`);
+        }
+
+        let dataWithUK = _.omit(data, uniqueKeys);
+
+        if (_.isEmpty(dataWithUK)) {
+            //if dupliate, dont need to update
+            return this.create_(model, data, { ...options, insertIgnore: true });
+        }
+
+        let sql = `INSERT INTO ?? SET ? ON DUPLICATE KEY UPDATE ?`;
+        let params = [ model ];
+        params.push(data);
+        params.push(dataWithUK);
+
+        return this.execute_(sql, params, restOptions); 
+    }
+
     async insertMany_(model, fields, data, options) {
         if (!data || _.isEmpty(data)) {
             throw new ApplicationError(`Creating with empty "${model}" data.`);

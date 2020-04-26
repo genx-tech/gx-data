@@ -315,6 +315,7 @@ class EntityModel {
      * @param {object} data - Entity data 
      * @param {object} [createOptions] - Create options     
      * @property {bool} [createOptions.$retrieveCreated=false] - Retrieve the newly created record from db.     
+     * @property {bool} [createOptions.$upsert=false] - If already exist, just update the record.     
      * @param {object} [connOptions]
      * @property {object} [connOptions.connection]
      * @returns {EntityModel}
@@ -347,11 +348,7 @@ class EntityModel {
                 const [ finished, pendingAssocs ] = await this._createAssocs_(context, associations, true /* before create */);            
                 
                 _.forOwn(finished, (refFieldValue, localField) => {
-                    if (_.isNil(raw[localField])) {
-                        raw[localField] = refFieldValue;
-                    } else {
-                        throw new ValidationError(`Association data ":${localField}" of entity "${this.meta.name}" conflicts with input value of field "${localField}".`);
-                    }
+                    raw[localField] = refFieldValue;
                 });
 
                 associations = pendingAssocs;
@@ -372,11 +369,20 @@ class EntityModel {
                 context.latest = Object.freeze(context.latest);
             }
 
-            context.result = await this.db.connector.create_(
-                this.meta.name, 
-                context.latest, 
-                context.connOptions
-            );
+            if (context.options.$upsert) {
+                context.result = await this.db.connector.upsertOne_(
+                    this.meta.name, 
+                    context.latest, 
+                    this.getUniqueKeyFieldsFrom(context.latest),
+                    context.connOptions
+                );
+            } else {
+                context.result = await this.db.connector.create_(
+                    this.meta.name, 
+                    context.latest, 
+                    context.connOptions
+                );
+            }
 
             context.return = context.latest;
 
@@ -446,6 +452,7 @@ class EntityModel {
         let rawOptions = updateOptions;
 
         if (!updateOptions) {
+            //if no condition given, extract from data 
             let conditionFields = this.getUniqueKeyFieldsFrom(data);
             if (_.isEmpty(conditionFields)) {
                 throw new InvalidArgument(
@@ -459,6 +466,7 @@ class EntityModel {
             data = _.omit(data, conditionFields);
         }
 
+        //see if there is associated entity data provided together
         let [ raw, associations ] = this._extractAssociations(data);
 
         let context = { 
@@ -468,6 +476,7 @@ class EntityModel {
             connOptions
         };               
 
+        //see if there is any runtime feature stopping the update
         let toUpdate;
 
         if (forSingleRecord) {
@@ -478,13 +487,16 @@ class EntityModel {
 
         if (!toUpdate) {
             return context.return;
-        }
-
-        let needCreateAssocs = !_.isEmpty(associations);
+        }        
         
         let success = await this._safeExecute_(async (context) => {
-            if (needCreateAssocs) {
-                await this.ensureTransaction_(context);                       
+            let needUpdateAssocs = !_.isEmpty(associations);
+
+            if (needUpdateAssocs) {
+                await this.ensureTransaction_(context);     
+                
+                associations = await this._updateAssocs_(context, associations, true /* before update */, forSingleRecord);            
+                needUpdateAssocs = !_.isEmpty(associations);
             }
 
             await this._prepareEntityData_(context, true /* is updating */, forSingleRecord);          
@@ -507,11 +519,21 @@ class EntityModel {
                 context.latest = Object.freeze(context.latest);
             }
 
+            const { $query, ...otherOptions } = context.options;
+
+            
+
+            if (needUpdateAssocs && _.isEmpty(this.valueOfKey($query)) && _.isEmpty(this.valueOfKey(context.latest)) && !otherOptions.$retrieveUpdated) {
+                //has associated data depending on this record
+                //should ensure the latest result will contain the key of this record
+                otherOptions.$retrieveUpdated = true;
+            }
+
             context.result = await this.db.connector.update_(
                 this.meta.name, 
                 context.latest, 
-                context.options.$query,
-                context.options,
+                $query,
+                otherOptions,
                 context.connOptions
             );  
 
@@ -519,18 +541,18 @@ class EntityModel {
 
             if (forSingleRecord) {
                 await this._internalAfterUpdate_(context);
+
+                if (!context.queryKey) {
+                    context.queryKey = this.getUniqueKeyValuePairsFrom($query);
+                }
             } else {
                 await this._internalAfterUpdateMany_(context);
-            }
-
-            if (!context.queryKey) {
-                context.queryKey = this.getUniqueKeyValuePairsFrom(context.options.$query);
-            }
+            }            
 
             await Features.applyRules_(Rules.RULE_AFTER_UPDATE, this, context);
 
-            if (needCreateAssocs) {
-                await this._updateAssocs_(context, associations);
+            if (needUpdateAssocs) {
+                await this._updateAssocs_(context, associations, false, forSingleRecord);
             }            
 
             return true;
