@@ -42,7 +42,7 @@ exports.getValueFrom = (arrayOfColl, key) => {
     const l = arrayOfColl.length;
     for (let i = 0; i < l; i++) {
         const coll = arrayOfColl[i];
-        const value = coll[key];
+        const value = coll && coll[key];
         if (value != null) return value;
     }
     return undefined;

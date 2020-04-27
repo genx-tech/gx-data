@@ -201,9 +201,9 @@ class MySQLConnector extends Connector {
 
             return rows2;
         } catch (err) {      
-            err.extraInfo || (err.extraInfo = {});
-            err.extraInfo.sql = _.truncate(sql, { length: 200 });
-            err.extraInfo.params = params;
+            err.info || (err.info = {});
+            err.info.sql = _.truncate(sql, { length: 200 });
+            err.info.params = params;
 
             throw err;
         } finally {

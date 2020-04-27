@@ -682,22 +682,16 @@ class MySQLEntityModel extends EntityModel {
     static async _updateAssocs_(context, assocs, beforeEntityUpdate, forSingleRecord) {
         const meta = this.meta.associations;
 
-        let keyValue;
+        let currentKeyValue;
 
-        if (beforeEntityUpdate) {
-            keyValue = getValueFrom([context.options.$query, context.raw], this.meta.keyField);
-
-            if (keyValue == null) {
-                context.existing = await this.findOne_(context.options.$query, context.connOptions);
-                keyValue = context.existing[this.meta.keyField];
-            }            
-        } else {
-            keyValue = getValueFrom([context.options.$query, context.return], this.meta.keyField);
-        }        
-
-        if (_.isNil(keyValue)) { // should have in updating
-            throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
-        }
+        if (beforeEntityUpdate) {            
+                        
+        } else {            
+            currentKeyValue = getValueFrom([context.options.$query, context.return], this.meta.keyField);
+            if (_.isNil(currentKeyValue)) { // should have in updating
+                throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
+            }
+        }            
 
         const pendingAssocs = {};
 
@@ -718,9 +712,9 @@ class MySQLEntityModel extends EntityModel {
                     throw new ApplicationError(`Missing "field" property in the metadata of association "${anchor}" of entity "${this.meta.name}".`);
                 }
 
-                await assocModel.deleteMany_({ [assocMeta.field]: keyValue }, context.connOptions);
+                await assocModel.deleteMany_({ [assocMeta.field]: currentKeyValue }, context.connOptions);
 
-                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: keyValue }, null, context.connOptions));
+                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: currentKeyValue }, null, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
                     throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
@@ -735,14 +729,29 @@ class MySQLEntityModel extends EntityModel {
             }
 
             if (beforeEntityUpdate) {
-                //refersTo or belongsTo        
-                return assocModel.updateOne_(data, { [assocMeta.field]: keyValue }, context.connOptions);              
+                //refersTo or belongsTo                    
+                let destEntityId = getValueFrom([context.existing, context.options.$query, context.raw], anchor);
+
+                if (!_.isEmpty(context.existing)) {
+                    throw new ApplicationError('Existing does not contain the referenced entity id.');
+                }
+
+                if (destEntityId == null) {
+                    context.existing = await this.findOne_(context.options.$query, context.connOptions);
+                    destEntityId = context.existing[anchor];
+
+                    if (destEntityId == null) {
+                        throw new ApplicationError('Existing does not contain the referenced entity id.');
+                    }
+                }
+
+                return assocModel.updateOne_(data, { [assocMeta.field]: destEntityId }, context.connOptions);              
             }
 
-            await assocModel.deleteMany_({ [assocMeta.field]: keyValue }, context.connOptions);
+            await assocModel.deleteMany_({ [assocMeta.field]: currentKeyValue }, context.connOptions);
 
             if (forSingleRecord) {
-                return assocModel.create_({ ...data, [assocMeta.field]: keyValue }, null, context.connOptions);              
+                return assocModel.create_({ ...data, [assocMeta.field]: currentKeyValue }, null, context.connOptions);              
             }
 
             throw new Error('update associated data for multiple records not implemented');
