@@ -10,7 +10,7 @@ const { ValidationError, DatabaseError, InvalidArgument } = Errors;
 const Features = require('./entityFeatures');
 const Rules = require('./enum/Rules');
 
-const { isNothing } = require('./utils/lang');
+const { isNothing, hasValueIn } = require('./utils/lang');
 
 const NEED_OVERRIDE = 'Should be overrided by driver-specific subclass.';
 
@@ -48,7 +48,7 @@ class EntityModel {
     }    
 
     static valueOfKey(data) {
-        return Array.isArray(this.meta.keyField) ? _.pick(data, this.meta.keyField) : data[this.meta.keyField];
+        return data[this.meta.keyField];
     }
 
     /**
@@ -491,12 +491,14 @@ class EntityModel {
         
         let success = await this._safeExecute_(async (context) => {
             let needUpdateAssocs = !_.isEmpty(associations);
+            let doneUpdateAssocs;
 
             if (needUpdateAssocs) {
                 await this.ensureTransaction_(context);     
                 
                 associations = await this._updateAssocs_(context, associations, true /* before update */, forSingleRecord);            
                 needUpdateAssocs = !_.isEmpty(associations);
+                doneUpdateAssocs = true;
             }
 
             await this._prepareEntityData_(context, true /* is updating */, forSingleRecord);          
@@ -515,41 +517,45 @@ class EntityModel {
                 return false;
             }
 
-            dev: {
-                context.latest = Object.freeze(context.latest);
-            }
-
-            const { $query, ...otherOptions } = context.options;
-
-            
-
-            if (needUpdateAssocs && _.isEmpty(this.valueOfKey($query)) && _.isEmpty(this.valueOfKey(context.latest)) && !otherOptions.$retrieveUpdated) {
-                //has associated data depending on this record
-                //should ensure the latest result will contain the key of this record
-                otherOptions.$retrieveUpdated = true;
-            }
-
-            context.result = await this.db.connector.update_(
-                this.meta.name, 
-                context.latest, 
-                $query,
-                otherOptions,
-                context.connOptions
-            );  
-
-            context.return = context.latest;
-
-            if (forSingleRecord) {
-                await this._internalAfterUpdate_(context);
-
-                if (!context.queryKey) {
-                    context.queryKey = this.getUniqueKeyValuePairsFrom($query);
+            if (_.isEmpty(context.latest)) {
+                if (!doneUpdateAssocs && !needUpdateAssocs) {
+                    throw new InvalidArgument('Cannot do the update with empty record. Entity: ' + this.meta.name);
                 }
             } else {
-                await this._internalAfterUpdateMany_(context);
-            }            
+                dev: {
+                    context.latest = Object.freeze(context.latest);
+                }
 
-            await Features.applyRules_(Rules.RULE_AFTER_UPDATE, this, context);
+                const { $query, ...otherOptions } = context.options;
+
+                if (needUpdateAssocs && !hasValueIn([$query, context.latest], this.meta.keyField) && !otherOptions.$retrieveUpdated) {
+                    //has associated data depending on this record
+                    //should ensure the latest result will contain the key of this record
+                    otherOptions.$retrieveUpdated = true;
+                }
+
+                context.result = await this.db.connector.update_(
+                    this.meta.name, 
+                    context.latest, 
+                    $query,
+                    otherOptions,
+                    context.connOptions
+                );  
+
+                context.return = context.latest;
+
+                if (forSingleRecord) {
+                    await this._internalAfterUpdate_(context);
+
+                    if (!context.queryKey) {
+                        context.queryKey = this.getUniqueKeyValuePairsFrom($query);
+                    }
+                } else {
+                    await this._internalAfterUpdateMany_(context);
+                }            
+
+                await Features.applyRules_(Rules.RULE_AFTER_UPDATE, this, context);
+            }
 
             if (needUpdateAssocs) {
                 await this._updateAssocs_(context, associations, false, forSingleRecord);

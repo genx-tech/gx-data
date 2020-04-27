@@ -36,3 +36,14 @@ exports.SupportedDrivers = Object.freeze(SupportedDrivers);
 exports.$col = (name) => ({ oorType: 'ColumnReference', name });
 exports.$expr = (left, op, right) =>({ oorType: 'BinaryExpression', left, op, right });
 exports.$f = (name, ...args) => ({ oorType: 'Function', name, args });
+
+exports.hasValueIn = (arrayOfColl, key) => _.find(arrayOfColl, coll => coll[key] != null);
+exports.getValueFrom = (arrayOfColl, key) => {
+    const l = arrayOfColl.length;
+    for (let i = 0; i < l; i++) {
+        const coll = arrayOfColl[i];
+        const value = coll[key];
+        if (value != null) return value;
+    }
+    return undefined;
+};

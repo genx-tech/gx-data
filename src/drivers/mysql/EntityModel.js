@@ -2,11 +2,11 @@
 
 const Util = require('rk-utils');
 const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
-
 const { DateTime } = require('luxon');
 const EntityModel = require('../../EntityModel');
 const { ApplicationError, DatabaseError, ValidationError, InvalidArgument } = require('../../utils/Errors');
 const Types = require('../../types');
+const { getValueFrom } = require('../../utils/lang');
 
 /**
  * MySQL entity model class.
@@ -681,14 +681,22 @@ class MySQLEntityModel extends EntityModel {
 
     static async _updateAssocs_(context, assocs, beforeEntityUpdate, forSingleRecord) {
         const meta = this.meta.associations;
-        let keyValue;
-        
-        if (!beforeEntityUpdate) {
-            keyValue = context.return[this.meta.keyField];
 
-            if (_.isNil(keyValue)) {
-                throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
-            }
+        let keyValue;
+
+        if (beforeEntityUpdate) {
+            keyValue = getValueFrom([context.options.$query, context.raw], this.meta.keyField);
+
+            if (keyValue == null) {
+                context.existing = await this.findOne_(context.options.$query, context.connOptions);
+                keyValue = context.existing[this.meta.keyField];
+            }            
+        } else {
+            keyValue = getValueFrom([context.options.$query, context.return], this.meta.keyField);
+        }        
+
+        if (_.isNil(keyValue)) { // should have in updating
+            throw new ApplicationError('Missing required primary key field value. Entity: ' + this.meta.name);
         }
 
         const pendingAssocs = {};
@@ -727,8 +735,8 @@ class MySQLEntityModel extends EntityModel {
             }
 
             if (beforeEntityUpdate) {
-                //refersTo or belongsTo                
-                return assocModel.updateOne_(data, null, context.connOptions);              
+                //refersTo or belongsTo        
+                return assocModel.updateOne_(data, { [assocMeta.field]: keyValue }, context.connOptions);              
             }
 
             await assocModel.deleteMany_({ [assocMeta.field]: keyValue }, context.connOptions);
