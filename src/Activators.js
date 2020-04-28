@@ -16,6 +16,10 @@ module.exports = {
         return condition ? value : null;
     },
 
+    defaultAs: function (model, context, value) {
+        return value;
+    },
+
     concat: (model, context, sep = '', ...strs) => strs.join(sep),
 
     sum: (model, context, ...args) => args.reduce((sum, v) => sum += v, 0),
