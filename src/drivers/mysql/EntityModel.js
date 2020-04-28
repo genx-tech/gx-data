@@ -730,13 +730,13 @@ class MySQLEntityModel extends EntityModel {
 
             if (beforeEntityUpdate) {
                 //refersTo or belongsTo                    
-                let destEntityId = getValueFrom([context.existing, context.options.$query, context.raw], anchor);
-
-                if (!_.isEmpty(context.existing)) {
-                    throw new ApplicationError('Existing does not contain the referenced entity id.');
-                }
+                let destEntityId = getValueFrom([context.existing, context.options.$query, context.raw], anchor);                
 
                 if (destEntityId == null) {
+                    if (!_.isEmpty(context.existing)) {                        
+                        throw new ApplicationError('Existing does not contain the referenced entity id.');
+                    }
+
                     context.existing = await this.findOne_(context.options.$query, context.connOptions);
                     destEntityId = context.existing[anchor];
 
