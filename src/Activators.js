@@ -75,7 +75,7 @@ module.exports = {
             }
 
             if (!remoteEntity) {
-                throw new ApplicationError(`Unable to find the "${assocMeta.entity}" with [${assocMeta.key}=${assocValue}].`);
+                throw new ApplicationError(`Unable to find the "${assocMeta.entity}" with [${assocMeta.key}=${assocValue}]. Entity: ${model.meta.name}`);
             }
 
             context.populated || (context.populated = {});

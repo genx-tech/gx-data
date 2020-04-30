@@ -321,7 +321,7 @@ class MySQLConnector extends Connector {
             sql += ' A ' + joinings.join(' ');
         }
 
-        if (queryOptions && queryOptions.$requireSplitColumns) {
+        if ((queryOptions && queryOptions.$requireSplitColumns) || hasJoining) {
             sql += ' SET ' + this._splitColumnsAsInput(data, params, hasJoining, aliasMap).join(',');
         } else {
             params.push(data);
@@ -681,7 +681,7 @@ class MySQLConnector extends Connector {
         return _.map(data, (v, fieldName) => {
             assert: fieldName.indexOf('.') === -1, 'Column of direct input data cannot be a dot-separated name.';
             
-            return mysql.escapeId(fieldName) + '=' + this._packValue(v, params, hasJoining, aliasMap);
+            return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + '=' + this._packValue(v, params, hasJoining, aliasMap);
         });
     }
 
