@@ -119,11 +119,11 @@ class MySQLConnector extends Connector {
      * @property {string} [options.isolationLevel]
      */
     async beginTransaction_(options) {
-        let conn = await this.connect_();
+        const conn = await this.connect_();
 
         if (options && options.isolationLevel) {
             //only allow valid option value to avoid injection attach
-            let isolationLevel = _.find(MySQLConnector.IsolationLevels, (value, key) => options.isolationLevel === key || options.isolationLevel === value);
+            const isolationLevel = _.find(MySQLConnector.IsolationLevels, (value, key) => options.isolationLevel === key || options.isolationLevel === value);
             if (!isolationLevel) {
                 throw new ApplicationError(`Invalid isolation level: "${isolationLevel}"!"`);
             }
@@ -131,7 +131,11 @@ class MySQLConnector extends Connector {
             await conn.query('SET SESSION TRANSACTION ISOLATION LEVEL ' + isolationLevel);            
         }
 
-        await conn.beginTransaction();
+        const [ ret ] = await conn.query('SELECT @@autocommit;');        
+        conn.$$autocommit = ret[0]['@@autocommit'];        
+
+        await conn.query('SET SESSION autocommit=0;');
+        await conn.query('START TRANSACTION;');
         
         this.log('verbose', 'Begins a new transaction.');
         return conn;
@@ -142,9 +146,13 @@ class MySQLConnector extends Connector {
      * @param {MySQLConnection} conn - MySQL connection.
      */
     async commit_(conn) {
-        await conn.commit();
-        
-        this.log('verbose', 'Commits a transaction.');
+        await conn.query('COMMIT;');        
+        this.log('verbose', `Commits a transaction. Previous autocommit=${conn.$$autocommit}`);
+        if (conn.$$autocommit) {
+            await conn.query('SET SESSION autocommit=1;');
+            delete conn.$$autocommit;
+        }        
+
         return this.disconnect_(conn);
     }
 
@@ -153,9 +161,13 @@ class MySQLConnector extends Connector {
      * @param {MySQLConnection} conn - MySQL connection.
      */
     async rollback_(conn) {
-        await conn.rollback();
+        await conn.query('ROLLBACK;');
+        this.log('verbose', `Rollbacks a transaction. Previous autocommit=${conn.$$autocommit}`);
+        if (conn.$$autocommit) {
+            await conn.query('SET SESSION autocommit=1;');
+            delete conn.$$autocommit;
+        }              
         
-        this.log('verbose', 'Rollbacks a transaction.');
         return this.disconnect_(conn);
     }
 

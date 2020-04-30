@@ -40,7 +40,7 @@ async function createLogEntry_(entityModel, feature, context, operation) {
     }
 
     let clConnector = getConnector(entityModel, feature);
-    await clConnector.insertOne_(feature.storeEntity, logEntry);
+    await clConnector.insertOne_(feature.storeEntity, logEntry, context.connOptions);
 }
 
 /**

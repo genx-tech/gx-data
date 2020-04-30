@@ -222,7 +222,8 @@ class MySQLEntityModel extends EntityModel {
                 retrieveOptions.$relationships = context.options.$relationships;
             }
             
-            context.return = await this.findOne_({ ...condition, ...retrieveOptions }, context.connOptions);
+            context.return = await this.findOne_({ ...condition, ...retrieveOptions, $includeDeleted: context.options.$retrieveDeleted }, context.connOptions);
+            
             if (context.return) {
                 context.queryKey = this.getUniqueKeyValuePairsFrom(context.return);
             } else {
@@ -262,7 +263,7 @@ class MySQLEntityModel extends EntityModel {
                 retrieveOptions.$relationships = context.options.$relationships;
             }
             
-            context.return = await this.findAll_({ ...retrieveOptions, $query: context.options.$query }, context.connOptions);            
+            context.return = await this.findAll_({ ...retrieveOptions, $query: context.options.$query, $includeDeleted: context.options.$retrieveDeleted }, context.connOptions);            
         }
 
         context.queryKey = context.options.$query;

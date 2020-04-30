@@ -3,6 +3,7 @@
 const Rules = require('../enum/Rules');
 const { mergeCondition } = require('../utils/lang');
 const Generators = require('../Generators');
+const { _ } = require("rk-utils");
 
 /**
  * A rule specifies the entity will not be deleted physically.
@@ -30,11 +31,18 @@ module.exports = {
                 updateTo[timestampField] = Generators.default(entityModel.meta.fields[timestampField], context.i18n);
             }
 
-            context.return = await entityModel._update_(updateTo, { 
+            const updateOpts = { 
                 $query: options.$query, 
-                $retrieveUpdated: options.$retrieveDeleted,
-                $bypassReadOnly: new Set([field, timestampField])
-            });
+                $retrieveUpdated: options.$retrieveDeleted,                
+                $bypassReadOnly: new Set([field, timestampField]),
+                ..._.pick(options, [ '$retrieveDeleted', '$retrieveDbResult' ])
+            }
+
+            context.return = await entityModel._update_(updateTo, updateOpts, context.connOptions, context.forSingleRecord);
+
+            if (options.$retrieveDbResult) {
+                context.rawOptions.$result = updateOpts.$result;                   
+            }
 
             return false;
         }

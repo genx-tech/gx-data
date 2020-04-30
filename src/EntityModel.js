@@ -473,7 +473,8 @@ class EntityModel {
             raw, 
             rawOptions,
             options: this._prepareQueries(updateOptions, forSingleRecord /* for single record */),            
-            connOptions
+            connOptions,
+            forSingleRecord
         };               
 
         //see if there is any runtime feature stopping the update
@@ -661,7 +662,8 @@ class EntityModel {
         let context = { 
             rawOptions,
             options: deleteOptions,
-            connOptions
+            connOptions,
+            forSingleRecord
         };
 
         let toDelete;
