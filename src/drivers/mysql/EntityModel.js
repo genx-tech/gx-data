@@ -650,7 +650,7 @@ class MySQLEntityModel extends EntityModel {
         const finished = {};
 
         //todo: double check to ensure including all required options
-        const passOnOptions = _.pick(context.options, ['$migration']);
+        const passOnOptions = _.pick(context.options, ['$migration', '$variables']);
 
         await eachAsync_(assocs, async (data, anchor) => {            
             let assocMeta = meta[anchor];                        
@@ -712,7 +712,7 @@ class MySQLEntityModel extends EntityModel {
         const pendingAssocs = {};
 
         //todo: double check to ensure including all required options
-        const passOnOptions = _.pick(context.options, ['$migration']);
+        const passOnOptions = _.pick(context.options, ['$migration', '$variables']);
 
         await eachAsync_(assocs, async (data, anchor) => {
             let assocMeta = meta[anchor];
@@ -764,7 +764,7 @@ class MySQLEntityModel extends EntityModel {
                     }
                 }
 
-                return assocModel.updateOne_(data, { [assocMeta.field]: destEntityId }, context.connOptions);              
+                return assocModel.updateOne_(data, { [assocMeta.field]: destEntityId, ...passOnOptions }, context.connOptions);              
             }
 
             await assocModel.deleteMany_({ [assocMeta.field]: currentKeyValue }, context.connOptions);
