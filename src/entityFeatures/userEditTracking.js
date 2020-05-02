@@ -11,7 +11,7 @@ function addCreatedBy_(entityModel, feature, context) {
 
     let uid = entityModel.getValueFromContext(context, feature.uidSource);
     if (uid == null) {
-        throw new InvalidArgument(`Context "${feature.uidSource}" not found.`)
+        throw new InvalidArgument(`Context "${feature.uidSource}" not found. Entity: ${entityModel.meta.name}`)
     }
     context.latest[feature.fields.createdBy] = uid;
     return true;

@@ -204,25 +204,37 @@ class MySQLEntityModel extends EntityModel {
      * @property {bool} [context.options.$retrieveUpdated] - Retrieve the newly updated record from db. 
      */
     static async _internalAfterUpdate_(context) {
-        if (context.options.$retrieveDbResult) {
+        const options = context.options;
+
+        if (options.$retrieveDbResult) {
             context.rawOptions.$result = context.result;                   
         }
 
-        if (context.options.$retrieveUpdated) {    
-            let condition = { $query: this.getUniqueKeyValuePairsFrom(context.options.$query) };
-            if (context.options.$bypassEnsureUnique) {
-                condition.$bypassEnsureUnique = context.options.$bypassEnsureUnique;
+        let retrieveUpdated = options.$retrieveUpdated;
+
+        if (!retrieveUpdated) {
+            if (options.$retrieveActualUpdated && context.result.affectedRows > 0) {
+                retrieveUpdated = options.$retrieveActualUpdated;
+            } else if (options.$retrieveNotUpdate && context.result.affectedRows === 0) {
+                retrieveUpdated = options.$retrieveNotUpdate;
+            }
+        }
+
+        if (retrieveUpdated) {    
+            let condition = { $query: this.getUniqueKeyValuePairsFrom(options.$query) };
+            if (options.$bypassEnsureUnique) {
+                condition.$bypassEnsureUnique = options.$bypassEnsureUnique;
             } 
 
             let retrieveOptions = {};
             
-            if (_.isPlainObject(context.options.$retrieveUpdated)) {
-                retrieveOptions = context.options.$retrieveUpdated;
-            } else if (context.options.$relationships) {
-                retrieveOptions.$relationships = context.options.$relationships;
+            if (_.isPlainObject(retrieveUpdated)) {
+                retrieveOptions = retrieveUpdated;
+            } else if (options.$relationships) {
+                retrieveOptions.$relationships = options.$relationships;
             }
             
-            context.return = await this.findOne_({ ...condition, ...retrieveOptions, $includeDeleted: context.options.$retrieveDeleted }, context.connOptions);
+            context.return = await this.findOne_({ ...condition, ...retrieveOptions, $includeDeleted: options.$retrieveDeleted }, context.connOptions);
             
             if (context.return) {
                 context.queryKey = this.getUniqueKeyValuePairsFrom(context.return);
@@ -637,6 +649,9 @@ class MySQLEntityModel extends EntityModel {
         const pendingAssocs = {};
         const finished = {};
 
+        //todo: double check to ensure including all required options
+        const passOnOptions = _.pick(context.options, ['$migration']);
+
         await eachAsync_(assocs, async (data, anchor) => {            
             let assocMeta = meta[anchor];                        
 
@@ -654,7 +669,7 @@ class MySQLEntityModel extends EntityModel {
                     throw new ApplicationError(`Missing "field" property in the metadata of association "${anchor}" of entity "${this.meta.name}".`);
                 }
 
-                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: keyValue }, null, context.connOptions));
+                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: keyValue }, passOnOptions, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
                     throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
@@ -672,7 +687,7 @@ class MySQLEntityModel extends EntityModel {
                 data = { ...data, [assocMeta.field]: keyValue };
             } 
 
-            let created = await assocModel.create_(data, null, context.connOptions);  
+            let created = await assocModel.create_(data, passOnOptions, context.connOptions);  
 
             finished[anchor] = beforeEntityCreate ? created[assocMeta.field] : created[assocMeta.key];
         });
@@ -696,6 +711,9 @@ class MySQLEntityModel extends EntityModel {
 
         const pendingAssocs = {};
 
+        //todo: double check to ensure including all required options
+        const passOnOptions = _.pick(context.options, ['$migration']);
+
         await eachAsync_(assocs, async (data, anchor) => {
             let assocMeta = meta[anchor];
             
@@ -715,7 +733,7 @@ class MySQLEntityModel extends EntityModel {
 
                 await assocModel.deleteMany_({ [assocMeta.field]: currentKeyValue }, context.connOptions);
 
-                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: currentKeyValue }, null, context.connOptions));
+                return eachAsync_(data, item => assocModel.create_({ ...item, [assocMeta.field]: currentKeyValue }, passOnOptions, context.connOptions));
             } else if (!_.isPlainObject(data)) {
                 if (Array.isArray(data)) {
                     throw new ApplicationError(`Invalid type of associated entity (${assocMeta.entity}) data triggered from "${this.meta.name}" entity. Singular value expected (${anchor}), but an array is given instead.`);
@@ -752,7 +770,7 @@ class MySQLEntityModel extends EntityModel {
             await assocModel.deleteMany_({ [assocMeta.field]: currentKeyValue }, context.connOptions);
 
             if (forSingleRecord) {
-                return assocModel.create_({ ...data, [assocMeta.field]: currentKeyValue }, null, context.connOptions);              
+                return assocModel.create_({ ...data, [assocMeta.field]: currentKeyValue }, passOnOptions, context.connOptions);              
             }
 
             throw new Error('update associated data for multiple records not implemented');
