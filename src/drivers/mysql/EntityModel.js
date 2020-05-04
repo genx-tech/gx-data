@@ -814,6 +814,8 @@ class MySQLEntityModel extends EntityModel {
             }
 
             if (beforeEntityUpdate) {
+                if (_.isEmpty(data)) return;
+
                 //refersTo or belongsTo
                 let destEntityId = getValueFrom([context.existing, context.options.$query, context.raw], anchor);
 
@@ -845,7 +847,7 @@ class MySQLEntityModel extends EntityModel {
                     }
                 }
 
-                if (destEntityId) {
+                if (destEntityId) {                    
                     return assocModel.updateOne_(
                         data,
                         { [assocMeta.field]: destEntityId, ...passOnOptions },
