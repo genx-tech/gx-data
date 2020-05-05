@@ -47,7 +47,7 @@ module.exports = {
     generate: (info, i18n) => i18n ? i18n.now() : DateTime.local(),
 
     serialize: value => {
-        if (value.toISO) {
+        if (value && value.toISO) {
             return value.toISO({ includeOffset: false }); 
         }
 
