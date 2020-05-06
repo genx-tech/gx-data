@@ -67,10 +67,7 @@ class DbModel {
             }
 
             if (i === maxRetry) {
-                throw new DatabaseError(
-                    `Unable to complete expected transaction after retried ${maxRetry} times.`,
-                    result
-                );
+                throw result;
             }
 
             this.app.logException(
