@@ -933,6 +933,17 @@ class MySQLConnector extends Connector {
 
                                 return value.name + '(' + this._buildColumns(col.args, valuesSeq, hasJoining, aliasMap) + ') = '
                                     */
+
+                            case '$has':
+                                if (typeof v !== 'string' || v.indexOf(',') >= 0) {
+                                    throw new Error('The value should be a string without "," when using "$has" operator.');
+                                }
+
+                                assert: !inject;
+        
+                                params.push(v);
+                                return `FIND_IN_SET(?, ${this._escapeIdWithAlias(fieldName, hasJoining, aliasMap)}) > 0`;
+
                             default:
                                 throw new Error(`Unsupported condition operator: "${k}"!`);
                         }
