@@ -3,7 +3,7 @@
 const Types = require('..');
 const { _ } = require('rk-utils');
 
-describe.only('unit:types:text', function () {       
+describe('unit:types:text', function () {       
 
     it('basic', function () {   
         const fixtures = [

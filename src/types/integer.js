@@ -11,6 +11,8 @@ module.exports = {
     alias: [ 'int' ],
 
     sanitize: (value, info, i18n) => {
+        if (value == null) return value;
+
         let raw = value;
         value = Convertors.toInt(value);
         if (isNaN(value)) {
