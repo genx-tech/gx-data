@@ -56,7 +56,11 @@ class EntityModel {
      * @param {*} data 
      */
     static fieldMeta(name) {
-        return _.omit(this.meta.fields[name], ['default']);
+        const meta = this.meta.fields[name];
+        if (!meta) {
+            throw new InvalidArgument(`Uknown field "${name}" of entity "${this.meta.name}".`)
+        }
+        return _.omit(meta, ['default']);
     }
 
     /**
@@ -693,9 +697,12 @@ class EntityModel {
                 return false;
             }
 
+            const { $query, ...otherOptions } = context.options;
+
             context.result = await this.db.connector.delete_(
                 this.meta.name,                 
-                context.options.$query,
+                $query,
+                otherOptions,
                 context.connOptions
             ); 
 

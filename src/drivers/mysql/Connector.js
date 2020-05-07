@@ -369,15 +369,30 @@ class MySQLConnector extends Connector {
     /**
      * Remove an existing entity.
      * @param {string} model 
-     * @param {*} condition 
+     * @param {*} query 
+     * @param {*} deleteOptions 
      * @param {*} options 
      */
-    async delete_(model, condition, options) {
-        let params = [ model ];
+    async delete_(model, query, deleteOptions, options) {
+        let params = [ model ], aliasMap = { [model]: 'A' }, joinings, hasJoining = false, joiningParams = []; 
 
-        let whereClause = this._joinCondition(condition, params);        
+        if (deleteOptions && deleteOptions.$relationships) {                                        
+            joinings = this._joinAssociations(deleteOptions.$relationships, model, 'A', aliasMap, 1, joiningParams);             
+            hasJoining = model;
+        }
 
-        let sql = 'DELETE FROM ?? WHERE ' + whereClause;
+        let sql;
+
+        if (hasJoining) {
+            joiningParams.forEach(p => params.push(p));
+            sql = 'DELETE A FROM ?? A ' + joinings.join(' ');
+        } else {
+            sql = 'DELETE FROM ??';
+        }
+
+        let whereClause = this._joinCondition(query, params, null, hasJoining, aliasMap);        
+
+        sql += ' WHERE ' + whereClause;
         
         return this.execute_(sql, params, options);
     }

@@ -22,7 +22,7 @@ function sanitize(value, info, i18n, prefix) {
     if (Array.isArray(value)) {
         if (info.elementSchema) {
             const Validators = require('../Validators');
-            return value.map((a, i) => Validators.validateObjectBySchema(a, info.elementSchema, i18n, prefix + `[${i}]`));
+            return value.map((a, i) => Validators.validateAny(a, info.elementSchema, i18n, prefix + `[${i}]`));
         }
 
         return value;

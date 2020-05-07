@@ -6,6 +6,7 @@ const { isNothing } = require('./utils/lang');
 const { tryRequire } = require('./utils/lib');
 const { ValidationError } = require('./utils/Errors');
 const validator = require('validator');
+const Types = require('./types');
 
 module.exports = _.pick(validator, [ 
     'equals',
@@ -112,13 +113,10 @@ function validate(obj, condition) {
 
 module.exports.validate = validate;
 
-function validateObjectBySchema(raw, schema, i18n, prefix) {   
-    let latest = {};
-    const Types = require('./types');
+module.exports.validateAny = Types.sanitize;
 
-    if (schema.type && schema.type !== 'object') {
-        return Types.sanitize(raw, schema, i18n, prefix);
-    }
+function validateObjectBySchema(raw, schema, i18n, prefix) {   
+    let latest = {};    
 
     _.forOwn(schema, (fieldInfo, fieldName) => {
         if (fieldName in raw) {

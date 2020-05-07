@@ -182,10 +182,27 @@ class MySQLEntityModel extends EntityModel {
 
         if (context.options.$retrieveCreated) {
             if (this.hasAutoIncrement) {
-                let { insertId } = context.result;
-                context.queryKey = { [this.meta.features.autoId.field]: insertId };
+                if (context.result.affectedRows === 0) {
+                    //insert ignored
+                    context.queryKey = this.getUniqueKeyValuePairsFrom(context.latest);
+
+                    if (_.isEmpty(context.queryKey)) {
+                        throw new ApplicationError('Cannot extract unique keys from input data.', {
+                            entity: this.meta.name
+                        })
+                    }
+                } else {
+                    let { insertId } = context.result;
+                    context.queryKey = { [this.meta.features.autoId.field]: insertId };
+                }                
             } else {
                 context.queryKey = this.getUniqueKeyValuePairsFrom(context.latest);
+
+                if (_.isEmpty(context.queryKey)) {
+                    throw new ApplicationError('Cannot extract unique keys from input data.', {
+                        entity: this.meta.name
+                    })
+                }
             }
 
             let retrieveOptions = _.isPlainObject(context.options.$retrieveCreated)
@@ -194,8 +211,13 @@ class MySQLEntityModel extends EntityModel {
             context.return = await this.findOne_({ ...retrieveOptions, $query: context.queryKey }, context.connOptions);
         } else {
             if (this.hasAutoIncrement) {
-                let { insertId } = context.result;
-                context.queryKey = { [this.meta.features.autoId.field]: insertId };
+                if (context.result.affectedRows === 0) {
+                    context.queryKey = this.getUniqueKeyValuePairsFrom(context.latest);
+                } else {
+                    let { insertId } = context.result;
+                    context.queryKey = { [this.meta.features.autoId.field]: insertId };
+                }
+
                 context.return = { ...context.return, ...context.queryKey };
             }
         }
