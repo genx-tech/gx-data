@@ -532,10 +532,12 @@ class MySQLEntityModel extends EntityModel {
                 let subIndexes = existingRow.subIndexes[objKey];
 
                 // joined an empty record
-                let rowKey = subObj[key];
-                if (_.isNil(rowKey)) return;
+                let rowKeyValue = subObj[key];
+                if (_.isNil(rowKeyValue)) {
+                    return;
+                }
 
-                let existingSubRow = subIndexes && subIndexes[rowKey];
+                let existingSubRow = subIndexes && subIndexes[rowKeyValue];
                 if (existingSubRow) {
                     if (subAssocs) {
                         mergeRecord(existingSubRow, subObj, subAssocs, currentPath);
@@ -573,7 +575,7 @@ class MySQLEntityModel extends EntityModel {
                         );
                     }
 
-                    subIndexes[rowKey] = subIndex;
+                    subIndexes[rowKeyValue] = subIndex;
                 }
             });
         }
@@ -608,10 +610,11 @@ class MySQLEntityModel extends EntityModel {
                         rowObject[objKey] = [subObject];
                     }
                 } else if (subObject && _.isNil(subObject[key])) {
+                    /*
                     if (subAssocs) {
                         subIndex.subIndexes = buildSubIndexes(subObject, subAssocs);
-                    }
-
+                    }*/
+                    rowObject[objKey] = null;
                     return;
                 }
 
