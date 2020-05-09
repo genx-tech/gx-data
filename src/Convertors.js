@@ -35,21 +35,19 @@ exports.toKVPairs = (arrayOfObjects, property, transformer) => {
 
 /**
  * Remap the keys of object elements in an array, like projection.
- * @param {*} arrayOfObjects
+ * @param {*} object
  * @param {*} mapping - key to newKey or key to array[ newKey, valueMap ] for next level mapping
  * @param {boolean} keepUnmapped - If true, will keep those not in mapping as its original key, otherwise filter out
  */
-const mapKeysDeep = (arrayOfObjects, mapping, keepUnmapped) => {
-    if (Array.isArray(arrayOfObjects)) return _.map(arrayOfObjects, (obj) => mapKeysDeep(obj, mapping));
-
-    if (typeof mapping === 'string') return { [mapping]: arrayOfObjects };
+const mapKeysDeep = (object, mapping, keepUnmapped) => {
+    if (typeof mapping === 'string') return { [mapping]: object };
 
     let newObj = {};
-    _.forOwn(arrayOfObjects, (v, k) => {
+    _.forOwn(object, (v, k) => {
         if (k in mapping) {
             let nk = mapping[k];
             if (Array.isArray(nk)) {
-                newObj[nk[0]] = { ...newObj[nk[0]], ...mapKeysDeep(v, nk[1]) };
+                newObj[nk[0]] = { ...newObj[nk[0]], ...mapKeysDeep(v, nk[1], keepUnmapped) };
             } else {
                 newObj[nk] = v;
             }
@@ -63,4 +61,7 @@ const mapKeysDeep = (arrayOfObjects, mapping, keepUnmapped) => {
     return newObj;
 };
 
+const mapArraysDeep = (arrayOfObjects, mapping, keepUnmapped) => _.map(arrayOfObjects, (obj) => mapKeysDeep(obj, mapping, keepUnmapped));
+
 exports.mapKeysDeep = mapKeysDeep;
+exports.mapArraysDeep = mapArraysDeep;
