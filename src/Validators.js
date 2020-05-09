@@ -118,6 +118,13 @@ module.exports.validateAny = Types.sanitize;
 function validateObjectBySchema(raw, schema, i18n, prefix) {   
     let latest = {};    
 
+    if (typeof raw !== 'object') {
+        throw new ValidationError('The value is not an object.', {
+            raw,
+            prefix
+        });
+    }
+
     _.forOwn(schema, (fieldInfo, fieldName) => {
         if (fieldName in raw) {
             let value = raw[fieldName];
