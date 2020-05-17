@@ -33,9 +33,17 @@ exports.extractDriverAndConnectorName = id => id.split('.');
 exports.mergeCondition = mergeCondition;
 exports.SupportedDrivers = Object.freeze(SupportedDrivers);
 
-exports.$col = (name) => ({ oorType: 'ColumnReference', name });
-exports.$expr = (left, op, right) =>({ oorType: 'BinaryExpression', left, op, right });
-exports.$f = (name, ...args) => ({ oorType: 'Function', name, args });
+const $col = (name) => ({ oorType: 'ColumnReference', name });
+const $expr = (left, op, right) =>({ oorType: 'BinaryExpression', left, op, right });
+const $f = (name, ...args) => ({ oorType: 'Function', name, args });
+const $inc = (field, increment) => $expr($col(field), '+', increment);
+
+exports.$col = $col;
+exports.$expr = $expr;
+exports.$f = $f;
+exports.$func = $f;
+exports.$inc = $inc
+exports.$increase = $inc
 
 exports.hasValueIn = (arrayOfColl, key) => _.find(arrayOfColl, coll => coll[key] != null);
 exports.getValueFrom = (arrayOfColl, key) => {

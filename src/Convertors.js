@@ -3,7 +3,7 @@
 const validator = require("validator");
 const { _ } = require("rk-utils");
 
-exports.toBoolean = (value) => (typeof value === "boolean" ? value : validator.toBoolean(value, true));
+exports.toBoolean = (value) => (typeof value === "boolean" ? value : validator.toBoolean(value.toString(), true));
 
 exports.toText = (value, noTrim) => {
     if (value) {
