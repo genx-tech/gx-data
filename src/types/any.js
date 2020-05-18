@@ -16,6 +16,7 @@ module.exports = {
         'displayName',
         'generator',
         'constraintOnUpdate',
-        'constraintOnDelete'
+        'constraintOnDelete',
+        'hasActivator'
     ])
 };

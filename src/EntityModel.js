@@ -889,7 +889,7 @@ class EntityModel {
             if (isUpdating) {
                 if (fieldInfo.forceUpdate) {
                     //has force update policy, e.g. updateTimestamp
-                    if (fieldInfo.updateByDb) {
+                    if (fieldInfo.updateByDb || fieldInfo.hasActivator) {
                         return;
                     }
 
@@ -900,7 +900,7 @@ class EntityModel {
                     } 
 
                     throw new ValidationError(
-                        `"${fieldName}" of "${name}" enttiy is required for each update.`, {         
+                        `"${fieldName}" of "${name}" entity is required for each update.`, {         
                             entity: name,                                               
                             fieldInfo: fieldInfo
                         }
