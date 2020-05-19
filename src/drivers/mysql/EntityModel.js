@@ -665,7 +665,8 @@ class MySQLEntityModel extends EntityModel {
             _.forOwn(tableCache, (obj, table) => {
                 let nodePath = aliasMap[table];
                 const tmpl = getValueByPath(tableTemplate, nodePath);
-                setValueByPath(rowObject, nodePath, { ...tmpl, ...obj });
+                const existing = getValueByPath(rowObject, nodePath);
+                setValueByPath(rowObject, nodePath, { ...tmpl, ...existing, ...obj });
             });
 
             //console.dir(rowObject, { depth: 10 });
