@@ -601,20 +601,18 @@ class MySQLEntityModel extends EntityModel {
                         return;
                     }
 
+                    rowObject[objKey] = [subObject];
+
                     //many to *
                     if (_.isNil(subObject[key])) {
-                        //subObject not exist, just filled with null by joining
-                        rowObject[objKey] = [];
+                        //subObject not exist, just filled with null by joining                        
                         subObject = null;
-                    } else {
-                        rowObject[objKey] = [subObject];
-                    }
-                } else if (subObject && _.isNil(subObject[key])) {
-                    /*
+                    } 
+                } else if (subObject && _.isNil(subObject[key])) {                    
                     if (subAssocs) {
                         subIndex.subIndexes = buildSubIndexes(subObject, subAssocs);
-                    }*/
-                    rowObject[objKey] = null;
+                    }
+                    //rowObject[objKey] = null;
                     return;
                 }
 
@@ -623,9 +621,9 @@ class MySQLEntityModel extends EntityModel {
                         subIndex.subIndexes = buildSubIndexes(subObject, subAssocs);
                     }
 
-                    indexes[objKey] = {
+                    indexes[objKey] = subObject[key] ? {
                         [subObject[key]]: subIndex,
-                    };
+                    } : {};
                 }
             });
 
