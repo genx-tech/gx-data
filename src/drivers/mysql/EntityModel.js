@@ -1,4 +1,4 @@
-"use strict";
+-"use strict";
 
 const Util = require("rk-utils");
 const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
@@ -599,22 +599,21 @@ class MySQLEntityModel extends EntityModel {
                 if (list) {
                     if (!subObject) {
                         return;
-                    }
+                    }                    
 
                     rowObject[objKey] = [subObject];
 
                     //many to *
-                    if (_.isNil(subObject[key])) {
-                        //subObject not exist, just filled with null by joining                        
+                    if (_.isNil(subObject[key])) {                   
                         subObject = null;
                     } 
-                } else if (subObject && _.isNil(subObject[key])) {                    
+                } /*else if (subObject && _.isNil(subObject[key])) {                    
                     if (subAssocs) {
                         subIndex.subIndexes = buildSubIndexes(subObject, subAssocs);
                     }
                     //rowObject[objKey] = null;
                     return;
-                }
+                }*/
 
                 if (subObject) {
                     if (subAssocs) {
@@ -632,6 +631,14 @@ class MySQLEntityModel extends EntityModel {
 
         let arrayOfObjs = [];
 
+        const tableTemplate = columns.reduce((result, col) => {
+            if (col.table !== 'A') {
+                setValueByPath(result, aliasMap[col.table] + '.' + col.name, null);
+            }
+
+            return result;
+        }, {});
+
         //process each row
         rows.forEach((row, i) => {
             let rowObject = {}; // hash-style data row
@@ -642,23 +649,26 @@ class MySQLEntityModel extends EntityModel {
 
                 if (col.table === "A") {
                     result[col.name] = value;
-                } else {
+                } else if (value != null) {
                     let bucket = tableCache[col.table];
                     if (bucket) {
                         //already nested inside
                         bucket[col.name] = value;
                     } else {
-                        let nodePath = aliasMap[col.table];
-                        if (nodePath) {
-                            let subObject = { [col.name]: value };
-                            tableCache[col.table] = subObject;
-                            setValueByPath(result, nodePath, subObject);
-                        }
+                        tableCache[col.table] = { [col.name]: value };                            
                     }
                 }
 
                 return result;
             }, rowObject);
+
+            _.forOwn(tableCache, (obj, table) => {
+                let nodePath = aliasMap[table];
+                const tmpl = getValueByPath(tableTemplate, nodePath);
+                setValueByPath(rowObject, nodePath, { ...tmpl, ...obj });
+            });
+
+            //console.dir(rowObject, { depth: 10 });
 
             let rowKey = rowObject[self.meta.keyField];
             let existingRow = mainIndex[rowKey];
