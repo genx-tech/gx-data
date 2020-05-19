@@ -6,7 +6,7 @@ const { DateTime } = require("luxon");
 const EntityModel = require("../../EntityModel");
 const { ApplicationError, DatabaseError, ValidationError, InvalidArgument } = require("../../utils/Errors");
 const Types = require("../../types");
-const { getValueFrom } = require("../../utils/lang");
+const { getValueFrom, mapFilter } = require("../../utils/lang");
 
 /**
  * MySQL entity model class.
@@ -812,9 +812,20 @@ class MySQLEntityModel extends EntityModel {
                     );
                 }
 
-                await assocModel.deleteMany_({ [assocMeta.field]: currentKeyValue }, context.connOptions);
+                const assocKeys = mapFilter(data, record => record[assocMeta.key] != null, record => record[assocMeta.key]);                
+                const assocRecordsToRemove = { [assocMeta.field]: currentKeyValue };
+                if (assocKeys.length > 0) {
+                    assocRecordsToRemove[assocMeta.key] = { $notIn: assocKeys };  
+                }
 
-                return eachAsync_(data, (item) =>
+                await assocModel.deleteMany_(assocRecordsToRemove, context.connOptions);
+
+                return eachAsync_(data, (item) => item[assocMeta.key] != null ?
+                    assocModel.updateOne_(
+                        { ..._.omit(item, [assocMeta.key]), [assocMeta.field]: currentKeyValue },
+                        { $query: { [assocMeta.key]: item[assocMeta.key] }, ...passOnOptions },
+                        context.connOptions
+                    ):
                     assocModel.create_(
                         { ...item, [assocMeta.field]: currentKeyValue },
                         passOnOptions,

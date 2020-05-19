@@ -22,10 +22,8 @@ exports.jsonToBase64 = (obj) => Buffer.from(JSON.stringify(obj)).toString("base6
 
 exports.base64ToJson = (base64) => JSON.parse(Buffer.from(base64, "base64").toString("ascii"));
 
-exports.textToDate = require("date-fns/parse");
-
 exports.toKVPairs = (arrayOfObjects, property, transformer) => {
-    const keyGetter = (typeof property === 'function') ? property : obj => obj[property];
+    const keyGetter = typeof property === "function" ? property : (obj) => obj[property];
 
     return arrayOfObjects.reduce((table, obj) => {
         table[keyGetter(obj)] = transformer ? transformer(obj) : obj;
@@ -40,7 +38,7 @@ exports.toKVPairs = (arrayOfObjects, property, transformer) => {
  * @param {boolean} keepUnmapped - If true, will keep those not in mapping as its original key, otherwise filter out
  */
 const mapKeysDeep = (object, mapping, keepUnmapped) => {
-    if (typeof mapping === 'string') return { [mapping]: object };
+    if (typeof mapping === "string") return { [mapping]: object };
 
     let newObj = {};
     _.forOwn(object, (v, k) => {
@@ -61,7 +59,8 @@ const mapKeysDeep = (object, mapping, keepUnmapped) => {
     return newObj;
 };
 
-const mapArraysDeep = (arrayOfObjects, mapping, keepUnmapped) => _.map(arrayOfObjects, (obj) => mapKeysDeep(obj, mapping, keepUnmapped));
+const mapArraysDeep = (arrayOfObjects, mapping, keepUnmapped) =>
+    _.map(arrayOfObjects, (obj) => mapKeysDeep(obj, mapping, keepUnmapped));
 
 exports.mapKeysDeep = mapKeysDeep;
 exports.mapArraysDeep = mapArraysDeep;

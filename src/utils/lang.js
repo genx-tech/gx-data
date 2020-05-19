@@ -55,3 +55,27 @@ exports.getValueFrom = (arrayOfColl, key) => {
     }
     return undefined;
 };
+
+const mapFilterReducerArray = (predicate, mapper) => (result, value) => {
+    if (predicate(value)) {
+        result.push(mapper(value));
+    }
+    return result;
+};
+
+const mapFilterReducerObject = (predicate, mapper) => (result, value, key) => {
+    if (predicate(value)) {
+        result[key] = mapper(value);
+    }
+    return result;
+};
+
+/**
+ * @param {object} collection
+ * @param {function} predicate
+ * @param {function} mapper 
+ */
+exports.mapFilter = (collection, predicate, mapper) =>
+    Array.isArray(collection)
+        ? _.reduce(collection, mapFilterReducerArray(predicate, mapper), [])
+        : _.reduce(collection, mapFilterReducerObject(predicate, mapper), {});
