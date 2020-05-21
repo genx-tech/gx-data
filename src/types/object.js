@@ -13,6 +13,8 @@ module.exports = {
     alias: [ 'json' ],
 
     sanitize: (value, info, i18n, prefix) => {
+        if (value == null) return null;
+
         let raw = value;
         let type = typeof value;
 

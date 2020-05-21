@@ -8,7 +8,7 @@ module.exports = {
 
     alias: [ 'bool' ],
 
-    sanitize: (value, info, i18n) => Convertors.toBoolean(value),
+    sanitize: (value, info, i18n) => value == null ? null : Convertors.toBoolean(value),
 
     defaultValue: false,
 

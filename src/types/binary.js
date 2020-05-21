@@ -8,7 +8,7 @@ module.exports = {
 
     alias: [ 'blob', 'buffer' ],
 
-    sanitize: (value, info, i18n) => (value instanceof Buffer) ? input : Buffer.from(value.toString()),
+    sanitize: (value, info, i18n) => value == null ? null : (value instanceof Buffer) ? input : Buffer.from(value.toString()),
 
     defaultValue: 0,
 

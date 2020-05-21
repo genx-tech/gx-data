@@ -7,6 +7,8 @@ module.exports = {
     name: 'enum',    
 
     sanitize: (value, info) => {
+        if (value == null) return null;
+
         let raw = value;
         value = (typeof value !== 'string' ? value.toString() : value).trim();
 

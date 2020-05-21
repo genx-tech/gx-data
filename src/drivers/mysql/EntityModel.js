@@ -269,7 +269,7 @@ class MySQLEntityModel extends EntityModel {
             }
 
             context.return = await this.findOne_(
-                { ...condition, ...retrieveOptions, $includeDeleted: options.$retrieveDeleted },
+                { ...condition, $includeDeleted: options.$retrieveDeleted, ...retrieveOptions },
                 context.connOptions
             );
 
@@ -288,7 +288,9 @@ class MySQLEntityModel extends EntityModel {
      * @property {bool} [options.$retrieveUpdated] - Retrieve the newly updated record from db.
      */
     static async _internalAfterUpdateMany_(context) {
-        if (context.options.$retrieveDbResult) {
+        const options = context.options;
+
+        if (options.$retrieveDbResult) {
             context.rawOptions.$result = context.result;
 
             /**
@@ -303,26 +305,26 @@ class MySQLEntityModel extends EntityModel {
              */
         }
 
-        if (context.options.$retrieveUpdated) {
+        if (options.$retrieveUpdated) {
             let retrieveOptions = {};
 
-            if (_.isPlainObject(context.options.$retrieveUpdated)) {
-                retrieveOptions = context.options.$retrieveUpdated;
-            } else if (context.options.$relationships) {
-                retrieveOptions.$relationships = context.options.$relationships;
+            if (_.isPlainObject(options.$retrieveUpdated)) {
+                retrieveOptions = options.$retrieveUpdated;
+            } else if (options.$relationships) {
+                retrieveOptions.$relationships = options.$relationships;
             }
 
             context.return = await this.findAll_(
                 {
-                    ...retrieveOptions,
-                    $query: context.options.$query,
-                    $includeDeleted: context.options.$retrieveDeleted,
+                    $query: options.$query,                                 
+                    $includeDeleted: options.$retrieveDeleted,
+                    ...retrieveOptions,       
                 },
                 context.connOptions
             );
         }
 
-        context.queryKey = context.options.$query;
+        context.queryKey = options.$query;
     }
 
     /**

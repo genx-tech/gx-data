@@ -11,8 +11,14 @@ module.exports = {
 
     alias: [ 'string', 'char' ],
 
-    sanitize: (value, info, i18n) => {        
+    sanitize: (value, info, i18n) => {    
+        if (value == null) return null;
+        
         value = Convertors.toText(value, info && info.noTrim);
+
+        if (value === '' && info.emptyAsNull) {
+            return null;
+        }
 
         if (!_.isNil(value)) {
             if (info && info.fixedLength && value.length !== info.fixedLength) {
@@ -59,6 +65,7 @@ module.exports = {
         'encoding',
         'allowedChars',
         'caps',
-        'noTrim'
+        'noTrim',
+        'emptyAsNull'
     ])
 };

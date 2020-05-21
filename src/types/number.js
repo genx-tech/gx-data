@@ -8,7 +8,7 @@ module.exports = {
 
     alias: [ 'float', 'decimal', 'double' ],
 
-    sanitize: (value, info, i18n) => Convertors.toFloat(value),
+    sanitize: (value, info, i18n) => value == null ? null : Convertors.toFloat(value),
 
     defaultValue: 0,
 

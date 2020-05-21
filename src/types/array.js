@@ -6,6 +6,8 @@ const any = require('./any');
 const { ValidationError } = require('../utils/Errors');
 
 function sanitize(value, info, i18n, prefix) {
+    if (value == null) return null;
+
     let raw = value;
 
     if (typeof value === 'string') {

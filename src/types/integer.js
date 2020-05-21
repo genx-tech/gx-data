@@ -11,7 +11,7 @@ module.exports = {
     alias: [ 'int' ],
 
     sanitize: (value, info, i18n) => {
-        if (value == null) return value;
+        if (value == null) return null;
 
         let raw = value;
         value = Convertors.toInt(value);

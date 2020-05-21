@@ -12,7 +12,9 @@ module.exports = {
 
     alias: [ 'date', 'time', 'timestamp' ],
 
-    sanitize: (value, info, i18n) => {           
+    sanitize: (value, info, i18n) => {   
+        if (value == null) return null;
+        
         let opts = { zone: i18n?.timezone || 'local' };
 
         let raw = value;
