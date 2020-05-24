@@ -28,6 +28,10 @@ module.exports = {
             if (info && info.maxLength && value.length > info.maxLength) {
                 throw new ValidationError(`The length of the ${info.name || 'text'} value exceeds max limit (maximum: ${info.maxLength}, actual: ${value.length}).`, { value, feild: info })
             }
+
+            if (info && info.minLength && value.length < info.minLength) {
+                throw new ValidationError(`The length of the ${info.name || 'text'} value does not reach min requirement (minimum: ${info.minLength}, actual: ${value.length}).`, { value, feild: info })
+            }
         }
 
         return value;
