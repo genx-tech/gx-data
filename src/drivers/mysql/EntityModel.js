@@ -632,14 +632,16 @@ class MySQLEntityModel extends EntityModel {
         }
 
         let arrayOfObjs = [];
-
+        
         const tableTemplate = columns.reduce((result, col) => {
             if (col.table !== 'A') {
-                setValueByPath(result, aliasMap[col.table] + '.' + col.name, null);
+                setValueByPath(result, aliasMap[col.table].concat([col.name]), null);
             }
 
             return result;
         }, {});
+
+        //console.log(tableTemplate);
 
         //process each row
         rows.forEach((row, i) => {
@@ -651,7 +653,7 @@ class MySQLEntityModel extends EntityModel {
 
                 if (col.table === "A") {
                     result[col.name] = value;
-                } else if (value != null) {
+                } else if (value != null) { // avoid a object with all null value exists
                     let bucket = tableCache[col.table];
                     if (bucket) {
                         //already nested inside
@@ -666,9 +668,8 @@ class MySQLEntityModel extends EntityModel {
 
             _.forOwn(tableCache, (obj, table) => {
                 let nodePath = aliasMap[table];
-                const tmpl = getValueByPath(tableTemplate, nodePath);
-                const existing = getValueByPath(rowObject, nodePath);
-                setValueByPath(rowObject, nodePath, { ...tmpl, ...existing, ...obj });
+                const tmpl = getValueByPath(tableTemplate, nodePath);                                              
+                setValueByPath(rowObject, nodePath, { ...tmpl, ...obj });
             });
 
             //console.dir(rowObject, { depth: 10 });
@@ -683,7 +684,7 @@ class MySQLEntityModel extends EntityModel {
                     rowObject,
                     subIndexes: buildSubIndexes(rowObject, hierarchy),
                 };
-            }
+            }            
         });
 
         return arrayOfObjs;
