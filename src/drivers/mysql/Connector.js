@@ -881,31 +881,48 @@ class MySQLConnector extends Connector {
                                 return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <= ?';
     
                             case '$in':
-    
-                                if (!Array.isArray(v)) {
-                                    throw new Error('The value should be an array when using "$in" operator.');
-                                }
+                                if (_.isPlainObject(v) && v.oorType === 'DataSet') {
+                                    
+                                    const sqlInfo = this.buildQuery(v.model, v.query);
+                                    sqlInfo.params && sqlInfo.params.forEach(p => params.push(p));
 
-                                if (inject) {
-                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` IN (${v})`;
+                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` IN (${sqlInfo.sql})`;
+                                } else {    
+    
+                                    if (!Array.isArray(v)) {
+                                        throw new Error('The value should be an array when using "$in" operator.');
+                                    }
+
+                                    if (inject) {
+                                        return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` IN (${v})`;
+                                    }
+                                   
+                                    params.push(v);
+                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' IN (?)';
                                 }
-        
-                                params.push(v);
-                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' IN (?)';
     
                             case '$nin':
                             case '$notIn':
-    
-                                if (!Array.isArray(v)) {
-                                    throw new Error('The value should be an array when using "$in" operator.');
-                                }
+                                if (_.isPlainObject(v) && v.oorType === 'DataSet') {
+                                    
+                                    const sqlInfo = this.buildQuery(v.model, v.query);
+                                    sqlInfo.params && sqlInfo.params.forEach(p => params.push(p));
 
-                                if (inject) {
-                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` NOT IN (${v})`;
-                                }
+                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` NOT IN (${sqlInfo.sql})`;
+                                } else {   
         
-                                params.push(v);
-                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' NOT IN (?)';
+                                    if (!Array.isArray(v)) {
+                                        throw new Error('The value should be an array when using "$in" operator.');
+                                    }
+
+                                    if (inject) {
+                                        return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` NOT IN (${v})`;
+                                    }
+
+                                     
+                                    params.push(v);
+                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' NOT IN (?)';
+                                }
 
                             case '$startWith':
                             case '$startsWith':

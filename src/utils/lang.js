@@ -37,6 +37,8 @@ const $col = (name) => ({ oorType: 'ColumnReference', name });
 const $expr = (left, op, right) =>({ oorType: 'BinaryExpression', left, op, right });
 const $f = (name, ...args) => ({ oorType: 'Function', name, args });
 const $inc = (field, increment) => $expr($col(field), '+', increment);
+const $dataSet = (model, query) => ({ oorType: 'DataSet', model, query });
+const $sql = (sql) => ({ oorType: 'SQL', sql });
 
 exports.$col = $col;
 exports.$expr = $expr;
@@ -44,6 +46,9 @@ exports.$f = $f;
 exports.$func = $f;
 exports.$inc = $inc
 exports.$increase = $inc
+exports.$dataSet = $dataSet;
+exports.$select = $dataSet;
+exports.$sql = $sql;
 
 exports.hasValueIn = (arrayOfColl, key) => _.find(arrayOfColl, coll => coll[key] != null);
 exports.getValueFrom = (arrayOfColl, key) => {

@@ -30,7 +30,7 @@ function minifyAssocs(assocs) {
     return minified;
 }
 
-const oorTypesToBypass = new Set(['ColumnReference', 'Function', 'BinaryExpression']);
+const oorTypesToBypass = new Set(['ColumnReference', 'Function', 'BinaryExpression', 'DataSet', 'SQL']);
 
 /**
  * Base entity model class.
