@@ -635,7 +635,7 @@ class MySQLEntityModel extends EntityModel {
         
         const tableTemplate = columns.reduce((result, col) => {
             if (col.table !== 'A') {
-                setValueByPath(result, aliasMap[col.table].concat([col.name]), null);
+                setValueByPath(result, aliasMap[col.table] + '.' + col.name, null);
             }
 
             return result;
@@ -668,7 +668,9 @@ class MySQLEntityModel extends EntityModel {
 
             _.forOwn(tableCache, (obj, table) => {
                 let nodePath = aliasMap[table];
-                const tmpl = getValueByPath(tableTemplate, nodePath);                                              
+                const tmpl = getValueByPath(tableTemplate, nodePath); 
+                const existing = getValueByPath(rowObject, nodePath);
+                                                             
                 setValueByPath(rowObject, nodePath, { ...tmpl, ...obj });
             });
 
