@@ -635,7 +635,7 @@ class MySQLEntityModel extends EntityModel {
         
         const tableTemplate = columns.reduce((result, col) => {
             if (col.table !== 'A') {
-                setValueByPath(result, aliasMap[col.table] + '.' + col.name, null);
+                setValueByPath(result, [col.table, col.name], null);
             }
 
             return result;
@@ -659,7 +659,7 @@ class MySQLEntityModel extends EntityModel {
                         //already nested inside
                         bucket[col.name] = value;
                     } else {
-                        tableCache[col.table] = { [col.name]: value };                            
+                        tableCache[col.table] = { ...tableTemplate[col.table], [col.name]: value };                            
                     }
                 }
 
@@ -667,11 +667,8 @@ class MySQLEntityModel extends EntityModel {
             }, rowObject);
 
             _.forOwn(tableCache, (obj, table) => {
-                let nodePath = aliasMap[table];
-                const tmpl = getValueByPath(tableTemplate, nodePath); 
-                const existing = getValueByPath(rowObject, nodePath);
-                                                             
-                setValueByPath(rowObject, nodePath, { ...tmpl, ...obj });
+                let nodePath = aliasMap[table];                
+                setValueByPath(rowObject, nodePath, obj);
             });
 
             //console.dir(rowObject, { depth: 10 });
