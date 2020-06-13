@@ -882,6 +882,9 @@ class MySQLEntityModel extends EntityModel {
                     }
 
                     context.existing = await this.findOne_(context.options.$query, context.connOptions);
+                    if (!context.existing) {
+                        throw new ValidationError(`Specified "${this.meta.name}" not found.`, { query: context.options.$query });
+                    }
                     destEntityId = context.existing[anchor];
 
                     if (destEntityId == null && !(anchor in context.existing)) {
