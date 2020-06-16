@@ -939,14 +939,16 @@ class EntityModel {
 
         //final round process before entering database
         context.latest = _.mapValues(latest, (value, key) => {
-            let fieldInfo = fields[key];
-            assert: fieldInfo;
+            if (value == null) return value;            
 
             if (_.isPlainObject(value) && value.oorType) {
                 //there is special input column which maybe a function or an expression
                 opOptions.$requireSplitColumns = true;
                 return value;
             }
+
+            let fieldInfo = fields[key];
+            assert: fieldInfo;
 
             return this._serializeByTypeInfo(value, fieldInfo);
         });        
