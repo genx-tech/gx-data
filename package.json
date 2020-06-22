@@ -40,7 +40,7 @@
     "rk-utils": "*"
   },
   "devDependencies": {
-    "@genx/app": "genx-tech/gx-app#v-next",
+    "@genx/app": "genx-tech/gx-app",
     "amqplib": "^0.5.3",
     "fast-csv": "^3.4.0",
     "hyperid": "^2.0.2",
