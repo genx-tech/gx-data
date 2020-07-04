@@ -2,7 +2,7 @@
 
 const Types = require('..');
 
-describe('unit:types:object', function () {    
+describe.only('unit:types:object', function () {    
     let obj = {
         'intKey': 100,
         'strKey': 'string',
@@ -29,8 +29,10 @@ describe('unit:types:object', function () {
         'intKey2': { type: 'integer', optional: true, 'default': 200 },
         'strKey': { type: 'text' },
         'arrayKey': { type: 'array', 'elementSchema': {
-            key1: { type: 'text' },
-            key2: { type: 'boolean' },
+            type: 'object', schema: {
+                key1: { type: 'text' },
+                key2: { type: 'boolean' },
+            }
         } },
         'objKey': {
             type: 'object',
@@ -98,11 +100,40 @@ describe('unit:types:object', function () {
             'arrayKey': {
                 type: 'array',
                 elementSchema: {
-                    key3: { type: 'text' }
+                    type: 'object',
+                    schema: {
+                        key3: { type: 'text' }
+                    }
                 }
             }          
         };
 
         (() => Types.OBJECT.sanitize(obj, { schema: schemaErr })).should.throw('Missing required property "arrayKey[0].key3"');
+    });
+
+    it('validate object with multiple possible options', function () {    
+        let obj1 = {
+            status: [ 'abc', 'def' ]
+        };   
+
+        let obj2 = {
+            status: 'abc'
+        };   
+        
+        let schemaErr = {
+            'status': [{
+                type: 'array',
+                elementSchema: {
+                    type: 'enum',
+                    values: [ 'abc', 'def', 'ghi' ]
+                }
+            },{
+                type: 'enum',
+                values: [ 'abc', 'def', 'ghi' ]
+            }
+        ]};
+
+        Types.OBJECT.sanitize(obj1, { schema: schemaErr }).should.be.ok();
+        Types.OBJECT.sanitize(obj2, { schema: schemaErr }).should.be.ok();
     });
 });

@@ -115,6 +115,39 @@ module.exports.validate = validate;
 
 module.exports.validateAny = Types.sanitize;
 
+const NIL = Symbol('nil');
+
+function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
+    if (fieldName in raw) {
+        let value = raw[fieldName];
+        
+        //sanitize first
+        if (isNothing(value)) {
+            if (!fieldInfo.optional && isNothing(fieldInfo.default)) {               
+                throw new ValidationError(`Value of property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}" cannot be null`);
+            }
+
+            return fieldInfo.default ?? null;
+        } 
+        
+        if (fieldInfo.type) {
+            return Types.sanitize(value, fieldInfo, i18n, (prefix ? prefix + '.' : '') + fieldName);
+        } 
+
+        return value;
+    }       
+
+    if (!fieldInfo.optional) {
+        throw new ValidationError(`Missing required property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}"`);
+    }        
+
+    if ('default' in fieldInfo) {
+        return fieldInfo.default;
+    }
+
+    return NIL;
+}
+
 function validateObjectBySchema(raw, schema, i18n, prefix) {   
     let latest = {};    
 
@@ -125,35 +158,37 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
         });
     }
 
-    _.forOwn(schema, (fieldInfo, fieldName) => {
-        if (fieldName in raw) {
-            let value = raw[fieldName];
-            
-            //sanitize first
-            if (isNothing(value)) {
-                if (!fieldInfo.optional && isNothing(fieldInfo.default)) {
-                    throw new ValidationError(`Value of property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}" cannot be null`);
+    _.forOwn(schema, (fieldInfo, fieldName) => {  
+        if (Array.isArray(fieldInfo)) {
+            if (!fieldInfo.find(fieldInfoOption => {
+                let validated;
+                let hasError = false;
+
+                try {
+                    validated = validateObjectMember(raw, fieldName, fieldInfoOption, i18n, prefix);
+                } catch (error) {                    
+                    hasError = true;
+                    validated = NIL;
                 }
 
-                latest[fieldName] = fieldInfo.default ?? null;
-            } else {
-                if (fieldInfo.type) {
-                    latest[fieldName] = Types.sanitize(value, fieldInfo, i18n, (prefix ? prefix + '.' : '') + fieldName);
-                } else {                    
-                    latest[fieldName] = value;
-                }
-            }
+                if (validated !== NIL) {
+                    latest[fieldName] = validated;                    
+                }  
+                
+                return !hasError;
+            })) {
+                throw new ValidationError(`Invalid "${fieldName}" value.`, {
+                    raw,
+                    prefix
+                });
+            }   
 
-            return;
-        }       
-
-        if (!fieldInfo.optional) {
-            throw new ValidationError(`Missing required property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}"`);
-        }        
-
-        if ('default' in fieldInfo) {
-            latest[fieldName] = fieldInfo.default
-        }
+        } else {
+            const validated = validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix);
+            if (validated !== NIL) {
+                latest[fieldName] = validated;
+            }      
+        }           
     });
 
     return latest;
