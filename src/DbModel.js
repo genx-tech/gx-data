@@ -30,12 +30,16 @@ class DbModel {
 
         let BaseEntityModel = require(`./drivers/${this.driver}/EntityModel`);
         if (entityCustomClassFactory) {
-            BaseEntityModel = entityCustomClassFactory(BaseEntityModel);
+            BaseEntityModel = entityCustomClassFactory(BaseEntityModel);            
         }
 
         const modelClass = entityClassFactory(BaseEntityModel);
         modelClass.db = this;
 
+        if (modelClass._init) {
+            modelClass._init();
+        }
+ 
         this._modelCache[entityName] = modelClass;
         if (modelClassName !== entityName) {
             this._modelCache[modelClassName] = modelClass;
