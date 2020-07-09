@@ -4,7 +4,7 @@ const Util = require("rk-utils");
 const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
 const { DateTime } = require("luxon");
 const EntityModel = require("../../EntityModel");
-const { ApplicationError, DatabaseError, ValidationError, InvalidArgument } = require("../../utils/Errors");
+const { ApplicationError, DatabaseError, ReferencedNotExistError, DuplicateError, ValidationError, InvalidArgument } = require("../../utils/Errors");
 const Types = require("../../types");
 const { getValueFrom, mapFilter } = require("../../utils/lang");
 
@@ -97,11 +97,12 @@ class MySQLEntityModel extends EntityModel {
             let errorCode = error.code;
 
             if (errorCode === "ER_NO_REFERENCED_ROW_2") {
-                throw new DatabaseError(
-                    "The new entity is referencing to an unexisting entity. Detail: " + error.message
+                throw new ReferencedNotExistError(
+                    "The new entity is referencing to an unexisting entity. Detail: " + error.message, 
+                    error.info
                 );
             } else if (errorCode === "ER_DUP_ENTRY") {
-                throw new DatabaseError(error.message + ` while creating a new "${this.meta.name}".`);
+                throw new DuplicateError(error.message + ` while creating a new "${this.meta.name}".`, error.info);
             }
 
             throw error;
@@ -115,11 +116,12 @@ class MySQLEntityModel extends EntityModel {
             let errorCode = error.code;
 
             if (errorCode === "ER_NO_REFERENCED_ROW_2") {
-                throw new DatabaseError(
-                    "The entity to be updated is referencing to an unexisting entity. Detail: " + error.message
+                throw new ReferencedNotExistError(
+                    "The entity to be updated is referencing to an unexisting entity. Detail: " + error.message, 
+                    error.info
                 );
             } else if (errorCode === "ER_DUP_ENTRY") {
-                throw new DatabaseError(error.message + ` while updating an existing "${this.meta.name}".`);
+                throw new DuplicateError(error.message + ` while updating an existing "${this.meta.name}".`, error.info);
             }
 
             throw error;

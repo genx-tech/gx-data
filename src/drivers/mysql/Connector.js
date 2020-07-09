@@ -217,6 +217,8 @@ class MySQLConnector extends Connector {
             err.info.sql = _.truncate(sql, { length: 200 });
             err.info.params = params;
 
+            
+
             throw err;
         } finally {
             conn && await this._releaseConnection_(conn, options);
