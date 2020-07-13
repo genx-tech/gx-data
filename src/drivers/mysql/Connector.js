@@ -28,6 +28,12 @@ class MySQLConnector extends Connector {
     escapeId = mysql.escapeId;
     format = mysql.format;
     raw = mysql.raw;
+    queryCount = (alias = 'count', fieldName = '*') => ({
+        type: 'function',
+        name: 'COUNT',
+        args: [ fieldName ],
+        alias
+    }); 
 
     /**          
      * @param {string} name 

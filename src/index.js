@@ -20,8 +20,9 @@ module.exports = {
     Processors, 
     Validators,
     DbModel,
-    Utils: { 
+    Utils: {         
         Lang: require('./utils/lang'), 
+        Expression: require('./utils/expression'), 
         Bulk: require('./utils/Bulk'), 
         parseCsvFile:require('./utils/parseCsvFile'), 
         download: require('./utils/download') 
