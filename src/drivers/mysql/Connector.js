@@ -28,12 +28,13 @@ class MySQLConnector extends Connector {
     escapeId = mysql.escapeId;
     format = mysql.format;
     raw = mysql.raw;
-    queryCount = (alias = 'count', fieldName = '*') => ({
+    queryCount = (alias, fieldName) => ({
         type: 'function',
         name: 'COUNT',
-        args: [ fieldName ],
-        alias
+        args: [ fieldName || '*' ],
+        alias: alias || 'count'
     }); 
+    nullOrIs = (fieldName, value) => [{ [fieldName]: { $exists: false } }, { [fieldName]: { $eq: value } }];
 
     /**          
      * @param {string} name 
