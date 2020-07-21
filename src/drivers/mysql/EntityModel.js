@@ -519,8 +519,30 @@ class MySQLEntityModel extends EntityModel {
         let mainIndex = {};
         let self = this;
 
+        columns = columns.map(col => {
+            if (col.table === "") {
+                const pos = col.name.indexOf('$');
+                if (pos > 0) {
+                    return {
+                        table: col.name.substr(0, pos),
+                        name: col.name.substr(pos+1)
+                    };
+                }
+                
+                return {
+                    table: 'A',
+                    name: col.name
+                };
+            }
+
+            return {
+                table: col.table,
+                name: col.name
+            };
+        });
+
         function mergeRecord(existingRow, rowObject, associations, nodePath) {
-            _.each(associations, ({ sql, key, list, subAssocs }, anchor) => {
+            return _.each(associations, ({ sql, key, list, subAssocs }, anchor) => {
                 if (sql) return;
 
                 let currentPath = nodePath.concat();
@@ -530,6 +552,7 @@ class MySQLEntityModel extends EntityModel {
                 let subObj = rowObject[objKey];
 
                 if (!subObj) {
+                    //associated entity not in result set, probably when custom projection is used
                     return;
                 }
 
@@ -538,13 +561,21 @@ class MySQLEntityModel extends EntityModel {
                 // joined an empty record
                 let rowKeyValue = subObj[key];
                 if (_.isNil(rowKeyValue)) {
+                    if (list && rowKeyValue == null) {
+                        if (existingRow.rowObject[objKey]) {
+                            existingRow.rowObject[objKey].push(subObj);
+                        } else {
+                            existingRow.rowObject[objKey] = [subObj];
+                        }
+                    }
+                    
                     return;
                 }
 
                 let existingSubRow = subIndexes && subIndexes[rowKeyValue];
                 if (existingSubRow) {
                     if (subAssocs) {
-                        mergeRecord(existingSubRow, subObj, subAssocs, currentPath);
+                        return mergeRecord(existingSubRow, subObj, subAssocs, currentPath);
                     }
                 } else {
                     if (!list) {
@@ -567,7 +598,7 @@ class MySQLEntityModel extends EntityModel {
                     };
 
                     if (subAssocs) {
-                        subIndex.subIndexes = buildSubIndexes(subObj, subAssocs);
+                        subIndex.subIndexes = buildSubIndexes(subObj, subAssocs);                        
                     }
 
                     if (!subIndexes) {
@@ -602,13 +633,15 @@ class MySQLEntityModel extends EntityModel {
 
                 if (list) {
                     if (!subObject) {
+                        //associated entity not in result set, probably when custom projection is used
                         return;
                     }                    
 
                     rowObject[objKey] = [subObject];
 
                     //many to *
-                    if (_.isNil(subObject[key])) {                   
+                    if (_.isNil(subObject[key])) {     
+                        //when custom projection is used              
                         subObject = null;
                     } 
                 } /*else if (subObject && _.isNil(subObject[key])) {                    
@@ -643,8 +676,6 @@ class MySQLEntityModel extends EntityModel {
             return result;
         }, {});
 
-        //console.log(tableTemplate);
-
         //process each row
         rows.forEach((row, i) => {
             let rowObject = {}; // hash-style data row
@@ -673,19 +704,17 @@ class MySQLEntityModel extends EntityModel {
                 setValueByPath(rowObject, nodePath, obj);
             });
 
-            //console.dir(rowObject, { depth: 10 });
-
             let rowKey = rowObject[self.meta.keyField];
             let existingRow = mainIndex[rowKey];
             if (existingRow) {
-                mergeRecord(existingRow, rowObject, hierarchy, []);
-            } else {
-                arrayOfObjs.push(rowObject);
-                mainIndex[rowKey] = {
-                    rowObject,
-                    subIndexes: buildSubIndexes(rowObject, hierarchy),
-                };
-            }            
+                return mergeRecord(existingRow, rowObject, hierarchy, []);                
+            } 
+        
+            arrayOfObjs.push(rowObject);
+            mainIndex[rowKey] = {
+                rowObject,
+                subIndexes: buildSubIndexes(rowObject, hierarchy),
+            };  
         });
 
         return arrayOfObjs;

@@ -1,16 +1,126 @@
 # Entity Model
 
-## static members
+Updated on 21/07/2020
 
-* db
-    * connector - Getter
-    * createNewConnector - Create a new connector, usually used for transaction
+
+
+## Static members
+
+* db - instance of the @genx/data/DbModel class
+    * app - The owner app (instance of @genx/app/ServiceContainer) 
+    * connector - The driver-specific db connector
+    * driver - Getter for the dbms name, e.g. mysql or mongodb
+    * i18n - Internationalization
+    * model(name) - Getter for entity model
+    * entitiesOfType(subClass) - Get an array of entities with one of the subClasses as specified
+    * async retry_(closure(ok, failed), [times], [interval]) - Try several times (default: 3) to do a transaction in case rollbacked due to competition
+    * async doTransaction_(closure({connection}), errorHandler(error)) - Wrap a transaction block  
+
+```
+  // Model usage
+  
+  // inside a entity model
+  let User = this.db.model('User');
+  
+  // inside a controll or anywhere the app instance is applicable
+  let User = app.db('dbName').model('User');
+  
+  // call CRUD
+  await User.create_(...);
+  
+  
+  // Transaction
+  return this.db.doTransaction_(async (connOpts) => {
+      
+      let ret = await this.sendToGroup_(senderId, group.id, msg, connOpts);
+      await this.sendToGroup_(senderId, group.peer, msg, connOpts);
+
+      return ret;
+  });     
+  
+  
+  // Retry and transaction combination usage
+  
+  return this.db.retry_('transaction name for logging', async (ok, failed) => {
+      return this.db.doTransaction_(async (connOpts) => {
+          //...operations need to compute
+          // result set
+          
+          return ok(result);
+      }, failed);
+  });
+```
+
+
 * meta - Metadata about the enttiy
-    * knowledge 
-        * dependsOnExisting
+    * name 
+    * keyField
+    * schemaName
+    * fields
+    * features
+    * uniqueKeys
+    * indexes
+    * associations
+    * fieldDependencies
+
+
 * i18n - I18n object
 
-## operation context
+## CRUD operations (static method members)
+
+* async findOne_(findOptions, connOptions) 
+* async findAll_(findOptions, connOptions) 
+* async create_(data, createOptions, connOptions) 
+* async updateOne_(data, updateOptions, connOptions) 
+* async updateMany_(data, updateOptions, connOptions) 
+* async replaceOne_(data, updateOptions, connOptions) 
+* async deleteOne_(deleteOptions, connOptions) 
+* async deleteMany_(deleteOptions, connOptions) 
+* async cached_(key, associations, connOptions)
+
+## Operation options
+
+* $projection
+* $association - No trailing (s).
+* $relationships - Transformed from raw $association
+* $query - Query condition
+* $variables - Variables to interpolate into query condition, will be passed on to associated operation
+* $features - Custom feature options override
+* $orderBy - Order by condition, map of column to ascend?
+* $groupBy - Group by condition
+* $offset
+* $limit
+* $totalCount - Returns total record count when used with $limit, should provide the distinct field name 
+* $includeDeleted - {boolean}, for find only, include logical deleted records
+* $skipOrm - {boolean}
+* $objectMapper - {string} Object mapper , flat or hiarachy
+* $custom - User defined operation control data, used by user program only and will be passed on to associated operation
+* $retrieveCreated - {findOptions|boolean}
+* $retrieveUpdated - {findOptions|boolean}
+* $retrieveActualUpdated - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is actually updated
+* $retrieveNotUpdate - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is not actually updated
+* $retrieveDeleted - {findOptions|boolean}
+* $retrieveExisting
+* $retrieveDbResult - return the original db result through options.$result
+* $bypassReadOnly - Internal option, cannot be set by user
+* $physicalDeletion - {boolean}
+* $existing
+* $requireSplitColumns - {boolean}, for udpate only, will be auto set while input has function or expression
+* $bypassEnsureUnique
+* $toDictionary
+* $migration - {boolean}, set by migration program, will be passed on to associated operation
+
+
+## Connector options
+* insertIgnore - {boolean}, for create only
+* connection - for transactions, reused the transactional session
+
+-----
+
+
+
+
+## operation context [for @genx/data dev only]
 
 There are predefined context properties which can be accessed in an entity operation as listed below.
 
@@ -26,42 +136,13 @@ There are predefined context properties which can be accessed in an entity opera
 * schemas - Access other schema models in the same application
 * state - Current request state
 
-## opertion helper
+## operation helper [for @genx/data dev only]
 
-queryFunction
-queryBinExpr
-queryColumn
+* queryFunction
+* queryBinExpr
+* queryColumn
 
-## operation options
-
-* connector - Transaction connector.
-* $projection
-* $association
-* $relationships
-* $query - Query condition
-* $variables - Variables to interpolate into query condition
-* $features - Custom feature options override
-* $orderBy - Order by condition, map of column to ascend?
-* $groupBy - Group by condition
-* $offset
-* $limit
-* $totalCount - Returns total record count when used with $limit
-* $includeDeleted - {boolean}
-* $skipOrm - {boolean}
-* $custom - User defined operation control data
-* $retrieveCreated
-* $retrieveUpdated
-* $retrieveDeleted
-* $retrieveExisting
-* $bypassReadOnly
-* $physicalDeletion - {boolean}
-* $existing
-* $requireSplitColumns
-* $bypassEnsureUnique
-* $toDictionary
-* $migration - {boolean}
-
-## operation sequence
+## operation execution sequence [for @genx/data dev only]
 
 1. prepare query & context
 2. sub-class before hooks
@@ -76,68 +157,10 @@ queryColumn
 11. end transaction-safe closure
 12. sub-class after hooks
 
-## semantic symbols
-
-* supported symbols 
-    * @@now - Current datetime value
-
-## special tokens
-
-* oolType
-
-    Oolong Language Syntax Types (design time)
-
-    * General Value Types
-        * ObjectReference
-        * ConstReference
-        * StringTemplate
-        * PipedValue
-        * FunctionCall
-        * RegExp
-        * JavaScript
-
-    * Modifiers    
-        * Validator - |~, read as "Ensure"
-        * Processor - |>, read as "Transform to"
-        * Activator - |=, read as "Set to"   
-
-    * Data Operations
-        * findOne
-        * DoStatement
-
-    * Statements & Expressions
-        * cases
-        * ConditionalStatement
-        * ReturnExpression    
-        * ThrowExpression
-        * UnaryExpression
-        * ValidateExpression
-        * BinaryExpression
-        * LogicalExpression
-
-* oorType
-
-    Oolong Runtime Types (run time)
-
-    * SymbolToken
-    * SessionVariable
-    * QueryVariable
-
-## fieldDependency
-
-* fieldName: ifAnyExist: [ a1, a2, ... ] - If any of a1, a2, ... exists, all become dependency (need existing values)
-    
-    For activator that references to other fields
-    When creating
-
-* fieldName: 
-
-    For processor that references to other fields and 
-
-* dependsOnExisting: [ a1, a2 ] - 
-
 ## known issues
 
-* retrieveUpdated - The previous query maybe affected by updating
+* retrieveUpdated - The previous query maybe affected by parrallel updating
 
+## change logs since Apr 2020
 
+1. Add -1 for descent sorting for mysql connector, and now both false and -1 for ORDER BY DESC.

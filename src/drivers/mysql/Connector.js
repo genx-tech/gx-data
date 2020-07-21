@@ -1026,15 +1026,37 @@ class MySQLConnector extends Connector {
             if (col.alias) {
                 assert: typeof col.alias === 'string';
 
-                return this._buildColumn(_.omit(col, ['alias']), params, hasJoining, aliasMap) + ' AS ' + mysql.escapeId(col.alias);
+                const lastDotIndex = col.alias.lastIndexOf('.');
+                let alias = lastDotIndex > 0 ? col.alias.substr(lastDotIndex+1) : col.alias;
+
+                if (lastDotIndex > 0) {
+                    if (!hasJoining) {
+                        throw new InvalidArgument('Cascade alias is not allowed when the query has no associated entity populated.', {
+                            alias: col.alias
+                        });
+                    }
+
+                    const fullPath = hasJoining + '.' + col.alias.substr(0, lastDotIndex);
+                    const aliasPrefix = aliasMap[fullPath];
+                    if (!aliasPrefix) {
+                        throw new InvalidArgument(`Invalid cascade alias. "${fullPath}" not found in associations.`, {
+                            alias: col.alias
+                        });
+                    }
+
+                    alias = aliasPrefix + '$' + alias;
+                }
+
+                return this._buildColumn(_.omit(col, ['alias']), params, hasJoining, aliasMap) + ' AS ' + mysql.escapeId(alias);
             }
 
             if (col.type === 'function') {
-                if (col.name.toUpperCase() === 'COUNT' && col.args.length === 1 && col.args[0] === '*') {
+                let name = col.name.toUpperCase();
+                if (name === 'COUNT' && col.args.length === 1 && col.args[0] === '*') {
                     return 'COUNT(*)';
                 }
 
-                return col.name + '(' + (col.args ? this._buildColumns(col.args, params, hasJoining, aliasMap) : '') + ')';
+                return name + '(' + (col.prefix ? `${col.prefix.toUpperCase()} ` : "") + (col.args ? this._buildColumns(col.args, params, hasJoining, aliasMap) : '') + ')';
             }            
 
             if (col.type === 'expression') {
