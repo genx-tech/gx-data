@@ -220,7 +220,7 @@ class MySQLEntityModel extends EntityModel {
                     context.queryKey = { [this.meta.features.autoId.field]: insertId };
                 }
 
-                context.return = { ...context.return, ...context.queryKey };
+                context.return = context.latest = { ...context.return, ...context.queryKey };
             }
         }
     }

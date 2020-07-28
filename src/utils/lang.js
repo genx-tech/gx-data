@@ -37,6 +37,7 @@ const $col = (name) => ({ oorType: 'ColumnReference', name });
 const $expr = (left, op, right) =>({ oorType: 'BinaryExpression', left, op, right });
 const $f = (name, ...args) => ({ oorType: 'Function', name, args });
 const $inc = (field, increment) => $expr($col(field), '+', increment);
+const $dec = (field, decrement) => $expr($col(field), '-', decrement);
 const $dataSet = (model, query) => ({ oorType: 'DataSet', model, query });
 const $sql = (sql) => ({ oorType: 'SQL', sql });
 
