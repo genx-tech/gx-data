@@ -263,24 +263,25 @@ class MySQLConnector extends Connector {
      * @param {object} data 
      * @param {*} options 
      */
-    async upsertOne_(model, data, uniqueKeys, options) {
+    async upsertOne_(model, data, uniqueKeys, options, dataOnInsert) {
         if (!data || _.isEmpty(data)) {
             throw new ApplicationError(`Creating with empty "${model}" data.`);
         }
 
-        let dataWithUK = _.omit(data, uniqueKeys);
+        let dataWithoutUK = _.omit(data, uniqueKeys);
+        let insertData = { ...data, ...dataOnInsert };
 
-        if (_.isEmpty(dataWithUK)) {
+        if (_.isEmpty(dataWithoutUK)) {
             //if dupliate, dont need to update
-            return this.create_(model, data, { ...options, insertIgnore: true });
+            return this.create_(model, insertData, { ...options, insertIgnore: true });
         }
 
         let sql = `INSERT INTO ?? SET ? ON DUPLICATE KEY UPDATE ?`;
         let params = [ model ];
-        params.push(data);
-        params.push(dataWithUK);
+        params.push(insertData);
+        params.push(dataWithoutUK);
 
-        return this.execute_(sql, params, restOptions); 
+        return this.execute_(sql, params, options); 
     }
 
     async insertMany_(model, fields, data, options) {

@@ -1,8 +1,6 @@
 # Entity Model
 
-Updated on 21/07/2020
-
-
+Updated on 27/08/2020
 
 ## Static members
 
@@ -81,8 +79,26 @@ Updated on 21/07/2020
 ## Operation options
 
 * $projection
+```
+$projection: [ { type: 'function', name: 'MAX', alias: 'max', args: ['order'] } ],
+
+$projection: [this.db.connector.queryCount()],
+
+$projection: [
+    '*',            
+    'bookableResources.type',
+    {
+        alias: 'bookableResources.count',
+        type: 'function', 
+        name: 'COUNT',
+        prefix: 'DISTINCT',
+        args: [ 'bookableResources.id' ]
+    }
+],  
+
+```
 * $association - No trailing (s).
-* $relationships - Transformed from raw $association
+* $relationships - Transformed from raw $association, used by the EntityModel internally 
 * $query - Query condition
 * $variables - Variables to interpolate into query condition, will be passed on to associated operation
 * $features - Custom feature options override
@@ -93,7 +109,7 @@ Updated on 21/07/2020
 * $totalCount - Returns total record count when used with $limit, should provide the distinct field name 
 * $includeDeleted - {boolean}, for find only, include logical deleted records
 * $skipOrm - {boolean}
-* $objectMapper - {string} Object mapper , flat or hiarachy
+* $objectMapper - {string} Object mapper , flat or hiarachy (not used yet)
 * $custom - User defined operation control data, used by user program only and will be passed on to associated operation
 * $retrieveCreated - {findOptions|boolean}
 * $retrieveUpdated - {findOptions|boolean}
@@ -109,6 +125,7 @@ Updated on 21/07/2020
 * $bypassEnsureUnique
 * $toDictionary
 * $migration - {boolean}, set by migration program, will be passed on to associated operation
+* $upsert - {boolean|object}, for create_ only, insert or update on duplicate, pass object if insert extra data
 
 
 ## Connector options
@@ -164,3 +181,5 @@ There are predefined context properties which can be accessed in an entity opera
 ## change logs since Apr 2020
 
 1. Add -1 for descent sorting for mysql connector, and now both false and -1 for ORDER BY DESC.
+
+
