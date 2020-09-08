@@ -225,7 +225,7 @@ class EntityModel {
                 //rows, coloumns, aliasMap                    
                 if (records[0].length === 0) return undefined;
 
-                records = this._mapRecordsToObjects(records, findOptions.$relationships);
+                records = this._mapRecordsToObjects(records, findOptions.$relationships, findOptions.$nestedKeyGetter);
             } else if (records.length === 0) {
                 return undefined;
             }
@@ -283,7 +283,7 @@ class EntityModel {
                 }
 
                 if (!findOptions.$skipOrm) {                                                  
-                    records = this._mapRecordsToObjects(records, findOptions.$relationships);
+                    records = this._mapRecordsToObjects(records, findOptions.$relationships, findOptions.$nestedKeyGetter);
                 } else {
                     records = records[0];
                 }
@@ -924,6 +924,7 @@ class EntityModel {
 
                 } else {
                     //missing required
+                    //todo: check if there is an activator
                     throw new ValidationError(`"${fieldName}" of "${name}" entity is required.`, {
                         entity: name,
                         fieldInfo: fieldInfo 

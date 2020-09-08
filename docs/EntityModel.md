@@ -126,6 +126,7 @@ $projection: [
 * $toDictionary
 * $migration - {boolean}, set by migration program, will be passed on to associated operation
 * $upsert - {boolean|object}, for create_ only, insert or update on duplicate, pass object if insert extra data
+* $nestedKeyGetter - a getter function to transform the key of nested object, default as ':'+anchor for mysql
 
 
 ## Connector options

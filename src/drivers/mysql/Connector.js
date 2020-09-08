@@ -46,7 +46,7 @@ class MySQLConnector extends Connector {
         super('mysql', connectionString, options);
 
         this.relational = true;
-        this.acitveConnections = new WeakSet();
+        this.acitveConnections = new Set();
     }    
 
     /**
@@ -59,8 +59,8 @@ class MySQLConnector extends Connector {
             };
         }
 
-        if (this.pool) {
-            this.log('debug', `End connection pool to ${this.currentConnectionString}`);                    
+        if (this.pool) {            
+            this.log('debug', `Close connection pool to ${this.currentConnectionString}`);                    
             await this.pool.end();
             delete this.pool;
         }
@@ -98,7 +98,7 @@ class MySQLConnector extends Connector {
         }      
 
         if (!this.pool) {    
-            this.log('debug', `Create connection pool to ${csKey}`);                    
+            this.log('debug', `Create connection pool to ${csKey}`);                            
             this.pool = mysql.createPool(csKey);
         }        
 
@@ -428,7 +428,7 @@ class MySQLConnector extends Connector {
             result = await this.execute_(sqlInfo.sql, sqlInfo.params, connOptions);              
 
             let reverseAliasMap = _.reduce(sqlInfo.aliasMap, (result, alias, nodePath) => {
-                result[alias] = nodePath.split('.').slice(1).map(n => ':' + n);
+                result[alias] = nodePath.split('.').slice(1)/*.map(n => ':' + n) changed to be padding by orm and can be customized with other key getter */;
                 return result;
             }, {});
             

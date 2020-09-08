@@ -8,6 +8,8 @@ const { ApplicationError, DatabaseError, ReferencedNotExistError, DuplicateError
 const Types = require("../../types");
 const { getValueFrom, mapFilter } = require("../../utils/lang");
 
+const defaultNestedKeyGetter = (anchor) => (':' + anchor);
+
 /**
  * MySQL entity model class.
  */
@@ -515,7 +517,10 @@ class MySQLEntityModel extends EntityModel {
         return assoc;
     }
 
-    static _mapRecordsToObjects([rows, columns, aliasMap], hierarchy) {
+    static _mapRecordsToObjects([rows, columns, aliasMap], hierarchy, nestedKeyGetter) {
+        nestedKeyGetter == null && (nestedKeyGetter = defaultNestedKeyGetter);        
+        aliasMap = _.mapValues(aliasMap, chain => chain.map(anchor => nestedKeyGetter(anchor)));
+
         let mainIndex = {};
         let self = this;
 
@@ -548,7 +553,7 @@ class MySQLEntityModel extends EntityModel {
                 let currentPath = nodePath.concat();
                 currentPath.push(anchor);
 
-                let objKey = ":" + anchor;
+                let objKey = nestedKeyGetter(anchor);
                 let subObj = rowObject[objKey];
 
                 if (!subObj) {
@@ -625,7 +630,7 @@ class MySQLEntityModel extends EntityModel {
 
                 assert: key;
 
-                let objKey = ":" + anchor;
+                let objKey = nestedKeyGetter(anchor);
                 let subObject = rowObject[objKey];
                 let subIndex = {
                     rowObject: subObject,
