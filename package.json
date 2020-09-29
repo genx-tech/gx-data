@@ -9,8 +9,8 @@
   "scripts": {
     "doc": "jsdoc -c jsdoc.json -t ./node_modules/ink-docstrap/template -R README.md -d './docs/api' -r --verbose ./src",
     "jison": "jison ./src/lang/grammar/oolong.jison -o ./src/lang/grammar/oolong.js && npm run build",
-    "test": "mocha --require @babel/register --recursive src/**/*.spec.js --timeout 5000",
-    "cover": "npm run build:test && nyc --reporter=html --reporter=text mocha test/*.mocha.js --recursive src/**/*.spec.js --timeout 5000",
+    "test": "mocha --recursive src/**/*.spec.js",
+    "cover": "nyc --reporter=html --reporter=text mocha test/*.mocha.js --recursive src/**/*.spec.js",
     "bulid:clean": "rm -rf lib",
     "build:prod": "npm run bulid:clean && NODE_ENV=production babel src -d lib --copy-files && del lib/**/__test__",
     "build": "npm run bulid:clean && NODE_ENV=development babel src -d lib --copy-files && del lib/**/__test__"
@@ -25,7 +25,8 @@
     "exclude": [
       "babel.config.js",
       "test",
-      "src"
+      "lib",
+      "**/*.spec.js"
     ]
   },
   "mocha": {

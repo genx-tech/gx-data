@@ -17,11 +17,12 @@ describe("unit:types:integer", function () {
 
     fixtures.forEach(([input, expected], i) => {
         it("basic" + i, function () {
+            console.log(input, expected);
             let sanitized = Types.INTEGER.sanitize(input, { type: "integer" });
             if (typeof sanitized === "undefined") {
                 (typeof expected).should.be.exactly("undefined");
-            } else if (_.isNull(expected)) {
-                _.isNull(sanitized).should.be.ok();
+            } else if (expected == null) {
+                (sanitized == null).should.be.ok();
             } else {
                 sanitized.should.be.equal(expected);
             }

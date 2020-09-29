@@ -57,6 +57,7 @@ class MySQLConnector extends Connector {
             for (let conn of this.acitveConnections) {
                 await this.disconnect_(conn);
             };
+            assert: this.acitveConnections.size === 0;
         }
 
         if (this.pool) {            

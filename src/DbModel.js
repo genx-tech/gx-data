@@ -1,5 +1,4 @@
 const { _, pascalCase, sleep_ } = require("rk-utils");
-const { DatabaseError } = require("./utils/Errors");
 
 const retryFailed = (error) => [false, error];
 const retryOK = (result) => [true, result];
@@ -19,6 +18,10 @@ class DbModel {
         return this.connector.driver;
     }
 
+    /**
+     * Get entity model class by entity name.
+     * @param {*} entityName 
+     */
     model(entityName) {
         if (this._modelCache[entityName]) return this._modelCache[entityName];
 
@@ -36,8 +39,8 @@ class DbModel {
         const modelClass = entityClassFactory(BaseEntityModel);
         modelClass.db = this;
 
-        if (modelClass._init) {
-            modelClass._init();
+        if (modelClass.__init) {
+            modelClass.__init();
         }
  
         this._modelCache[entityName] = modelClass;
@@ -55,16 +58,26 @@ class DbModel {
         });
     }
 
-    async retry_(transactionName, transaction, connOptions, maxRetry, interval) {
+    /**
+     * Run an action and automatically retry when failed. 
+     * @param {*} transactionName 
+     * @param {*} action_ 
+     * @param {*} connOptions 
+     * @param {*} maxRetry 
+     * @param {*} interval 
+     * @param {*} onRetry_ 
+     */
+    async retry_(transactionName, action_, connOptions, maxRetry, interval, onRetry_) {
+        //retry will be ignored, if the transaction is a part of another transaction
         if (connOptions && connOptions.connection) {
-            return transaction(directReturn, directReturn);
+            return action_(directReturn, directReturn);
         }
 
         let i = 0;
-        if (maxRetry == null) maxRetry = 3;
+        if (maxRetry == null) maxRetry = 2;
 
         while (i++ < maxRetry) {
-            const [finished, result] = await transaction(retryOK, retryFailed);
+            const [finished, result] = await action_(retryOK, retryFailed);
 
             if (finished) {
                 return result;
@@ -85,16 +98,30 @@ class DbModel {
             if (interval != null) {
                 await sleep_(interval);
             }
+
+            if (onRetry_) {
+                await onRetry_();
+            }
         }
     }
 
-    async safeRetry_(transactionName, transaction, connOptions, maxRetry, interval) {
+    /**
+     * Run an action as transaction and automatically retry when failed. 
+     * @param {*} transactionName 
+     * @param {*} action_ 
+     * @param {*} connOptions 
+     * @param {*} maxRetry 
+     * @param {*} interval 
+     * @param {*} onRetry_ 
+     */
+    async safeRetry_(transactionName, action_, connOptions, maxRetry, interval, onRetry_) {
         return this.retry_(
             transactionName,
-            (ok, failed) => this.doTransaction_(async (connOpts) => ok(await transaction(connOpts)), failed, connOptions),
+            (ok, failed) => this.doTransaction_(async (connOpts) => ok(await action_(connOpts)), failed, connOptions),
             connOptions,
             maxRetry,
-            interval
+            interval,
+            onRetry_
         );
     }
 

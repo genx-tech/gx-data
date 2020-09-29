@@ -19,8 +19,8 @@ describe('unit:types:text', function () {
             let sanitized = Types.TEXT.sanitize(input, { type: 'text' }); 
             if (typeof sanitized === 'undefined') {
                 (typeof expected).should.be.exactly('undefined');
-            } else if (_.isNull(expected)) {
-                _.isNull(sanitized).should.be.ok();
+            } else if (expected == null) {
+                (sanitized == null).should.be.ok();
             } else {
                 sanitized.should.be.equal(expected);
             } 
@@ -41,9 +41,9 @@ describe('unit:types:text', function () {
             let sanitized = Types.TEXT.sanitize(input, { type: 'text', noTrim: true }); 
             if (typeof sanitized === 'undefined') {
                 (typeof expected).should.be.exactly('undefined');
-            } else if (_.isNull(expected)) {
-                _.isNull(sanitized).should.be.ok();
-            } else {
+            } else if (expected == null) {
+                (sanitized == null).should.be.ok();
+            }  else {
                 sanitized.should.be.equal(expected);
             } 
         });

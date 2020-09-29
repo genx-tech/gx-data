@@ -22,7 +22,7 @@ module.exports = {
     DbModel,
     Utils: {         
         Lang: require('./utils/lang'), 
-        Expression: require('./utils/expression'), 
+        Expression: require('./utils/jes'), 
         Bulk: require('./utils/Bulk'), 
         parseCsvFile:require('./utils/parseCsvFile'), 
         download: require('./utils/download') 
