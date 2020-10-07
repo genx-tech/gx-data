@@ -126,6 +126,16 @@ const defaultJesHandlers = {
             throw new Error(OPERAND_NOT_STRING('OP_TYPE'));
         }
 
+        right = right.toLowerCase();
+
+        if (right === 'array') {
+            return Array.isArray(left);
+        } 
+
+        if (right === 'integer') {
+            return _.isInteger(left);
+        }
+
         return typeof left === right;
     },
     OP_MATCH: (left, right, jes, prefix) => {
