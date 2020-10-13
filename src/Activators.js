@@ -2,6 +2,7 @@
 
 const { _ } = require('rk-utils');
 const { ApplicationError, InvalidArgument } = require('./utils/Errors');
+const Generators = require('./Generators');
 
 module.exports = {
     datetimeAdd: function (model, context, startTime, duration) {
@@ -18,6 +19,10 @@ module.exports = {
 
     defaultAs: function (model, context, value) {
         return value;
+    },
+
+    generator: function (model, context, value) {
+        return Generators.default(value);
     },
 
     concat: (model, context, sep = '', ...strs) => strs.join(sep),
