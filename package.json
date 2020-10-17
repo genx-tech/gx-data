@@ -12,8 +12,8 @@
     "test": "mocha --recursive src/**/*.spec.js",
     "cover": "nyc --reporter=html --reporter=text mocha test/*.mocha.js --recursive src/**/*.spec.js",
     "bulid:clean": "rm -rf lib",
-    "build": "npm run bulid:clean && NODE_ENV=production babel src -d lib --copy-files && del lib/**/__test__",
-    "build:dev": "npm run bulid:clean && NODE_ENV=development babel src -d lib --copy-files && del lib/**/__test__"
+    "build:prod": "npm run bulid:clean && NODE_ENV=production babel src -d lib --copy-files && del lib/**/__test__",
+    "build": "npm run bulid:clean && NODE_ENV=development babel src -d lib --copy-files && del lib/**/__test__"
   },
   "repository": "https://github.com/genx-tech/gx-data",
   "bugs": {

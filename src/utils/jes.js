@@ -1,5 +1,5 @@
 // JSON Expression Syntax (JES)
-const { _ } = require('rk-utils');
+const { _, hasKeyByPath } = require('rk-utils');
 const { ValidationError } = require('./Errors');
 
 //Exception messages
@@ -40,6 +40,8 @@ const OP_MATCH_ANY = [ '$any', '$or', '$either' ];
 
 const OP_TYPE = [ '$type' ];
 
+const OP_HAS_KEYS = [ '$hasKeys', '$withKeys' ];
+
 //Query & aggregate operator
 const OP_SIZE = [ '$size', '$length', '$count' ];
 const OP_SUM = [ '$sum', '$total' ];
@@ -73,6 +75,7 @@ addOpToMap(OP_EXISTS, 'OP_EXISTS');
 addOpToMap(OP_MATCH, 'OP_MATCH');
 addOpToMap(OP_MATCH_ANY, 'OP_MATCH_ANY');
 addOpToMap(OP_TYPE, 'OP_TYPE');
+addOpToMap(OP_HAS_KEYS, 'OP_HAS_KEYS');
 
 const MapOfMans = new Map();
 const addManToMap = (tokens, tag) => tokens.forEach(token => MapOfMans.set(token, tag));
@@ -136,6 +139,10 @@ const defaultJesHandlers = {
             return _.isInteger(left);
         }
 
+        if (right === 'text') {
+            return typeof left === 'string';
+        }
+
         return typeof left === right;
     },
     OP_MATCH: (left, right, jes, prefix) => {
@@ -149,6 +156,11 @@ const defaultJesHandlers = {
         });   
     
         return found ? true : false;
+    },
+    OP_HAS_KEYS: (left, right) => {
+        if (typeof left !== "object") return false;
+
+        return _.every(right, key => hasKeyByPath(left, key));
     }    
 };
 
@@ -193,9 +205,10 @@ const defaultJesExplanations = {
     OP_IN: (name, left, right, prefix) => `${formatName(name, prefix)} should be one of ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,
     OP_NOT_IN: (name, left, right, prefix) => `${formatName(name, prefix)} should not be any one of ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,
     OP_EXISTS: (name, left, right, prefix) => `${formatName(name, prefix)} should${right ? ' not ': ' '}be NULL.`,    
+    OP_TYPE: (name, left, right, prefix) => `The type of ${formatName(name, prefix)} should be "${right}", but ${JSON.stringify(left)} given.`,        
     OP_MATCH: (name, left, right, prefix) => `${formatName(name, prefix)} should match ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,    
-    OP_MATCH_ANY: (name, left, right, prefix) => `${formatName(name, prefix)} should match any of ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,
-    OP_TYPE: (name, left, right, prefix) => `The type of ${formatName(name, prefix)} should be "${right}", but ${JSON.stringify(left)} given.`        
+    OP_MATCH_ANY: (name, left, right, prefix) => `${formatName(name, prefix)} should match any of ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,    
+    OP_HAS_KEYS: (name, left, right, prefix) => `${formatName(name, prefix)} should have all of these keys [${right.join(', ')}].`,        
 };
 
 const defaultQueryExplanations = {
