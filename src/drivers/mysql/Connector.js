@@ -36,6 +36,23 @@ class MySQLConnector extends Connector {
     }); 
     nullOrIs = (fieldName, value) => [{ [fieldName]: { $exists: false } }, { [fieldName]: { $eq: value } }];
 
+    updatedCount = (context) => context.result.affectedRows;
+    deletedCount = (context) => context.result.affectedRows;
+
+    typeCast(value) {
+        const t = typeof value;
+
+        if (t === "boolean") return value ? 1 : 0;
+
+        if (t === "object") {
+            if (value.isLuxonDateTime) {
+                return value.toISO({ includeOffset: false });
+            }
+        }
+
+        return value;
+    }
+
     /**          
      * @param {string} name 
      * @param {object} options 
@@ -401,9 +418,10 @@ class MySQLConnector extends Connector {
             sql = 'DELETE FROM ??';
         }
 
-        let whereClause = this._joinCondition(query, params, null, hasJoining, aliasMap);        
-
-        sql += ' WHERE ' + whereClause;
+        let whereClause = this._joinCondition(query, params, null, hasJoining, aliasMap);    
+        if (whereClause) {
+            sql += ' WHERE ' + whereClause;
+        }            
         
         return this.execute_(sql, params, options);
     }
@@ -816,15 +834,8 @@ class MySQLConnector extends Connector {
     
                             case '$>':
                             case '$gt':
-                            case '$greaterThan':
-    
-                                /* // for datetime type
-                                if (!_.isFinite(v)) {
-                                    v = _.toFinite(v);
-                                    if (isNaN(v)) {
-                                        throw new Error('Only finite numbers can use "$gt" or "$>" operator.');
-                                    }
-                                }*/
+                            case '$greaterThan':    
+                                v = this.typeCast(v);
                                 
                                 if (inject) {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' > ' + v;
@@ -835,15 +846,8 @@ class MySQLConnector extends Connector {
         
                             case '$>=':
                             case '$gte':
-                            case '$greaterThanOrEqual':
-                            
-                                /* // for datetime type
-                                if (!_.isFinite(v)) {
-                                    v = _.toFinite(v);
-                                    if (isNaN(v)) {
-                                        throw new Error('Only finite numbers can use "$gte" or "$>=" operator.');
-                                    }
-                                }*/
+                            case '$greaterThanOrEqual':                            
+                                v = this.typeCast(v);
 
                                 if (inject) {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' >= ' + v;
@@ -854,15 +858,8 @@ class MySQLConnector extends Connector {
     
                             case '$<':
                             case '$lt':
-                            case '$lessThan':
-                            
-                                /* // for datetime type
-                                if (!_.isFinite(v)) {
-                                    v = _.toFinite(v);
-                                    if (isNaN(v)) {
-                                        throw new Error('Only finite numbers can use "$lt" or "$<" operator.');
-                                    }
-                                }*/
+                            case '$lessThan':                            
+                                v = this.typeCast(v);
 
                                 if (inject) {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' < ' + v;
@@ -873,16 +870,8 @@ class MySQLConnector extends Connector {
     
                             case '$<=':
                             case '$lte':
-                            case '$lessThanOrEqual':
-                            
-                                /* // for datetime type
-                                if (!_.isFinite(v)) {
-                                    v = _.toFinite(v);
-                                    if (isNaN(v)) {
-                                        throw new Error('Only finite numbers can use "$lte" or "$<=" operator.');
-                                    }
-                                }
-                                */
+                            case '$lessThanOrEqual':                            
+                                v = this.typeCast(v);
 
                                 if (inject) {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <= ' + v;
@@ -1001,6 +990,8 @@ class MySQLConnector extends Connector {
             params.push(JSON.stringify(value));
             return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' = ?';
         }
+
+        value = this.typeCast(value);
 
         if (inject) {
             return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' = ' + value;

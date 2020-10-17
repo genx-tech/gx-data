@@ -2,7 +2,6 @@
 
 const Util = require("rk-utils");
 const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
-const { DateTime } = require("luxon");
 const EntityModel = require("../../EntityModel");
 const { ApplicationError, DatabaseError, ReferencedNotExistError, DuplicateError, ValidationError, InvalidArgument } = require("../../utils/Errors");
 const Types = require("../../types");
@@ -47,20 +46,6 @@ class MySQLEntityModel extends EntityModel {
         }
 
         throw new Error("not support: " + name);
-    }
-
-    /**
-     * [override]
-     * @param {*} value
-     */
-    static _serialize(value) {
-        if (typeof value === "boolean") return value ? 1 : 0;
-
-        if (value instanceof DateTime) {
-            return value.toISO({ includeOffset: false });
-        }
-
-        return value;
     }
 
     /**
@@ -335,18 +320,22 @@ class MySQLEntityModel extends EntityModel {
      * Before deleting an entity.
      * @param {*} context
      * @property {object} [context.options] - Delete options
-     * @property {bool} [options.$retrieveDeleted] - Retrieve the recently deleted record from db.
+     * @property {bool} [context.options.$retrieveDeleted] - Retrieve the recently deleted record from db.
      */
     static async _internalBeforeDelete_(context) {
         if (context.options.$retrieveDeleted) {
             await this.ensureTransaction_(context);
 
             let retrieveOptions = _.isPlainObject(context.options.$retrieveDeleted)
-                ? context.options.$retrieveDeleted
-                : {};
+                ? { ...context.options.$retrieveDeleted, $query: context.options.$query }
+                : { $query: context.options.$query };
+
+            if (context.options.$physicalDeletion) {
+                retrieveOptions.$includeDeleted = true;
+            }    
 
             context.return = context.existing = await this.findOne_(
-                { ...retrieveOptions, $query: context.options.$query },
+                retrieveOptions,
                 context.connOptions
             );
         }
@@ -359,11 +348,15 @@ class MySQLEntityModel extends EntityModel {
             await this.ensureTransaction_(context);
 
             let retrieveOptions = _.isPlainObject(context.options.$retrieveDeleted)
-                ? context.options.$retrieveDeleted
-                : {};
+                ? { ...context.options.$retrieveDeleted, $query: context.options.$query }
+                : { $query: context.options.$query };
+
+            if (context.options.$physicalDeletion) {
+                retrieveOptions.$includeDeleted = true;
+            }    
 
             context.return = context.existing = await this.findAll_(
-                { ...retrieveOptions, $query: context.options.$query },
+                retrieveOptions,
                 context.connOptions
             );
         }

@@ -27,6 +27,9 @@ class MongodbConnector extends Connector {
         this.lockerField = this.options.lockerField || '__lock__';
     }
 
+    updatedCount = (context) => context.result.modifiedCount;
+    deletedCount = (context) => context.result.deletedCount;
+
     findAll_ = this.find_;
 
     /**

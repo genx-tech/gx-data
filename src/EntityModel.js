@@ -622,7 +622,7 @@ class EntityModel {
      * @param {object} [deleteOptions] - Update options
      * @property {object} [deleteOptions.$query] - Extra condition
      * @property {bool} [deleteOptions.$retrieveDeleted=false] - Retrieve the deleted entity from database     
-     * @property {bool} [deleteOptions.$physicalDeletion=false] - When fetchArray = true, the result will be returned directly without creating model objects.
+     * @property {bool} [deleteOptions.$physicalDeletion=false] - When $physicalDeletion = true, deletetion will not take into account logicaldeletion feature     
      * @param {object} [connOptions]
      * @property {object} [connOptions.connection] 
      */
@@ -635,7 +635,8 @@ class EntityModel {
      * @param {object} [deleteOptions] - Update options
      * @property {object} [deleteOptions.$query] - Extra condition
      * @property {bool} [deleteOptions.$retrieveDeleted=false] - Retrieve the deleted entity from database     
-     * @property {bool} [deleteOptions.$physicalDeletion=false] - When fetchArray = true, the result will be returned directly without creating model objects.
+     * @property {bool} [deleteOptions.$physicalDeletion=false] - When $physicalDeletion = true, deletetion will not take into account logicaldeletion feature     
+     * @property {bool} [deleteOptions.$deleteAll=false] - When $deleteAll = true, the operation will proceed even empty condition is given
      * @param {object} [connOptions]
      * @property {object} [connOptions.connection] 
      */
@@ -643,12 +644,16 @@ class EntityModel {
         return this._delete_(deleteOptions, connOptions, false);
     }
 
+    static async deleteAll_(connOptions) {
+        return this.deleteMany_({ $deleteAll: true }, connOptions);
+    }
+
     /**
      * Remove an existing entity with given data.     
      * @param {object} [deleteOptions] - Update options
      * @property {object} [deleteOptions.$query] - Extra condition
      * @property {bool} [deleteOptions.$retrieveDeleted=false] - Retrieve the deleted entity from database     
-     * @property {bool} [deleteOptions.$physicalDeletion=false] - When fetchArray = true, the result will be returned directly without creating model objects.
+     * @property {bool} [deleteOptions.$physicalDeletion=false] - When $physicalDeletion = true, deletetion will not take into account logicaldeletion feature     
      * @param {object} [connOptions]
      * @property {object} [connOptions.connection] 
      */
@@ -657,7 +662,7 @@ class EntityModel {
 
         deleteOptions = this._prepareQueries(deleteOptions, forSingleRecord /* for single record */);
 
-        if (_.isEmpty(deleteOptions.$query)) {
+        if (_.isEmpty(deleteOptions.$query) && (forSingleRecord || !deleteOptions.$deleteAll)) {
             throw new InvalidArgument('Empty condition is not allowed for deleting an entity.', { 
                 entity: this.meta.name,
                 deleteOptions 
@@ -683,7 +688,7 @@ class EntityModel {
             return context.return;
         }
         
-        let success = await this._safeExecute_(async (context) => {
+        let deletedCount = await this._safeExecute_(async (context) => {
             if (!(await Features.applyRules_(Rules.RULE_BEFORE_DELETE, this, context))) {
                 return false;
             }        
@@ -723,10 +728,10 @@ class EntityModel {
 
             await Features.applyRules_(Rules.RULE_AFTER_DELETE, this, context);
             
-            return true;
+            return this.db.connector.deletedCount(context);
         }, context);
 
-        if (success) {
+        if (deletedCount) {
             if (forSingleRecord) {
                 await this.afterDelete_(context);
             } else {
@@ -734,7 +739,7 @@ class EntityModel {
             }    
         }
 
-        return context.return;
+        return context.return || deletedCount;
     }
 
     /**
@@ -1240,15 +1245,11 @@ class EntityModel {
         throw new Error(NEED_OVERRIDE);
     }
 
-    static _serialize(value) {
-        throw new Error(NEED_OVERRIDE);
-    }
-
     static _serializeByTypeInfo(value, info) {
         throw new Error(NEED_OVERRIDE);
     }
 
-    static _translateValue(value, variables, skipSerialize, arrayToInOperator) {
+    static _translateValue(value, variables, skipTypeCast, arrayToInOperator) {
         if (_.isPlainObject(value)) {
             if (value.oorType) {
                 if (oorTypesToBypass.has(value.oorType)) return value;
@@ -1294,17 +1295,17 @@ class EntityModel {
                 throw new Error('Not implemented yet. ' + value.oorType);
             }
 
-            return _.mapValues(value, (v, k) => this._translateValue(v, variables, skipSerialize, arrayToInOperator && k[0] !== '$'));
+            return _.mapValues(value, (v, k) => this._translateValue(v, variables, skipTypeCast, arrayToInOperator && k[0] !== '$'));
         }
 
         if (Array.isArray(value)) {  
-            let ret = value.map(v => this._translateValue(v, variables, skipSerialize, arrayToInOperator));
+            let ret = value.map(v => this._translateValue(v, variables, skipTypeCast, arrayToInOperator));
             return arrayToInOperator ? { $in: ret } : ret;
         }
 
-        if (skipSerialize) return value;
+        if (skipTypeCast) return value;
 
-        return this._serialize(value);
+        return this.db.connector.typeCast(value);
     }
 }
 
