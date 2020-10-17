@@ -456,7 +456,9 @@ class MySQLConnector extends Connector {
             }
             
             return result.concat(reverseAliasMap);
-        } 
+        } else if (condition.$skipOrm) {
+            connOptions = { ...connOptions, rowsAsArray: true };
+        }
 
         result = await this.execute_(sqlInfo.sql, sqlInfo.params, connOptions);
 
@@ -821,16 +823,14 @@ class MySQLConnector extends Connector {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' IS NOT NULL';
                                 }          
         
-                                if (isPrimitive(v)) {
-                                    if (inject) {
-                                        return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <> ' + v;
-                                    }
+                                v = this.typeCast(v);
 
-                                    params.push(v);
-                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <> ?';
+                                if (inject) {
+                                    return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <> ' + v;
                                 }
-    
-                                return 'NOT (' + this._wrapCondition(fieldName, v, params, hasJoining, aliasMap, true) + ')';
+
+                                params.push(v);
+                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <> ?';
     
                             case '$>':
                             case '$gt':

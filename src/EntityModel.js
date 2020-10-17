@@ -262,13 +262,13 @@ class EntityModel {
         let context = {             
             options: findOptions,
             connOptions
-        }; 
+        };         
 
         await Features.applyRules_(Rules.RULE_BEFORE_FIND, this, context);  
 
         let totalCount;
 
-        let rows = await this._safeExecute_(async (context) => {             
+        let rows = await this._safeExecute_(async (context) => {                
             let records = await this.db.connector.find_(
                 this.meta.name, 
                 context.options, 
@@ -291,7 +291,9 @@ class EntityModel {
                 if (findOptions.$totalCount) {
                     totalCount = records[1];
                     records = records[0];
-                }    
+                } else if (findOptions.$skipOrm) {
+                    records = records[0];
+                }   
             }
 
             return this.afterFindAll_(context, records);            

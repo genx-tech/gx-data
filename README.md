@@ -130,6 +130,16 @@ $projection: [
 * $features - Custom feature options override
 * $orderBy - Order by condition, map of column to ascend?
 * $groupBy - Group by condition
+```
+const numDeals = await this.findAll_({
+    $projection: ["status", this.db.connector.queryCount(null, "status")],
+    $query: {
+        agent: agentId,
+        $or_0: this.db.connector.nullOrIs("fellOver", false),
+    },
+    $groupBy: "status",
+});
+```
 * $offset
 * $limit
 * $totalCount - Returns total record count when used with $limit, should provide the distinct field name 
@@ -205,6 +215,7 @@ There are predefined context properties which can be accessed in an entity opera
 ## known issues
 
 * retrieveUpdated - The previous query maybe affected by parrallel updating
+* retrieveDeleted - The deleted returned may differ from actual deletion (when data changes between find and delete)
 
 ## change logs since Apr 2020
 
