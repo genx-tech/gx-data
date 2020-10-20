@@ -45,7 +45,7 @@ class MySQLConnector extends Connector {
         if (t === "boolean") return value ? 1 : 0;
 
         if (t === "object") {
-            if (value.isLuxonDateTime) {
+            if (value != null && value.isLuxonDateTime) {
                 return value.toISO({ includeOffset: false });
             }
         }
