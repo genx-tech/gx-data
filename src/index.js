@@ -10,6 +10,8 @@ const Validators = require('./Validators');
 const Errors = require('./utils/Errors');
 const DbModel = require('./DbModel');
 
+const { cacheLocal, cacheLocal_ } = require('./utils/cacheLocal');
+
 module.exports = { 
     Types, 
     Errors, 
@@ -24,6 +26,8 @@ module.exports = {
         Lang: require('./utils/lang'), 
         Expression: require('./utils/jes'), 
         Bulk: require('./utils/Bulk'), 
+        cacheLocal,
+        cacheLocal_,
         parseCsvFile:require('./utils/parseCsvFile'), 
         download: require('./utils/download') 
     }        

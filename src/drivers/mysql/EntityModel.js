@@ -754,7 +754,21 @@ class MySQLEntityModel extends EntityModel {
             keyValue = context.return[this.meta.keyField];
 
             if (_.isNil(keyValue)) {
-                throw new ApplicationError("Missing required primary key field value. Entity: " + this.meta.name);
+                if (context.result.affectedRows === 0) {
+                    //insert ignored
+
+                    const query = this.getUniqueKeyValuePairsFrom(context.return);
+                    context.return = await this.findOne_({ $query: query }, context.connOptions);
+                }
+
+                keyValue = context.return[this.meta.keyField];
+
+                if (_.isNil(keyValue)) {
+                    throw new ApplicationError("Missing required primary key field value. Entity: " + this.meta.name, {
+                        data: context.return,
+                        associations: assocs
+                    });
+                }
             }
         }
 
@@ -762,7 +776,7 @@ class MySQLEntityModel extends EntityModel {
         const finished = {};
 
         //todo: double check to ensure including all required options
-        const passOnOptions = _.pick(context.options, ["$migration", "$variables"]);
+        const passOnOptions = _.pick(context.options, ["$skipModifiers", "$migration", "$variables"]);
 
         await eachAsync_(assocs, async (data, anchor) => {
             let assocMeta = meta[anchor];
@@ -831,7 +845,7 @@ class MySQLEntityModel extends EntityModel {
         const pendingAssocs = {};
 
         //todo: double check to ensure including all required options
-        const passOnOptions = _.pick(context.options, ["$migration", "$variables"]);
+        const passOnOptions = _.pick(context.options, ["$skipModifiers", "$migration", "$variables"]);
 
         await eachAsync_(assocs, async (data, anchor) => {
             let assocMeta = meta[anchor];

@@ -401,7 +401,7 @@ class EntityModel {
 
             await Features.applyRules_(Rules.RULE_AFTER_CREATE, this, context);
 
-            if (needCreateAssocs) {
+            if (needCreateAssocs) {               
                 await this._createAssocs_(context, associations);
             }
             
@@ -858,16 +858,14 @@ class EntityModel {
                 
                 //sanitize first
                 if (isNothing(value)) {
-                    if (!fieldInfo.optional) {
+                    if (fieldInfo['default']) {
+                        //has default setting in meta data
+                        latest[fieldName] = fieldInfo['default'];
+                    } else if (!fieldInfo.optional) {
                         throw new ValidationError(`The "${fieldName}" value of "${name}" entity cannot be null.`, {
                             entity: name,
                             fieldInfo: fieldInfo 
                         });
-                    }
-
-                    if (fieldInfo['default']) {
-                        //has default setting in meta data
-                        latest[fieldName] = fieldInfo['default'];
                     } else {
                         latest[fieldName] = null;
                     }
@@ -944,7 +942,9 @@ class EntityModel {
 
         await Features.applyRules_(Rules.RULE_AFTER_VALIDATION, this, context);    
 
-        await this.applyModifiers_(context, isUpdating);
+        if (!opOptions.$skipModifiers) {
+            await this.applyModifiers_(context, isUpdating);
+        }
 
         //final round process before entering database
         context.latest = _.mapValues(latest, (value, key) => {

@@ -112,7 +112,7 @@ describe("unit:utils:expression", function () {
                 key23: { $nin: ["ng1", "ng2"] },
 
                 key4: { $exists: false },
-                key2: { $type: "string" },
+                key2: { $is: "string" },
             })
             .match({
                 key3: {
@@ -161,7 +161,7 @@ describe("unit:utils:expression", function () {
 
         should.throws(() => {
             jeso.match({
-                key1: { $type: "string" },
+                key1: { $is: "string" },
             });
         }, 'ValidationError: The type of "key1" should be "string".');
 
@@ -205,6 +205,9 @@ describe("unit:utils:expression", function () {
 
         jeso.match({
             $$size: 4,
+            key1: {
+                $$type: 'integer'
+            }
         });
 
         jeso.match({
@@ -223,7 +226,7 @@ describe("unit:utils:expression", function () {
             jeso.match({
                 "|>$$add": [200, obj],
             });
-        }, 'ValidationError: The query "map(->add(?)).key1" should be 2000, but 2200 given.');
+        }, 'ValidationError: The query "_.each(->add(?)).key1" should be 2000, but 2200 given.');
 
         should.throws(() => {
             jeso.match({
@@ -285,5 +288,50 @@ describe("unit:utils:expression", function () {
                 $add: 1,
             },
         ]).value.should.be.exactly(204021);
+    });
+
+    it("eval array", function () {
+        let obj = {
+            keep: "keep",
+            items: [
+                { name: "Jack", score: 60 },
+                { name: "Bob", score: 40 },
+                { name: "Jane", score: 80 },
+                { name: "Peter", score: 100 },
+            ],
+            ignored: 'ingored',
+            exlcluded: 'exlcluded'
+        };
+
+        let jeso = new JES(obj);
+
+        const pipelined = jeso.evaluate({
+            keep: true, 
+            excluded: false,      
+            newItem: { $set: "new" },      
+            highestScore: [
+                "$$CURRENT.items",                
+                {
+                    $sortBy: "score",
+                },
+                "$reverse",
+                {
+                    "$nth": 0,
+                },
+                {
+                    "$of": "score"
+                }
+            ],
+        });
+
+        should.exist(pipelined.keep);
+        should.exist(pipelined.newItem);
+        should.exist(pipelined.highestScore);
+        should.not.exist(pipelined.exlcluded);
+        should.not.exist(pipelined.items);
+        should.not.exist(pipelined.ignored);
+
+        pipelined.newItem.should.be.exactly("new");
+        pipelined.highestScore.should.be.exactly(100);
     });
 });

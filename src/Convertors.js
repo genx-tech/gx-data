@@ -31,6 +31,17 @@ exports.toKVPairs = (arrayOfObjects, property, transformer) => {
     }, {});
 };
 
+exports.toSet = (arrayOfObjects, property) => {
+    if (!arrayOfObjects) return new Set();
+
+    const valueGetter = typeof property === "function" ? property : (obj) => obj[property];
+    const result  = new Set();
+
+    arrayOfObjects.forEach(obj => result.add(valueGetter(obj)));
+
+    return result;
+}
+
 /**
  * Remap the keys of object elements in an array, like projection.
  * @param {*} object

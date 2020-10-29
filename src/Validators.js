@@ -165,7 +165,7 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
                 let hasError = false;
 
                 try {
-                    validated = validateObjectMember(raw, fieldName, fieldInfoOption, i18n, prefix);
+                    validated = validateObjectMember(raw, fieldName, { ...fieldInfoOption, skipTypeCast: true }, i18n, prefix);
                 } catch (error) {                    
                     hasError = true;
                     validated = NIL;

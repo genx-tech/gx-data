@@ -34,6 +34,8 @@ class MySQLConnector extends Connector {
         args: [ fieldName || '*' ],
         alias: alias || 'count'
     }); 
+
+    //in mysql, null value comparison will never return true, even null != 1
     nullOrIs = (fieldName, value) => [{ [fieldName]: { $exists: false } }, { [fieldName]: { $eq: value } }];
 
     updatedCount = (context) => context.result.affectedRows;

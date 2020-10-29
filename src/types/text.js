@@ -13,8 +13,10 @@ module.exports = {
 
     sanitize: (value, info, i18n) => {    
         if (value == null) return null;
-        
-        value = Convertors.toText(value, info && info.noTrim);
+    
+        if (!info.skipTypeCast) {
+            value = Convertors.toText(value, info && info.noTrim);
+        }
 
         if (value === '' && info.emptyAsNull) {
             return null;

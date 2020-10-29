@@ -6,6 +6,14 @@ const { ValidationError } = require('../utils/Errors');
 const any = require('./any');
 
 const jsonStarter = new Set('"', '[', '{');
+const jsonEnding = {
+    '"': '"', 
+    '[': ']', 
+    '{': '}'
+};
+
+// info.dontParse
+// info.schema
 
 module.exports = {
     name: 'object',
@@ -18,18 +26,27 @@ module.exports = {
         let raw = value;
         let type = typeof value;
 
-        if (type === 'string') {
-            if (value.length === 0) {
-                value = '';
-            } else if (jsonStarter.has(value[0])) {
-                value = JSON.parse(value);
-            } 
-        } else if (type === 'boolean' || type === 'number') {
-            //skip
-        } else if (type !== 'object') {
-            throw new ValidationError('Invalid object value', { value: raw, feild: info });
-        } else {
-            value = _.toPlainObject(value);
+        switch (type) {
+            case 'string':
+                if (!info.dontParse && value.length > 0 && jsonStarter.has(value[0]) && jsonEnding[value[0]] === value[value.length-1]) {
+                    value = JSON.parse(value);
+                } 
+                break;
+
+            case 'boolean':
+            case 'number':            
+            case 'bigint':
+                //skip, keep original value
+                break;
+
+            case 'object':
+                if (!Array.isArray(value)) {
+                    value = _.toPlainObject(value);
+                }                
+                break;
+            
+            default:
+                throw new ValidationError('Invalid object value', { value: raw, feild: info });
         }
 
         if (info.schema) {
