@@ -14,7 +14,7 @@ module.exports = {
     sanitize: (value, info, i18n) => {    
         if (value == null) return null;
     
-        if (!info.skipTypeCast) {
+        if (!info || !info.skipTypeCast) {
             value = Convertors.toText(value, info && info.noTrim);
         }
 
