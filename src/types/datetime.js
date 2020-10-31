@@ -32,7 +32,7 @@ module.exports = {
                 }
             } else if (type === 'number') {
                 value = DateTime.fromMillis(value, opts);
-            } else if (type !== 'object' || !value.isLuxonDateTime) {
+            } else if (type !== 'object' || !value.isLuxonDateTime) {                
                 throw new ValidationError('Invalid datetime object.', { value: raw, field: info });
             }             
         }

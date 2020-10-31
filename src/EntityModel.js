@@ -206,7 +206,8 @@ class EntityModel {
 
         findOptions = this._prepareQueries(findOptions, true /* for single record */);
         
-        let context = {             
+        let context = {               
+            op: 'find',
             options: findOptions,
             connOptions
         }; 
@@ -259,7 +260,8 @@ class EntityModel {
     static async findAll_(findOptions, connOptions) {  
         findOptions = this._prepareQueries(findOptions);
 
-        let context = {             
+        let context = {               
+            op: 'find',     
             options: findOptions,
             connOptions
         };         
@@ -335,7 +337,8 @@ class EntityModel {
 
         let [ raw, associations ] = this._extractAssociations(data, true);
 
-        let context = { 
+        let context = {              
+            op: 'create',
             raw, 
             rawOptions,
             options: createOptions,
@@ -369,10 +372,6 @@ class EntityModel {
             
             if (!(await this._internalBeforeCreate_(context))) {
                 return false;
-            }
-
-            dev: {
-                context.latest = Object.freeze(context.latest);
             }
 
             if (context.options.$upsert) {
@@ -477,6 +476,7 @@ class EntityModel {
         let [ raw, associations ] = this._extractAssociations(data);
 
         let context = { 
+            op: 'update',
             raw, 
             rawOptions,
             options: this._prepareQueries(updateOptions, forSingleRecord /* for single record */),            
@@ -530,10 +530,6 @@ class EntityModel {
                     throw new InvalidArgument('Cannot do the update with empty record. Entity: ' + this.meta.name);
                 }
             } else {
-                dev: {
-                    context.latest = Object.freeze(context.latest);
-                }
-
                 const { $query, ...otherOptions } = context.options;
 
                 if (needUpdateAssocs && !hasValueIn([$query, context.latest], this.meta.keyField) && !otherOptions.$retrieveUpdated) {
@@ -608,6 +604,7 @@ class EntityModel {
         }
 
         let context = { 
+            op: 'replace',
             raw: data, 
             rawOptions,
             options: updateOptions,
@@ -671,7 +668,8 @@ class EntityModel {
             });
         }
 
-        let context = { 
+        let context = {              
+            op: 'delete',
             rawOptions,
             options: deleteOptions,
             connOptions,
@@ -818,10 +816,18 @@ class EntityModel {
             context.rawOptions.$existing = existing;
         }
 
-        await eachAsync_(fields, async (fieldInfo, fieldName) => {
-            if (fieldName in raw) {
-                let value = raw[fieldName];
+        await Features.applyRules_(Rules.RULE_BEFORE_VALIDATION, this, context);    
 
+        await eachAsync_(fields, async (fieldInfo, fieldName) => {
+            let value;
+            
+            if (fieldName in raw) {
+                value = raw[fieldName];
+            } else if (fieldName in latest) {
+                value = latest[fieldName];
+            }            
+
+            if (typeof value !== 'undefined') {
                 //field value given in raw data
                 if (fieldInfo.readOnly) {
                     if (!opOptions.$migration && (!isUpdating ||!opOptions.$bypassReadOnly || !opOptions.$bypassReadOnly.has(fieldName))) {
@@ -927,12 +933,13 @@ class EntityModel {
                     //automatically generated
                     latest[fieldName] = await Generators.default(fieldInfo, i18n);
 
-                } else {
-                    //missing required
-                    //todo: check if there is an activator
+                } else if (!fieldInfo.hasActivator) {
+                    //skip those have activators
+
                     throw new ValidationError(`"${fieldName}" of "${name}" entity is required.`, {
                         entity: name,
-                        fieldInfo: fieldInfo 
+                        fieldInfo: fieldInfo,
+                        raw 
                     });
                 }
             } // else default value set by database or by rules

@@ -34,6 +34,5 @@ function addUpdatedBy_(entityModel, feature, context) {
  */
 
 module.exports = {
-    [Rules.RULE_BEFORE_CREATE]: (feature, entityModel, context) => addCreatedBy_(entityModel, feature, context),
-    [Rules.RULE_BEFORE_UPDATE]: (feature, entityModel, context) => addUpdatedBy_(entityModel, feature, context)
+    [Rules.RULE_BEFORE_VALIDATION]: (feature, entityModel, context) => context.op === 'create' ? addCreatedBy_(entityModel, feature, context) : addUpdatedBy_(entityModel, feature, context)
 };

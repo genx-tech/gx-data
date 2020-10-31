@@ -1,4 +1,5 @@
 module.exports = {
+    RULE_BEFORE_VALIDATION: 'beforeValidation',
     RULE_AFTER_VALIDATION: 'afterValidation',
     RULE_BEFORE_CREATE: 'beforeCreate',
     RULE_BEFORE_UPDATE: 'beforeUpdate',
