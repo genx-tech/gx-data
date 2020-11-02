@@ -888,8 +888,8 @@ class EntityModel {
                         throw new ValidationError(`Invalid "${fieldName}" value of "${name}" entity.`, {
                             entity: name,
                             fieldInfo: fieldInfo,
-                            error: error.stack,
-                            value 
+                            value,
+                            error: error.stack                             
                         });
                     }    
                 }
