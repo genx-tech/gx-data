@@ -819,17 +819,18 @@ class EntityModel {
         await Features.applyRules_(Rules.RULE_BEFORE_VALIDATION, this, context);    
 
         await eachAsync_(fields, async (fieldInfo, fieldName) => {
-            let value;
+            let value, useRaw = false;
             
             if (fieldName in raw) {
                 value = raw[fieldName];
+                useRaw = true;
             } else if (fieldName in latest) {
                 value = latest[fieldName];
             }            
 
             if (typeof value !== 'undefined') {
                 //field value given in raw data
-                if (fieldInfo.readOnly) {
+                if (fieldInfo.readOnly && useRaw) {
                     if (!opOptions.$migration && (!isUpdating ||!opOptions.$bypassReadOnly || !opOptions.$bypassReadOnly.has(fieldName))) {
                         //read only, not allow to set by input value
                         throw new ValidationError(`Read-only field "${fieldName}" is not allowed to be set by manual input.`, {
