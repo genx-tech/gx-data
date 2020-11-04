@@ -63,6 +63,7 @@ const OP_OMIT = [ '$omit' ];
 const OP_GROUP = [ '$group', '$groupBy' ];
 const OP_SORT = [ '$sort', '$orderBy', '$sortBy' ];
 const OP_REVERSE = [ '$reverse' ];
+const OP_EVAL = [ '$eval', '$apply' ];
 
 const PFX_FOR_EACH = '|>'; // for each
 const PFX_WITH_ANY = '|*'; // with any
@@ -91,6 +92,7 @@ addManToMap(OP_SUM, ['OP_SUM', true ]);
 addManToMap(OP_KEYS, ['OP_KEYS', true ]); 
 addManToMap(OP_VALUES, ['OP_VALUES', true ]); 
 addManToMap(OP_GET_TYPE, ['OP_GET_TYPE', true ]); 
+addManToMap(OP_REVERSE, ['OP_REVERSE', true]);
 
 addManToMap(OP_ADD, ['OP_ADD', false ]); 
 addManToMap(OP_SUB, ['OP_SUB', false ]);
@@ -103,7 +105,7 @@ addManToMap(OP_GET_BY_KEY, ['OP_GET_BY_KEY', false]);
 addManToMap(OP_OMIT, ['OP_OMIT', false]);
 addManToMap(OP_GROUP, ['OP_GROUP', false]);
 addManToMap(OP_SORT, ['OP_SORT', false]);
-addManToMap(OP_REVERSE, ['OP_REVERSE', true]);
+addManToMap(OP_EVAL, ['OP_EVAL', false]);
 
 const defaultJesHandlers = {
     OP_EQUAL: (left, right) => _.isEqual(left, right),
@@ -159,12 +161,12 @@ const defaultJesHandlers = {
     OP_MATCH: (left, right, jes, prefix) => {
         if (Array.isArray(right)) {
             return _.every(right, rule => {
-                const r = match(left, rule, prefix, jes);
+                const r = match(left, rule, jes, prefix);
                 return r[0];
             });
         }
 
-        const r = match(left, right, prefix, jes);
+        const r = match(left, right, jes, prefix);
         return r[0];
     },
     OP_MATCH_ANY: (left, right, jes, prefix) => {
@@ -173,7 +175,7 @@ const defaultJesHandlers = {
         }
 
         let found = _.find(right, rule => {
-            const r = match(left, rule, prefix, jes);
+            const r = match(left, rule, jes, prefix);
             return r[0];
         });   
     
@@ -210,7 +212,8 @@ const defaultManipulations = {
     OP_GET_BY_KEY: (left, right) => _.get(left, right),
     OP_OMIT: (left, right) => _.omit(left, right),
     OP_GROUP: (left, right) => _.groupBy(left, right),
-    OP_SORT: (left, right) => _.sortBy(left, right),    
+    OP_SORT: (left, right) => _.sortBy(left, right),  
+    OP_EVAL: evaluateExpr,
 }
 
 const formatName = (name, prefix) => {
@@ -260,6 +263,7 @@ const defaultQueryExplanations = {
     OP_OMIT: 'omit',
     OP_GROUP: 'groupBy',
     OP_SORT: 'sortBy',
+    OP_EVAL: 'evaluate',
 };
 
 function getUnmatchedExplanation(jes, op, name, leftValue, rightValue, prefix) {
@@ -277,14 +281,14 @@ function test(value, op, opValue, jes, prefix) {
     return handler(value, opValue, jes, prefix);
 }
 
-function evaluate(value, op, opValue, jes, prefix) { 
+function evaluate(value, op, opValue, jes, prefix, context) { 
     const handler = jes.queryHanlders[op];
 
     if (!handler) {
         throw new Error(INVALID_QUERY_HANDLER(op));
     }
 
-    return handler(value, opValue, jes, prefix);
+    return handler(value, opValue, jes, prefix, context);
 }
 
 function evaluateUnary(value, op, jes, prefix) { 
@@ -297,12 +301,12 @@ function evaluateUnary(value, op, jes, prefix) {
     return handler(value, jes, prefix);
 }
 
-function evaluateByOpMeta(currentValue, rightValue, opMeta, prefix, jes) {
+function evaluateByOpMeta(currentValue, rightValue, opMeta, jes, prefix, context) {
     if (opMeta[1]) {
         return rightValue ? evaluateUnary(currentValue, opMeta[0], jes, prefix) : currentValue;
     } 
     
-    return evaluate(currentValue, opMeta[0], rightValue, jes, prefix);
+    return evaluate(currentValue, opMeta[0], rightValue, jes, prefix, context);
 }
 
 const defaultCustomizer = {
@@ -313,19 +317,19 @@ const defaultCustomizer = {
     queryHanlders: defaultManipulations
 };
 
-function matchCollection(actual, collectionOp, opMeta, operands, prefix, jes) {
+function matchCollection(actual, collectionOp, opMeta, operands, jes, prefix) {
     let matchResult, nextPrefix;
 
     switch (collectionOp) {
         case PFX_FOR_EACH:
-            const mapResult = _.isPlainObject(actual) ? _.mapValues(actual, (item, key) => evaluateByOpMeta(item, operands[0], opMeta, formatPrefix(key, prefix), jes)) : _.map(actual, (item, i) => evaluateByOpMeta(item, operands[0], opMeta, formatPrefix(i, prefix), jes));
+            const mapResult = _.isPlainObject(actual) ? _.mapValues(actual, (item, key) => evaluateByOpMeta(item, operands[0], opMeta, jes, formatPrefix(key, prefix))) : _.map(actual, (item, i) => evaluateByOpMeta(item, operands[0], opMeta, jes, formatPrefix(i, prefix)));
             nextPrefix = formatPrefix(formatMap(formatQuery(opMeta)), prefix);
-            matchResult = match(mapResult, operands[1], nextPrefix, jes);            
+            matchResult = match(mapResult, operands[1], jes, nextPrefix);            
             break;
 
         case PFX_WITH_ANY:          
             nextPrefix = formatPrefix(formatAny(formatQuery(opMeta)), prefix);
-            matchResult = _.find(actual, (item, key) => match(evaluateByOpMeta(item, operands[0], opMeta, formatPrefix(key, prefix), jes), operands[1], nextPrefix, jes));
+            matchResult = _.find(actual, (item, key) => match(evaluateByOpMeta(item, operands[0], opMeta, jes, formatPrefix(key, prefix)), operands[1], jes, nextPrefix));
             break;
 
         default:
@@ -339,7 +343,7 @@ function matchCollection(actual, collectionOp, opMeta, operands, prefix, jes) {
     return undefined;
 }
 
-function validateCollection(actual, collectionOp, op, expectedFieldValue, prefix, jes) {
+function validateCollection(actual, collectionOp, op, expectedFieldValue, jes, prefix) {
     switch (collectionOp) {
         case PFX_FOR_EACH:
             const unmatchedKey = _.findIndex(actual, (item) => !test(item, op, expectedFieldValue, jes, prefix))
@@ -369,10 +373,10 @@ function validateCollection(actual, collectionOp, op, expectedFieldValue, prefix
     return undefined;
 }
 
-function evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldValue, prefix, jes) {
+function evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldValue, jes, prefix, context) {
     switch (collectionOp) {
         case PFX_FOR_EACH:
-            return _.map(currentValue, (item, i) => evaluateByOpMeta(item, expectedFieldValue, opMeta, formatPrefix(i, prefix), jes));
+            return _.map(currentValue, (item, i) => evaluateByOpMeta(item, expectedFieldValue, opMeta, jes, formatPrefix(i, prefix), context));
 
         case PFX_WITH_ANY:         
             throw new Error(PRX_OP_NOT_FOR_EVAL(collectionOp));
@@ -386,12 +390,12 @@ function evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldVal
  * 
  * @param {*} actual 
  * @param {*} expected 
- * @param {*} prefix 
  * @param {*} jes 
+ * @param {*} prefix  
  * 
  * { key: { $match } }
  */
-function match(actual, expected, prefix, jes) {
+function match(actual, expected, jes, prefix) {
     jes != null || (jes = defaultCustomizer);
     let passObjectCheck = false;
 
@@ -427,7 +431,7 @@ function match(actual, expected, prefix, jes) {
                         throw new Error(INVALID_QUERY_OPERATOR(fieldName));
                     }
 
-                    const matchResult = matchCollection(actual, collectionOp, opMeta, expectedFieldValue, prefix, jes);
+                    const matchResult = matchCollection(actual, collectionOp, opMeta, expectedFieldValue, jes, prefix);
                     if (matchResult) return matchResult;
                     continue;
                 } else {
@@ -440,7 +444,7 @@ function match(actual, expected, prefix, jes) {
                         throw new Error(INVALID_TEST_OPERATOR(fieldName));
                     }
 
-                    const matchResult = validateCollection(actual, collectionOp, op, expectedFieldValue, prefix, jes);
+                    const matchResult = validateCollection(actual, collectionOp, op, expectedFieldValue, jes, prefix);
                     if (matchResult) return matchResult;
                     continue;
                 }
@@ -461,7 +465,7 @@ function match(actual, expected, prefix, jes) {
                     }
 
                     const queryResult = evaluateUnary(actual, opMeta[0], jes, prefix);                    
-                    const matchResult = match(queryResult, expectedFieldValue, formatPrefix(formatQuery(opMeta), prefix), jes);
+                    const matchResult = match(queryResult, expectedFieldValue, jes, formatPrefix(formatQuery(opMeta), prefix));
 
                     if (!matchResult[0]) {
                         return matchResult;
@@ -506,7 +510,7 @@ function match(actual, expected, prefix, jes) {
         let actualFieldValue = _.get(actual, fieldName);     
         
         if (expectedFieldValue != null && typeof expectedFieldValue === 'object') {            
-            const [ ok, reason ] = match(actualFieldValue, expectedFieldValue, formatPrefix(fieldName, prefix), jes);
+            const [ ok, reason ] = match(actualFieldValue, expectedFieldValue, jes, formatPrefix(fieldName, prefix));
             if (!ok) {
                 return [ false, reason ];
             }
@@ -537,10 +541,10 @@ function match(actual, expected, prefix, jes) {
  * @param {*} jes 
  * @param {*} context
  */
-function evaluateExpr(currentValue, expr, prefix, jes, context) {
+function evaluateExpr(currentValue, expr, jes, prefix, context) {
     jes != null || (jes = defaultCustomizer);
     if (Array.isArray(expr)) {
-        return expr.reduce((result, exprItem) => evaluateExpr(result, exprItem, prefix, jes, context), currentValue);
+        return expr.reduce((result, exprItem) => evaluateExpr(result, exprItem, jes, prefix, context), currentValue);
     }
 
     const typeExpr = typeof expr;
@@ -596,7 +600,7 @@ function evaluateExpr(currentValue, expr, prefix, jes, context) {
                     throw new Error(INVALID_QUERY_OPERATOR(fieldName));
                 }
 
-                result = evaluateByOpMeta(currentValue, expectedFieldValue, opMeta, prefix, jes);
+                result = evaluateByOpMeta(currentValue, expectedFieldValue, opMeta, jes, prefix, context);
                 hasOperator = true;
                 continue;
             }
@@ -614,7 +618,7 @@ function evaluateExpr(currentValue, expr, prefix, jes, context) {
                     throw new Error(INVALID_QUERY_OPERATOR(fieldName));
                 }
 
-                result = evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldValue, prefix, jes);
+                result = evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldValue, jes, prefix);
                 hasOperator = true;
                 continue;
             }
@@ -627,7 +631,7 @@ function evaluateExpr(currentValue, expr, prefix, jes, context) {
         //pick a field and then apply manipulation
         let actualFieldValue = currentValue != null ? _.get(currentValue, fieldName) : undefined;     
 
-        const childFieldValue = evaluateExpr(actualFieldValue, expectedFieldValue, formatPrefix(fieldName, prefix), jes, context);
+        const childFieldValue = evaluateExpr(actualFieldValue, expectedFieldValue, jes, formatPrefix(fieldName, prefix), context);
         if (typeof childFieldValue !== 'undefined') {
             result = {
                 ...result,
@@ -651,7 +655,7 @@ class JES {
      * @param  {...any} args 
      */
     match(expected) {        
-        const result = match(this.value, expected, undefined, this.customizer);
+        const result = match(this.value, expected, this.customizer);
         if (result[0]) return this;
 
         throw new ValidationError(result[1], {
@@ -661,11 +665,11 @@ class JES {
     }
 
     evaluate(expr) {
-        return evaluateExpr(this.value, expr, undefined, this.customizer);
+        return evaluateExpr(this.value, expr, this.customizer);
     }
 
     update(expr) {
-        const value = evaluateExpr(this.value, expr, undefined, this.customizer);
+        const value = evaluateExpr(this.value, expr, this.customizer);
         this.value = value;
         return this;
     }

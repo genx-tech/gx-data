@@ -334,4 +334,29 @@ describe("unit:utils:expression", function () {
         pipelined.newItem.should.be.exactly("new");
         pipelined.highestScore.should.be.exactly(100);
     });
+
+    it("transform collection", function () {
+        let array = [
+            { user: 100, agency: 1, ":user": { email: "email1", other: "any" }, ":agency": { name: 'agency1', other: 'any' } },
+            { user: 101, agency: 1, ":user": { email: "email2", other: "any" }, ":agency": { name: 'agency1', other: 'any' } },
+            { user: 102, agency: 1, ":user": { email: "email3", other: "any" }, ":agency": { name: 'agency1', other: 'any' } },
+            { user: 103, agency: 2, ":user": { email: "email4", other: "any" }, ":agency": { name: 'agency2', other: 'any' } },
+            { user: 104, agency: 2, ":user": { email: "email5", other: "any" }, ":agency": { name: 'agency2', other: 'any' } },
+        ];
+
+        let transformed = JES.evaluate(array, {
+            '|>$apply': {
+                user: [ '$$CURRENT.:user', { $pick: [ 'email' ] } ],
+                agency: [ '$$CURRENT.:agency', { $pick: [ 'name' ] } ]
+            }
+        });
+
+        transformed.should.be.eql([
+            { user: { email: 'email1' }, agency: { name: 'agency1' } },
+            { user: { email: 'email2' }, agency: { name: 'agency1' } },
+            { user: { email: 'email3' }, agency: { name: 'agency1' } },
+            { user: { email: 'email4' }, agency: { name: 'agency2' } },
+            { user: { email: 'email5' }, agency: { name: 'agency2' } }
+          ]);
+    });
 });

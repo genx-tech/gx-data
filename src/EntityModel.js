@@ -191,6 +191,7 @@ class EntityModel {
      * @param {object} [findOptions] - findOptions     
      * @property {object} [findOptions.$association] - Joinings
      * @property {object} [findOptions.$projection] - Selected fields
+     * @property {object} [findOptions.$filter] - Filtering fields before returning
      * @property {object} [findOptions.$query] - Extra condition
      * @property {object} [findOptions.$groupBy] - Group by fields
      * @property {object} [findOptions.$orderBy] - Order by fields
@@ -246,6 +247,7 @@ class EntityModel {
      * @param {object} [findOptions] - findOptions     
      * @property {object} [findOptions.$association] - Joinings
      * @property {object} [findOptions.$projection] - Selected fields
+     * @property {object} [findOptions.$filter] - Filtering fields before returning
      * @property {object} [findOptions.$query] - Extra condition
      * @property {object} [findOptions.$groupBy] - Group by fields
      * @property {object} [findOptions.$orderBy] - Order by fields

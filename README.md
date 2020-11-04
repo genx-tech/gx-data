@@ -108,7 +108,7 @@ module.exports = Base => class extends Base {
 ```
 $projection: [ { type: 'function', name: 'MAX', alias: 'max', args: ['order'] } ],
 
-$projection: [this.db.connector.queryCount()],
+$projection: [ this.db.connector.queryCount() ],
 
 $projection: [
     '*',            
@@ -165,6 +165,19 @@ const numDeals = await this.findAll_({
 * $nestedKeyGetter - a getter function to transform the key of nested object, default as ':'+anchor for mysql
 * $skipUpdateTracking - Skip update tracking, to be replaced by $skipFeatures
 * $skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before
+* $transformer - Transform results before returning 
+```
+$transformer: {    
+    omit: [ // or pick
+        'password',
+        'passwordSalt
+    ],  
+    map: {
+        
+    }
+}
+
+```
 
 
 ## Connector options

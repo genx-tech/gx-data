@@ -961,12 +961,6 @@ class MySQLConnector extends Connector {
 
                                 params.push(`%${v}%`);
                                 return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' LIKE ?';
-                                /*
-                            case '$apply':
-                                let args = value.args ? [ fieldName ].concat(value.args) : [ fieldName ];
-
-                                return value.name + '(' + this._buildColumns(col.args, valuesSeq, hasJoining, aliasMap) + ') = '
-                                    */
 
                             case '$has':
                                 if (typeof v !== 'string' || v.indexOf(',') >= 0) {
