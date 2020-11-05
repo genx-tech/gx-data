@@ -720,11 +720,13 @@ class MySQLEntityModel extends EntityModel {
 
     static _extractAssociations(data, isNew) {
         const raw = {},
-            assocs = {};
+            assocs = {},
+            refs = {};
         const meta = this.meta.associations;
 
         _.forOwn(data, (v, k) => {
-            if (k.startsWith(":")) {
+            if (k[0] === ":") {
+                //cascade update
                 const anchor = k.substr(1);
                 const assocMeta = meta[anchor];
                 if (!assocMeta) {
@@ -738,12 +740,56 @@ class MySQLEntityModel extends EntityModel {
                 }
 
                 assocs[anchor] = v;
+            } else if (k[0] === "@") {
+                //update by reference
+                const anchor = k.substr(1);
+                const assocMeta = meta[anchor];
+                if (!assocMeta) {
+                    throw new ValidationError(`Unknown association "${anchor}" of entity "${this.meta.name}".`);
+                }
+
+                if (assocMeta.type !== "refersTo" && assocMeta.type !== "belongsTo") {
+                    throw new ValidationError(`Association type "${assocMeta.type}" cannot be used for update by reference.`, {
+                        entity: this.meta.name,
+                        data
+                    });
+                }
+
+                if (isNew && anchor in data) {
+                    throw new ValidationError(
+                        `Association reference "@${anchor}" of entity "${this.meta.name}" conflicts with input value of field "${anchor}".`
+                    );
+                }
+
+                const assocAnchor = ":" + anchor;
+                if (assocAnchor in data) {
+                    throw new ValidationError(
+                        `Association reference "@${anchor}" of entity "${this.meta.name}" conflicts with association data "${assocAnchor}".`
+                    );
+                }
+
+                refs[anchor] = v;
             } else {
                 raw[k] = v;
             }
         });
 
-        return [raw, assocs];
+        return [raw, assocs, refs];
+    }
+
+    static async _populateReferences_(context, references) {
+        const meta = this.meta.associations;
+
+        await eachAsync_(references, async (refQuery, anchor) => {
+            const assocMeta = meta[anchor];
+            const ReferencedEntity = this.db.model(assocMeta.entity);
+
+            assert: !assocMeta.list;
+
+            let created = await ReferencedEntity.findOne_(refQuery, context.connOptions);
+
+            context.raw[anchor] = created[assocMeta.field];
+        });
     }
 
     static async _createAssocs_(context, assocs, beforeEntityCreate) {
@@ -826,7 +872,13 @@ class MySQLEntityModel extends EntityModel {
             finished[anchor] = beforeEntityCreate ? created[assocMeta.field] : created[assocMeta.key];
         });
 
-        return [finished, pendingAssocs];
+        if (beforeEntityCreate) {
+            _.forOwn(finished, (refFieldValue, localField) => {
+                context.raw[localField] = refFieldValue;
+            });
+        }
+
+        return pendingAssocs;
     }
 
     static async _updateAssocs_(context, assocs, beforeEntityUpdate, forSingleRecord) {

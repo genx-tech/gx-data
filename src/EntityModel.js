@@ -11,6 +11,7 @@ const Features = require('./entityFeatures');
 const Rules = require('./enum/Rules');
 
 const { isNothing, hasValueIn } = require('./utils/lang');
+const JES = require('./utils/jes');
 
 const NEED_OVERRIDE = 'Should be overrided by driver-specific subclass.';
 
@@ -191,7 +192,7 @@ class EntityModel {
      * @param {object} [findOptions] - findOptions     
      * @property {object} [findOptions.$association] - Joinings
      * @property {object} [findOptions.$projection] - Selected fields
-     * @property {object} [findOptions.$filter] - Filtering fields before returning
+     * @property {object} [findOptions.$transformer] - Transform fields before returning
      * @property {object} [findOptions.$query] - Extra condition
      * @property {object} [findOptions.$groupBy] - Group by fields
      * @property {object} [findOptions.$orderBy] - Order by fields
@@ -215,7 +216,7 @@ class EntityModel {
 
         await Features.applyRules_(Rules.RULE_BEFORE_FIND, this, context);  
 
-        return this._safeExecute_(async (context) => {            
+        const result = this._safeExecute_(async (context) => {            
             let records = await this.db.connector.find_(
                 this.meta.name, 
                 context.options, 
@@ -240,6 +241,12 @@ class EntityModel {
 
             return result;
         }, context);
+
+        if (findOptions.$transformer) {
+            return JES.evaluate(result, findOptions.$transformer);
+        }
+
+        return result;
     }
 
     /**
@@ -247,7 +254,7 @@ class EntityModel {
      * @param {object} [findOptions] - findOptions     
      * @property {object} [findOptions.$association] - Joinings
      * @property {object} [findOptions.$projection] - Selected fields
-     * @property {object} [findOptions.$filter] - Filtering fields before returning
+     * @property {object} [findOptions.$transformer] - Transform fields before returning
      * @property {object} [findOptions.$query] - Extra condition
      * @property {object} [findOptions.$groupBy] - Group by fields
      * @property {object} [findOptions.$orderBy] - Order by fields
@@ -303,6 +310,10 @@ class EntityModel {
             return this.afterFindAll_(context, records);            
         }, context);
 
+        if (findOptions.$transformer) {
+            rows = rows.map(row => JES.evaluate(row, findOptions.$transformer));
+        }
+
         if (findOptions.$totalCount) {
             let ret = { totalItems: totalCount, items: rows };
 
@@ -337,7 +348,7 @@ class EntityModel {
             createOptions = {}; 
         }
 
-        let [ raw, associations ] = this._extractAssociations(data, true);
+        let [ raw, associations, references ] = this._extractAssociations(data, true);
 
         let context = {              
             op: 'create',
@@ -352,17 +363,17 @@ class EntityModel {
         }        
 
         let success = await this._safeExecute_(async (context) => { 
+            if (!_.isEmpty(references)) {
+                await this.ensureTransaction_(context);     
+                await this._populateReferences_(context, references);          
+            }            
+
             let needCreateAssocs = !_.isEmpty(associations);
             if (needCreateAssocs) {  
-                await this.ensureTransaction_(context);                       
+                await this.ensureTransaction_(context); 
 
-                const [ finished, pendingAssocs ] = await this._createAssocs_(context, associations, true /* before create */);            
-                
-                _.forOwn(finished, (refFieldValue, localField) => {
-                    raw[localField] = refFieldValue;
-                });
-
-                associations = pendingAssocs;
+                associations = await this._createAssocs_(context, associations, true /* before create */);            
+                //check any other associations left
                 needCreateAssocs = !_.isEmpty(associations);
             }
 
@@ -475,7 +486,7 @@ class EntityModel {
         }
 
         //see if there is associated entity data provided together
-        let [ raw, associations ] = this._extractAssociations(data);
+        let [ raw, associations, references ] = this._extractAssociations(data);
 
         let context = { 
             op: 'update',
@@ -500,6 +511,11 @@ class EntityModel {
         }        
         
         let success = await this._safeExecute_(async (context) => {
+            if (!_.isEmpty(references)) {
+                await this.ensureTransaction_(context);     
+                await this._populateReferences_(context, references);          
+            }     
+            
             let needUpdateAssocs = !_.isEmpty(associations);
             let doneUpdateAssocs;
 
@@ -1245,6 +1261,12 @@ class EntityModel {
         throw new Error(NEED_OVERRIDE);    
     }
 
+    //will update context.raw if applicable
+    static async _populateReferences_(context, references) {
+        throw new Error(NEED_OVERRIDE);
+    }
+
+    //will update context.raw if applicable
     static async _createAssocs_(context, assocs) {
         throw new Error(NEED_OVERRIDE);
     }

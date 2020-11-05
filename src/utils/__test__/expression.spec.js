@@ -290,7 +290,7 @@ describe("unit:utils:expression", function () {
         ]).value.should.be.exactly(204021);
     });
 
-    it("eval array", function () {
+    it.only("eval array", function () {
         let obj = {
             keep: "keep",
             items: [
@@ -323,6 +323,8 @@ describe("unit:utils:expression", function () {
                 }
             ],
         });
+
+        console.log(pipelined);
 
         should.exist(pipelined.keep);
         should.exist(pipelined.newItem);
