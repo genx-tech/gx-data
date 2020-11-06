@@ -22,25 +22,21 @@ const REQUIRE_RIGHT_OPERAND = op => `Binary query operator "${op}" requires the 
 //Condition operator
 const OP_EQUAL = [ '$eq', '$eql', '$equal' ];
 const OP_NOT_EQUAL = [ '$ne', '$neq', '$notEqual' ];
-
+const OP_NOT = [ '$not' ];
 const OP_GREATER_THAN = [ '$gt', '$>', '$greaterThan' ];
 const OP_GREATER_THAN_OR_EQUAL = [ '$gte', '$<=', '$greaterThanOrEqual' ];
-
 const OP_LESS_THAN = [ '$lt', '$<', '$lessThan' ];
 const OP_LESS_THAN_OR_EQUAL = [ '$lte', '$<=', '$lessThanOrEqual' ];
 
 const OP_IN = [ '$in' ];
 const OP_NOT_IN = [ '$nin', '$notIn' ];
-
 const OP_EXISTS = [ '$exist', '$exists' ];
-
 const OP_MATCH = [ '$has', '$match', '$all' ];
-
 const OP_MATCH_ANY = [ '$any', '$or', '$either' ];
-
 const OP_TYPE = [ '$is', '$typeOf' ];
-
 const OP_HAS_KEYS = [ '$hasKeys', '$withKeys' ];
+const OP_START_WITH = [ '$startWith', '$startsWith' ];
+const OP_END_WITH = [ '$endWith', '$endsWith' ];
 
 //Query & aggregate operator
 const OP_SIZE = [ '$size', '$length', '$count' ];
@@ -64,6 +60,7 @@ const OP_GROUP = [ '$group', '$groupBy' ];
 const OP_SORT = [ '$sort', '$orderBy', '$sortBy' ];
 const OP_REVERSE = [ '$reverse' ];
 const OP_EVAL = [ '$eval', '$apply' ];
+const OP_MERGE = [ '$merge' ];
 
 const PFX_FOR_EACH = '|>'; // for each
 const PFX_WITH_ANY = '|*'; // with any
@@ -72,6 +69,7 @@ const MapOfOps = new Map();
 const addOpToMap = (tokens, tag) => tokens.forEach(token => MapOfOps.set(token, tag));
 addOpToMap(OP_EQUAL, 'OP_EQUAL');
 addOpToMap(OP_NOT_EQUAL, 'OP_NOT_EQUAL');
+addOpToMap(OP_NOT, 'OP_NOT');
 addOpToMap(OP_GREATER_THAN, 'OP_GREATER_THAN');
 addOpToMap(OP_GREATER_THAN_OR_EQUAL, 'OP_GREATER_THAN_OR_EQUAL');
 addOpToMap(OP_LESS_THAN, 'OP_LESS_THAN');
@@ -83,6 +81,8 @@ addOpToMap(OP_MATCH, 'OP_MATCH');
 addOpToMap(OP_MATCH_ANY, 'OP_MATCH_ANY');
 addOpToMap(OP_TYPE, 'OP_TYPE');
 addOpToMap(OP_HAS_KEYS, 'OP_HAS_KEYS');
+addOpToMap(OP_START_WITH, 'OP_START_WITH');
+addOpToMap(OP_END_WITH, 'OP_END_WITH');
 
 const MapOfMans = new Map();
 const addManToMap = (tokens, tag) => tokens.forEach(token => MapOfMans.set(token, tag));
@@ -106,10 +106,12 @@ addManToMap(OP_OMIT, ['OP_OMIT', false]);
 addManToMap(OP_GROUP, ['OP_GROUP', false]);
 addManToMap(OP_SORT, ['OP_SORT', false]);
 addManToMap(OP_EVAL, ['OP_EVAL', false]);
+addManToMap(OP_MERGE, ['OP_MERGE', false]);
 
 const defaultJesHandlers = {
     OP_EQUAL: (left, right) => _.isEqual(left, right),
     OP_NOT_EQUAL: (left, right) => !_.isEqual(left, right),
+    OP_NOT: (left, ...args) => !test(left, 'OP_MATCH', ...args),
     OP_GREATER_THAN: (left, right) => left > right,
     OP_GREATER_THAN_OR_EQUAL: (left, right) => left >= right,
     OP_LESS_THAN: (left, right) => left < right,
@@ -185,7 +187,23 @@ const defaultJesHandlers = {
         if (typeof left !== "object") return false;
 
         return _.every(right, key => hasKeyByPath(left, key));
-    }    
+    },
+    OP_START_WITH: (left, right) => {
+        if (typeof left !== "string") return false;
+        if (typeof right !== 'string') {
+            throw new Error(OPERAND_NOT_STRING('OP_START_WITH'));
+        }
+
+        return left.startsWith(right);
+    },
+    OP_END_WITH: (left, right) => {
+        if (typeof left !== "string") return false;
+        if (typeof right !== 'string') {
+            throw new Error(OPERAND_NOT_STRING('OP_END_WITH'));
+        }
+
+        return left.endsWith(right);
+    }       
 };
 
 const defaultManipulations = {
@@ -207,13 +225,30 @@ const defaultManipulations = {
     OP_MUL: (left, right) => left * right,
     OP_DIV: (left, right) => left / right, 
     OP_SET: (left, right) => right, 
-    OP_PICK: (left, right) => _.pick(left, right),
+    OP_PICK: (left, right, jes, prefix) => {
+        if (typeof right !== "object") {
+            right = _.castArray(right);
+        }
+
+        if (Array.isArray(right)) {
+            return _.pick(left, right);
+        } 
+
+        return _.pickBy(left, (x, key) => match(key, right, jes, prefix)[0]);
+    },
     OP_GET_BY_INDEX: (left, right) => _.nth(left, right),
     OP_GET_BY_KEY: (left, right) => _.get(left, right),
     OP_OMIT: (left, right) => _.omit(left, right),
     OP_GROUP: (left, right) => _.groupBy(left, right),
     OP_SORT: (left, right) => _.sortBy(left, right),  
     OP_EVAL: evaluateExpr,
+    OP_MERGE: (left, right, ...args) => {
+        if (!Array.isArray(right)) {
+            throw new Error(OPERAND_NOT_ARRAY('OP_MERGE'));
+        }
+        
+        return right.reduce((result, expr) => Object.assign(result, evaluateExpr(left, expr, ...args)), {});
+    } 
 }
 
 const formatName = (name, prefix) => {
@@ -229,6 +264,7 @@ const formatAny = (name) => `any(->${name})`;
 const defaultJesExplanations = {
     OP_EQUAL: (name, left, right, prefix) => `${formatName(name, prefix)} should be ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,
     OP_NOT_EQUAL: (name, left, right, prefix) => `${formatName(name, prefix)} should not be ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,
+    OP_NOT: (name, left, right, prefix) => `${formatName(name, prefix)} should not match ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,    
     OP_GREATER_THAN: (name, left, right, prefix) => `${formatName(name, prefix)} should be greater than ${right}, but ${JSON.stringify(left)} given.`,
     OP_GREATER_THAN_OR_EQUAL: (name, left, right, prefix) => `${formatName(name, prefix)} should be greater than or equal to ${right}, but ${JSON.stringify(left)} given.`,
     OP_LESS_THAN: (name, left, right, prefix) => `${formatName(name, prefix)} should be less than ${right}, but ${JSON.stringify(left)} given.`,
@@ -240,6 +276,8 @@ const defaultJesExplanations = {
     OP_MATCH: (name, left, right, prefix) => `${formatName(name, prefix)} should match ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,    
     OP_MATCH_ANY: (name, left, right, prefix) => `${formatName(name, prefix)} should match any of ${JSON.stringify(right)}, but ${JSON.stringify(left)} given.`,    
     OP_HAS_KEYS: (name, left, right, prefix) => `${formatName(name, prefix)} should have all of these keys [${right.join(', ')}].`,        
+    OP_START_WITH: (name, left, right, prefix) => `${formatName(name, prefix)} should start with "${right}".`,        
+    OP_END_WITH: (name, left, right, prefix) => `${formatName(name, prefix)} should end with "${right}".`,        
 };
 
 const defaultQueryExplanations = {
@@ -264,6 +302,7 @@ const defaultQueryExplanations = {
     OP_GROUP: 'groupBy',
     OP_SORT: 'sortBy',
     OP_EVAL: 'evaluate',
+    OP_MERGE: 'merge'
 };
 
 function getUnmatchedExplanation(jes, op, name, leftValue, rightValue, prefix) {
@@ -531,7 +570,7 @@ function match(actual, expected, jes, prefix) {
  * If $ operator used, only one a time is allowed
  * e.g.
  * {
- *    $groupBy: 'jfiejf'
+ *    $groupBy: 'key'
  * }
  * 
  * 

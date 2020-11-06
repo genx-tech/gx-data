@@ -206,8 +206,8 @@ describe("unit:utils:expression", function () {
         jeso.match({
             $$size: 4,
             key1: {
-                $$type: 'integer'
-            }
+                $$type: "integer",
+            },
         });
 
         jeso.match({
@@ -290,7 +290,7 @@ describe("unit:utils:expression", function () {
         ]).value.should.be.exactly(204021);
     });
 
-    it.only("eval array", function () {
+    it("eval array", function () {
         let obj = {
             keep: "keep",
             items: [
@@ -299,32 +299,30 @@ describe("unit:utils:expression", function () {
                 { name: "Jane", score: 80 },
                 { name: "Peter", score: 100 },
             ],
-            ignored: 'ingored',
-            exlcluded: 'exlcluded'
+            ignored: "ingored",
+            exlcluded: "exlcluded",
         };
 
         let jeso = new JES(obj);
 
         const pipelined = jeso.evaluate({
-            keep: true, 
-            excluded: false,      
-            newItem: { $set: "new" },      
+            keep: true,
+            excluded: false,
+            newItem: { $set: "new" },
             highestScore: [
-                "$$CURRENT.items",                
+                "$$CURRENT.items",
                 {
                     $sortBy: "score",
                 },
                 "$reverse",
                 {
-                    "$nth": 0,
+                    $nth: 0,
                 },
                 {
-                    "$of": "score"
-                }
+                    $of: "score",
+                },
             ],
         });
-
-        console.log(pipelined);
 
         should.exist(pipelined.keep);
         should.exist(pipelined.newItem);
@@ -339,26 +337,192 @@ describe("unit:utils:expression", function () {
 
     it("transform collection", function () {
         let array = [
-            { user: 100, agency: 1, ":user": { email: "email1", other: "any" }, ":agency": { name: 'agency1', other: 'any' } },
-            { user: 101, agency: 1, ":user": { email: "email2", other: "any" }, ":agency": { name: 'agency1', other: 'any' } },
-            { user: 102, agency: 1, ":user": { email: "email3", other: "any" }, ":agency": { name: 'agency1', other: 'any' } },
-            { user: 103, agency: 2, ":user": { email: "email4", other: "any" }, ":agency": { name: 'agency2', other: 'any' } },
-            { user: 104, agency: 2, ":user": { email: "email5", other: "any" }, ":agency": { name: 'agency2', other: 'any' } },
+            {
+                user: 100,
+                agency: 1,
+                ":user": { email: "email1", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 101,
+                agency: 1,
+                ":user": { email: "email2", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 102,
+                agency: 1,
+                ":user": { email: "email3", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 103,
+                agency: 2,
+                ":user": { email: "email4", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
+            {
+                user: 104,
+                agency: 2,
+                ":user": { email: "email5", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
         ];
 
         let transformed = JES.evaluate(array, {
-            '|>$apply': {
-                user: [ '$$CURRENT.:user', { $pick: [ 'email' ] } ],
-                agency: [ '$$CURRENT.:agency', { $pick: [ 'name' ] } ]
-            }
+            "|>$apply": {
+                user: ["$$CURRENT.:user", { $pick: ["email"] }],
+                agency: ["$$CURRENT.:agency", { $pick: ["name"] }],
+            },
         });
 
         transformed.should.be.eql([
-            { user: { email: 'email1' }, agency: { name: 'agency1' } },
-            { user: { email: 'email2' }, agency: { name: 'agency1' } },
-            { user: { email: 'email3' }, agency: { name: 'agency1' } },
-            { user: { email: 'email4' }, agency: { name: 'agency2' } },
-            { user: { email: 'email5' }, agency: { name: 'agency2' } }
+            { user: { email: "email1" }, agency: { name: "agency1" } },
+            { user: { email: "email2" }, agency: { name: "agency1" } },
+            { user: { email: "email3" }, agency: { name: "agency1" } },
+            { user: { email: "email4" }, agency: { name: "agency2" } },
+            { user: { email: "email5" }, agency: { name: "agency2" } },
+        ]);
+    });
+
+    it("transform collection - merge", function () {
+        let array = [
+            {
+                user: 100,
+                agency: 1,
+                ":user": { email: "email1", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 101,
+                agency: 1,
+                ":user": { email: "email2", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 102,
+                agency: 1,
+                ":user": { email: "email3", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 103,
+                agency: 2,
+                ":user": { email: "email4", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
+            {
+                user: 104,
+                agency: 2,
+                ":user": { email: "email5", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
+        ];
+
+        let transformed = JES.evaluate(array, {
+            "|>$apply": {
+                $merge: [
+                    {
+                        $pick: {
+                            $not: {
+                                $startWith: ":",
+                            },
+                        },
+                    },
+                    {
+                        "@user": ["$$CURRENT.:user", { $pick: ["email"] }],
+                        "@agency": ["$$CURRENT.:agency", { $pick: ["name"] }],
+                    },
+                ],
+            },
+        });
+
+        transformed.should.be.eql([
+            {
+              user: 100,
+              agency: 1,
+              '@user': { email: 'email1' },
+              '@agency': { name: 'agency1' }
+            },
+            {
+              user: 101,
+              agency: 1,
+              '@user': { email: 'email2' },
+              '@agency': { name: 'agency1' }
+            },
+            {
+              user: 102,
+              agency: 1,
+              '@user': { email: 'email3' },
+              '@agency': { name: 'agency1' }
+            },
+            {
+              user: 103,
+              agency: 2,
+              '@user': { email: 'email4' },
+              '@agency': { name: 'agency2' }
+            },
+            {
+              user: 104,
+              agency: 2,
+              '@user': { email: 'email5' },
+              '@agency': { name: 'agency2' }
+            }
           ]);
+    });
+
+    it("pick by jes", function () {
+        let array = [
+            {
+                user: 100,
+                agency: 1,
+                ":user": { email: "email1", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 101,
+                agency: 1,
+                ":user": { email: "email2", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 102,
+                agency: 1,
+                ":user": { email: "email3", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                user: 103,
+                agency: 2,
+                ":user": { email: "email4", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
+            {
+                user: 104,
+                agency: 2,
+                ":user": { email: "email5", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
+        ];
+
+        let transformed = JES.evaluate(array, {
+            "|>$apply": [
+                {
+                    $pick: {
+                        $not: {
+                            $startWith: ":",
+                        },
+                    },
+                },
+            ],
+        });
+
+        transformed.should.be.eql([
+            { user: 100, agency: 1 },
+            { user: 101, agency: 1 },
+            { user: 102, agency: 1 },
+            { user: 103, agency: 2 },
+            { user: 104, agency: 2 },
+        ]);
     });
 });
