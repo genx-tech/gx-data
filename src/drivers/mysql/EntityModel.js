@@ -813,6 +813,12 @@ class MySQLEntityModel extends EntityModel {
 
                     const query = this.getUniqueKeyValuePairsFrom(context.return);
                     context.return = await this.findOne_({ $query: query }, context.connOptions);
+                    if (!context.return) {
+                        throw new ApplicationError("The parent entity is duplicated on unique keys different from the pair of keys used to query", {
+                            query,
+                            latest: context.latest
+                        })
+                    }
                 }
 
                 keyValue = context.return[this.meta.keyField];

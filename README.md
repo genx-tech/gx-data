@@ -129,7 +129,7 @@ $association = [ 'person' ];
 
 {
     "$query": {
-        "ownerUser.email": "+61412345673"
+        "ownerUser.mobile": "+61412345673"
     },
     "$bypassEnsureUnique": true,
     "$association": [

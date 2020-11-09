@@ -21,8 +21,8 @@ module.exports = {
         return value;
     },
 
-    generator: function (model, context, value) {
-        return Generators.default(value);
+    generator: function (model, context, name, ...infoI18nOpts) {
+        return Generators[name](...infoI18nOpts);
     },
 
     concat: (model, context, sep = '', ...strs) => strs.join(sep),

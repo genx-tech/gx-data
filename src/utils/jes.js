@@ -57,7 +57,7 @@ const OP_SUB = [ '$sub', '$subtract', '$minus', '$dec' ];
 const OP_MUL = [ '$mul', '$multiply',  '$times' ];
 const OP_DIV = [ '$div', '$divide' ];
 const OP_SET = [ '$set', '$=' ];
-const OP_ADD_ITEM = [ '$addItem' ];
+const OP_ADD_ITEM = [ '$addItem', '$override' ];
 
 const OP_PICK = [ '$pick' ];
 const OP_GET_BY_INDEX = [ '$at', '$getByIndex', '$nth' ];
@@ -250,7 +250,7 @@ const defaultManipulations = {
             throw new Error(OPERAND_NOT_TUPLE('OP_ADD_ITEM'));
         }
 
-        return { ...left, [right[0]]: evaluateExpr(undefined, right[1], jes, prefix, context, true) };
+        return { ...left, [right[0]]: evaluateExpr(left, right[1], jes, prefix, { ...context, $$PARENT: context.$$CURRENT, $$CURRENT: left }) };
     }, 
     OP_PICK: (left, right, jes, prefix) => {
         if (left == null) return null;
