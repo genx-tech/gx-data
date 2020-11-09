@@ -289,8 +289,6 @@ const defaultManipulations = {
 
         const condition = evaluateExpr(undefined, right[0], jes, prefix, context, true);
 
-        console.log(left, condition);
-
         if (test(left, 'OP_MATCH', condition, jes, prefix)) {
             console.log('true');
             return evaluateExpr(left, right[1], jes, prefix, context);
