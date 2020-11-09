@@ -289,16 +289,13 @@ const defaultManipulations = {
 
         const condition = evaluateExpr(undefined, right[0], jes, prefix, context, true);
 
-        if (test(left, 'OP_MATCH', condition, jes, prefix)) {
-            console.log('true');
+        if (test(left, 'OP_MATCH', condition, jes, prefix)) {            
             return evaluateExpr(left, right[1], jes, prefix, context);
         } else if (right.length > 2) {            
             const ret = evaluateExpr(left, right[2], jes, prefix, context);
-            console.log('false', ret);
             return ret;
         }
 
-        console.log('false');
         return left;
     }
 }

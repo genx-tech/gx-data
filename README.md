@@ -124,6 +124,29 @@ $projection: [
 
 ```
 * $association - No trailing (s).
+```
+$association = [ 'person' ];
+
+{
+    "$query": {
+        "ownerUser.email": "+61412345673"
+    },
+    "$bypassEnsureUnique": true,
+    "$association": [
+        {
+            "entity": "user",
+            "alias": "ownerUser",
+            "on": {
+                "id": {
+                    "oorType": "ColumnReference",
+                    "name": "ownerUser.person"
+                }
+            }
+        }
+    ]
+}
+```
+
 * $relationships - Transformed from raw $association, used by the EntityModel internally 
 * $query - Query condition
 * $variables - Variables to interpolate into query condition, will be passed on to associated operation

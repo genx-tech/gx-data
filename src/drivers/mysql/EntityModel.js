@@ -396,7 +396,7 @@ class MySQLEntityModel extends EntityModel {
 
         associations.forEach((assoc) => {
             if (_.isPlainObject(assoc)) {
-                assoc = this._translateSchemaNameToDb(assoc, this.db.schemaName);
+                assoc = this._translateSchemaNameToDb(assoc);
 
                 let alias = assoc.alias;
                 if (!assoc.alias) {
