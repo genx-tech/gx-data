@@ -515,7 +515,7 @@ class EntityModel {
                 await this.ensureTransaction_(context);     
                 await this._populateReferences_(context, references);          
             }     
-            
+
             let needUpdateAssocs = !_.isEmpty(associations);
             let doneUpdateAssocs;
 

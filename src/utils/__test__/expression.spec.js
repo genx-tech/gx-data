@@ -471,33 +471,38 @@ describe("unit:utils:expression", function () {
           ]);
     });
 
-    it("pick by jes", function () {
+    it("pick & omit by jes", function () {
         let array = [
             {
+                id: 1,
                 user: 100,
                 agency: 1,
                 ":user": { email: "email1", other: "any" },
                 ":agency": { name: "agency1", other: "any" },
             },
             {
+                id: 2,
                 user: 101,
                 agency: 1,
                 ":user": { email: "email2", other: "any" },
                 ":agency": { name: "agency1", other: "any" },
             },
             {
+                id: 3,
                 user: 102,
                 agency: 1,
                 ":user": { email: "email3", other: "any" },
                 ":agency": { name: "agency1", other: "any" },
             },
             {
+                id: 4,
                 user: 103,
                 agency: 2,
                 ":user": { email: "email4", other: "any" },
                 ":agency": { name: "agency2", other: "any" },
             },
             {
+                id: 5,
                 user: 104,
                 agency: 2,
                 ":user": { email: "email5", other: "any" },
@@ -514,15 +519,21 @@ describe("unit:utils:expression", function () {
                         },
                     },
                 },
+                {
+                    $omit: [ 'id' ],
+                },
+                {
+                    $addItem: [ "$test", "$$CURRENT.id" ]
+                }
             ],
         });
 
         transformed.should.be.eql([
-            { user: 100, agency: 1 },
-            { user: 101, agency: 1 },
-            { user: 102, agency: 1 },
-            { user: 103, agency: 2 },
-            { user: 104, agency: 2 },
+            { user: 100, agency: 1, '$test': 1 },
+            { user: 101, agency: 1, '$test': 2  },
+            { user: 102, agency: 1, '$test': 3  },
+            { user: 103, agency: 2, '$test': 4  },
+            { user: 104, agency: 2, '$test': 5  },
         ]);
     });
 });

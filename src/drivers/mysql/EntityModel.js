@@ -3,7 +3,7 @@
 const Util = require("rk-utils");
 const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
 const EntityModel = require("../../EntityModel");
-const { ApplicationError, DatabaseError, ReferencedNotExistError, DuplicateError, ValidationError, InvalidArgument } = require("../../utils/Errors");
+const { ApplicationError, ReferencedNotExistError, DuplicateError, ValidationError, InvalidArgument } = require("../../utils/Errors");
 const Types = require("../../types");
 const { getValueFrom, mapFilter } = require("../../utils/lang");
 
@@ -768,7 +768,11 @@ class MySQLEntityModel extends EntityModel {
                     );
                 }
 
-                refs[anchor] = v;
+                if (v == null) {
+                    raw[anchor] = null;
+                } else {
+                    refs[anchor] = v;
+                }                
             } else {
                 raw[k] = v;
             }
@@ -787,6 +791,10 @@ class MySQLEntityModel extends EntityModel {
             assert: !assocMeta.list;
 
             let created = await ReferencedEntity.findOne_(refQuery, context.connOptions);
+
+            if (!created) {
+                throw new ReferencedNotExistError(`Referenced entity "${ReferencedEntity.meta.name}" with ${JSON.stringify(refQuery)} not exist.`);
+            }
 
             context.raw[anchor] = created[assocMeta.field];
         });

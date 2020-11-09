@@ -4,18 +4,24 @@ const { ValidationError } = require('./Errors');
 
 //Exception messages
 const OPERATOR_NOT_ALONE = 'Query operator can only be used alone in a stage.';
+const NOT_A_UNARY_QUERY = 'Only unary query operator is allowed to be used directly in a matching.';
+const INVALID_EXPR_SYNTAX = 'Invalid expression syntax.';
+
 const INVALID_QUERY_OPERATOR = token => `Invalid JES query operator "${token}".`;
 const INVALID_TEST_OPERATOR = token => `Invalid JES test operator "${token}".`;
 const INVALID_QUERY_HANDLER = op => `JES query operator "${op}" handler not found.`;
 const INVALID_TEST_HANLDER = op => `JES test operator "${op}" handler not found.`;
-const NOT_A_TWO_TUPLE = 'The value of collection operator should be a two-tuple.';
-const NOT_A_UNARY_QUERY = 'Only unary query operator is allowed to be used directly in a matching.';
+
 const INVALID_COLLECTION_OP = op => `Invalid collection operator "${op}".`;
 const PRX_OP_NOT_FOR_EVAL = prefix => `Operator prefix "${prefix}" cannot be used in evaluation.`;
 
-const OPERAND_NOT_ARRAY = op => `The right operand of JES operator "${op}" should be an array.`;
-const OPERAND_NOT_BOOL= op => `The right operand of JES operator "${op}" should be a boolean value.`;
-const OPERAND_NOT_STRING= op => `The right operand of JES operator "${op}" should be a string.`;
+const OPERAND_NOT_TUPLE = op => `The operand of a collection operator ${op ? '" + op + " ' : ''}must be a two-tuple.`;
+const OPERAND_NOT_TUPLE_2_OR_3 = op => `The operand of a "${op}" operator must be either a 2-tuple or a 3-tuple.`;
+const OPERAND_NOT_ARRAY = op => `The operand of a "${op}" operator must be an array.`;
+const OPERAND_NOT_BOOL = op => `The operand of a "${op}" operator must be a boolean value.`;
+const OPERAND_NOT_STRING = op => `The operand of a "${op}" operator must be a string.`;
+
+const VALUE_NOT_COLLECTION = op => `The value using a "${op}" operator must be either an object or an array.`;
 
 const REQUIRE_RIGHT_OPERAND = op => `Binary query operator "${op}" requires the right operand.`
 
@@ -30,7 +36,7 @@ const OP_LESS_THAN_OR_EQUAL = [ '$lte', '$<=', '$lessThanOrEqual' ];
 
 const OP_IN = [ '$in' ];
 const OP_NOT_IN = [ '$nin', '$notIn' ];
-const OP_EXISTS = [ '$exist', '$exists' ];
+const OP_EXISTS = [ '$exist', '$exists', '$notNull' ];
 const OP_MATCH = [ '$has', '$match', '$all' ];
 const OP_MATCH_ANY = [ '$any', '$or', '$either' ];
 const OP_TYPE = [ '$is', '$typeOf' ];
@@ -51,6 +57,7 @@ const OP_SUB = [ '$sub', '$subtract', '$minus', '$dec' ];
 const OP_MUL = [ '$mul', '$multiply',  '$times' ];
 const OP_DIV = [ '$div', '$divide' ];
 const OP_SET = [ '$set', '$=' ];
+const OP_ADD_ITEM = [ '$addItem' ];
 
 const OP_PICK = [ '$pick' ];
 const OP_GET_BY_INDEX = [ '$at', '$getByIndex', '$nth' ];
@@ -61,6 +68,9 @@ const OP_SORT = [ '$sort', '$orderBy', '$sortBy' ];
 const OP_REVERSE = [ '$reverse' ];
 const OP_EVAL = [ '$eval', '$apply' ];
 const OP_MERGE = [ '$merge' ];
+
+//Condition operation
+const OP_IF = [ '$if' ];
 
 const PFX_FOR_EACH = '|>'; // for each
 const PFX_WITH_ANY = '|*'; // with any
@@ -99,6 +109,7 @@ addManToMap(OP_SUB, ['OP_SUB', false ]);
 addManToMap(OP_MUL, ['OP_MUL', false ]);
 addManToMap(OP_DIV, ['OP_DIV', false ]);
 addManToMap(OP_SET, ['OP_SET', false ]);
+addManToMap(OP_ADD_ITEM, ['OP_ADD_ITEM', false ]);
 addManToMap(OP_PICK, ['OP_PICK', false]);
 addManToMap(OP_GET_BY_INDEX, ['OP_GET_BY_INDEX', false]);
 addManToMap(OP_GET_BY_KEY, ['OP_GET_BY_KEY', false]);
@@ -107,6 +118,7 @@ addManToMap(OP_GROUP, ['OP_GROUP', false]);
 addManToMap(OP_SORT, ['OP_SORT', false]);
 addManToMap(OP_EVAL, ['OP_EVAL', false]);
 addManToMap(OP_MERGE, ['OP_MERGE', false]);
+addManToMap(OP_IF, ['OP_IF', false]);
 
 const defaultJesHandlers = {
     OP_EQUAL: (left, right) => _.isEqual(left, right),
@@ -224,8 +236,25 @@ const defaultManipulations = {
     OP_SUB: (left, right) => left - right,
     OP_MUL: (left, right) => left * right,
     OP_DIV: (left, right) => left / right, 
-    OP_SET: (left, right) => right, 
+    OP_SET: (left, right, jes, prefix, context) => evaluateExpr(undefined, right, jes, prefix, context, true), 
+    OP_ADD_ITEM: (left, right, jes, prefix, context) => {
+        if (typeof left !== "object") {
+            throw new ValidationError(VALUE_NOT_COLLECTION('OP_ADD_ITEM'));
+        }
+
+        if (Array.isArray(left)) {
+            return left.concat(right);
+        }
+
+        if (!Array.isArray(right) || right.length !== 2) {
+            throw new Error(OPERAND_NOT_TUPLE('OP_ADD_ITEM'));
+        }
+
+        return { ...left, [right[0]]: evaluateExpr(undefined, right[1], jes, prefix, context, true) };
+    }, 
     OP_PICK: (left, right, jes, prefix) => {
+        if (left == null) return null;
+
         if (typeof right !== "object") {
             right = _.castArray(right);
         }
@@ -238,17 +267,42 @@ const defaultManipulations = {
     },
     OP_GET_BY_INDEX: (left, right) => _.nth(left, right),
     OP_GET_BY_KEY: (left, right) => _.get(left, right),
-    OP_OMIT: (left, right) => _.omit(left, right),
+    OP_OMIT: (left, right) => left == null ? null : _.omit(left, right),
     OP_GROUP: (left, right) => _.groupBy(left, right),
     OP_SORT: (left, right) => _.sortBy(left, right),  
     OP_EVAL: evaluateExpr,
-    OP_MERGE: (left, right, ...args) => {
+    OP_MERGE: (left, right, jes, prefix, context) => {
         if (!Array.isArray(right)) {
             throw new Error(OPERAND_NOT_ARRAY('OP_MERGE'));
         }
         
-        return right.reduce((result, expr) => Object.assign(result, evaluateExpr(left, expr, ...args)), {});
-    } 
+        return right.reduce((result, expr) => Object.assign(result, evaluateExpr(left, expr, jes, prefix, { ...context })), {});
+    },
+    OP_IF: (left, right, jes, prefix, context) => {
+        if (!Array.isArray(right)) {
+            throw new Error(OPERAND_NOT_ARRAY('OP_IF'));
+        }
+
+        if (right.length < 2 || right.length > 3) {
+            throw new Error(OPERAND_NOT_TUPLE_2_OR_3('OP_IF'));
+        }
+
+        const condition = evaluateExpr(undefined, right[0], jes, prefix, context, true);
+
+        console.log(left, condition);
+
+        if (test(left, 'OP_MATCH', condition, jes, prefix)) {
+            console.log('true');
+            return evaluateExpr(left, right[1], jes, prefix, context);
+        } else if (right.length > 2) {            
+            const ret = evaluateExpr(left, right[2], jes, prefix, context);
+            console.log('false', ret);
+            return ret;
+        }
+
+        console.log('false');
+        return left;
+    }
 }
 
 const formatName = (name, prefix) => {
@@ -295,6 +349,7 @@ const defaultQueryExplanations = {
     OP_MUL: 'multiply',
     OP_DIV: 'divide', 
     OP_SET: 'assign',
+    OP_ADD_ITEM: 'addItem',
     OP_PICK: 'pick',
     OP_GET_BY_INDEX: 'get element at index',
     OP_GET_BY_KEY: 'get element of key',
@@ -302,7 +357,8 @@ const defaultQueryExplanations = {
     OP_GROUP: 'groupBy',
     OP_SORT: 'sortBy',
     OP_EVAL: 'evaluate',
-    OP_MERGE: 'merge'
+    OP_MERGE: 'merge',
+    OP_IF: 'evaluate if'
 };
 
 function getUnmatchedExplanation(jes, op, name, leftValue, rightValue, prefix) {
@@ -415,7 +471,7 @@ function validateCollection(actual, collectionOp, op, expectedFieldValue, jes, p
 function evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldValue, jes, prefix, context) {
     switch (collectionOp) {
         case PFX_FOR_EACH:
-            return _.map(currentValue, (item, i) => evaluateByOpMeta(item, expectedFieldValue, opMeta, jes, formatPrefix(i, prefix), context));
+            return _.map(currentValue, (item, i) => evaluateByOpMeta(item, expectedFieldValue, opMeta, jes, formatPrefix(i, prefix), { ...context, $$PARENT: currentValue, $$CURRENT: item }));
 
         case PFX_WITH_ANY:         
             throw new Error(PRX_OP_NOT_FOR_EVAL(collectionOp));
@@ -458,7 +514,7 @@ function match(actual, expected, jes, prefix) {
             if (l > 4 && fieldName[0] === '|' && fieldName[2] === '$') {
                 if (fieldName[3] === '$') {
                     if (!Array.isArray(expectedFieldValue) && expectedFieldValue.length !== 2) {
-                        throw new Error(NOT_A_TWO_TUPLE);
+                        throw new Error(OPERAND_NOT_TUPLE());
                     }
 
                     //processors
@@ -580,27 +636,42 @@ function match(actual, expected, jes, prefix) {
  * @param {*} jes 
  * @param {*} context
  */
-function evaluateExpr(currentValue, expr, jes, prefix, context) {
+function evaluateExpr(currentValue, expr, jes, prefix, context, setOp) {
     jes != null || (jes = defaultCustomizer);
     if (Array.isArray(expr)) {
-        return expr.reduce((result, exprItem) => evaluateExpr(result, exprItem, jes, prefix, context), currentValue);
+        if (setOp) {
+            return expr.map(item => evaluateExpr(undefined, item, jes, prefix, { ...context }, true));
+        }
+        
+        return expr.reduce((result, exprItem) => evaluateExpr(result, exprItem, jes, prefix, { ...context }), currentValue);
     }
 
     const typeExpr = typeof expr;
 
     if (typeExpr === "boolean") {
+        if (setOp) return expr;
         return expr ? currentValue : undefined;
     }    
+
+    if (typeExpr === "number" || typeExpr === "bigint") {
+        if (setOp) return expr;
+
+        throw new Error(INVALID_EXPR_SYNTAX);
+    }
 
     if (typeExpr === 'string') {
         if (expr.startsWith('$$')) {
             //get from context
             const pos = expr.indexOf('.');
-            if (pos === -1) {
+            if (pos === -1) {                
                 return context[expr];
             }
 
             return _.get(context[expr.substr(0, pos)], expr.substr(pos+1));
+        }
+
+        if (setOp) {
+            return expr;
         }
 
         const opMeta = jes.mapOfManipulators.get(expr);
@@ -615,11 +686,17 @@ function evaluateExpr(currentValue, expr, jes, prefix, context) {
         return evaluateUnary(currentValue, opMeta[0], jes, prefix);
     } 
 
-    if (context == null) { 
-        context = { $$ROOT: currentValue, $$PARENT: null, $$CURRENT: currentValue };
-    } else {
-        context = { ...context, $$PARENT: context.$$CURRENT, $$CURRENT: currentValue };
+    if (typeExpr !== "object") {
+        throw new Error(INVALID_EXPR_SYNTAX);
     }
+
+    if (setOp) {
+        return _.mapValues(expr, item => evaluateExpr(undefined, item, jes, prefix, context, true));
+    }
+
+    if (context == null) { 
+        context = { $$ROOT: currentValue, $$PARENT: null, $$CURRENT: currentValue };        
+    } 
 
     let result, hasOperator = false;    
 
@@ -657,7 +734,7 @@ function evaluateExpr(currentValue, expr, jes, prefix, context) {
                     throw new Error(INVALID_QUERY_OPERATOR(fieldName));
                 }
 
-                result = evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldValue, jes, prefix);
+                result = evaluateCollection(currentValue, collectionOp, opMeta, expectedFieldValue, jes, prefix, context);
                 hasOperator = true;
                 continue;
             }
@@ -667,15 +744,20 @@ function evaluateExpr(currentValue, expr, jes, prefix, context) {
             throw new Error(OPERATOR_NOT_ALONE);
         }
 
+        let compleyKey = fieldName.indexOf('.') !== -1;
+
         //pick a field and then apply manipulation
-        let actualFieldValue = currentValue != null ? _.get(currentValue, fieldName) : undefined;     
+        let actualFieldValue = currentValue != null ? (compleyKey ? _.get(currentValue, fieldName) : currentValue[fieldName]) : undefined;         
 
         const childFieldValue = evaluateExpr(actualFieldValue, expectedFieldValue, jes, formatPrefix(fieldName, prefix), context);
+
         if (typeof childFieldValue !== 'undefined') {
-            result = {
-                ...result,
-                [fieldName]: childFieldValue
-            };
+            result == null && (result = {});
+            if (compleyKey) {
+                _.set(result, fieldName, childFieldValue);
+            } else {
+                result[fieldName] = childFieldValue;
+            }            
         }        
     }
 
