@@ -931,7 +931,7 @@ class EntityModel {
                     } 
 
                     throw new ValidationError(
-                        `"${fieldName}" of "${name}" entity is required for each update.`, {         
+                        `Field "${fieldName}" of "${name}" entity is required for each update.`, {         
                             entity: name,                                               
                             fieldInfo: fieldInfo
                         }
@@ -955,7 +955,7 @@ class EntityModel {
                 } else if (!fieldInfo.hasActivator) {
                     //skip those have activators
 
-                    throw new ValidationError(`"${fieldName}" of "${name}" entity is required.`, {
+                    throw new ValidationError(`Field "${fieldName}" of "${name}" entity is required.`, {
                         entity: name,
                         fieldInfo: fieldInfo,
                         raw 

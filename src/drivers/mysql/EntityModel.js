@@ -816,7 +816,7 @@ class MySQLEntityModel extends EntityModel {
                     if (!context.return) {
                         throw new ApplicationError("The parent entity is duplicated on unique keys different from the pair of keys used to query", {
                             query,
-                            latest: context.latest
+                            data: context.latest
                         })
                     }
                 }
@@ -881,7 +881,20 @@ class MySQLEntityModel extends EntityModel {
                 data = { ...data, [assocMeta.field]: keyValue };
             }
 
+            passOnOptions.$retrieveDbResult = true;
             let created = await assocModel.create_(data, passOnOptions, context.connOptions);
+            if (passOnOptions.$result.affectedRows === 0) {
+                //insert ignored
+
+                const assocQuery = assocModel.getUniqueKeyValuePairsFrom(data);
+                created = await assocModel.findOne_({ $query: assocQuery }, context.connOptions);
+                if (!created) {
+                    throw new ApplicationError("The assoicated entity is duplicated on unique keys different from the pair of keys used to query", {
+                        query: assocQuery,
+                        data
+                    })
+                }
+            }
 
             finished[anchor] = beforeEntityCreate ? created[assocMeta.field] : created[assocMeta.key];
         });
