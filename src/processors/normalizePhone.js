@@ -1,4 +1,5 @@
-const { _, replaceAll } = require('rk-utils');
+const { _ } = require('rk-utils');
+const { ValidationError } = require('../utils/Errors');
 
 function normalizePhone(phone, defaultArea) {
     if (phone) {
@@ -12,9 +13,19 @@ function normalizePhone(phone, defaultArea) {
                 if (phone[1] === '0') {
                     phone = '+' + phone.substr(2);
                 } else {
+                    if (defaultArea == null) {
+                        throw new ValidationError('The mobile phone number must be supplied with a country code.', {
+                            data: phone
+                        });
+                    }
                     phone = defaultArea + phone.substr(1);
                 }
             } else {
+                if (defaultArea == null) {
+                    throw new ValidationError('The mobile phone number must be supplied with a country code.', {
+                        data: phone
+                    });
+                }
                 phone = defaultArea + phone;
             }
 

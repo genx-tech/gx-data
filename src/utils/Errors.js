@@ -3,6 +3,7 @@
 const { Errors: { InvalidArgument, ExposableError, ApplicationError } } = require('@genx/app');
 const HttpCode = require('http-status-codes');
 
+//suggest use { data, ... } as info
 class ValidationError extends ExposableError {
     constructor(message, info) {
         super(message, info, HttpCode.BAD_REQUEST, 'E_INVALID_DATA');

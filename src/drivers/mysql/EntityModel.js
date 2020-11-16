@@ -989,9 +989,17 @@ class MySQLEntityModel extends EntityModel {
                 let destEntityId = getValueFrom([context.existing, context.options.$query, context.raw], anchor);
 
                 if (destEntityId == null) {
-                    if (!_.isEmpty(context.existing)) {
+                    if (_.isEmpty(context.existing)) {
+                        context.existing = await this.findOne_(context.options.$query, context.connOptions);
+                        if (!context.existing) {
+                            throw new ValidationError(`Specified "${this.meta.name}" not found.`, { query: context.options.$query });
+                        }
+                        destEntityId = context.existing[anchor];
+                    }
+
+                    if (destEntityId == null) {
                         if (!(anchor in context.existing)) {
-                            throw new ApplicationError("Existing does not contain the referenced entity id.", {
+                            throw new ApplicationError("Existing entity record does not contain the referenced entity id.", {
                                 anchor,
                                 data,
                                 existing: context.existing,
@@ -1000,23 +1008,27 @@ class MySQLEntityModel extends EntityModel {
                             });
                         }
 
+                        //to create the associated, existing is null
+
+                        passOnOptions.$retrieveDbResult = true;
+                        let created = await assocModel.create_(data, passOnOptions, context.connOptions);
+
+                        if (passOnOptions.$result.affectedRows === 0) {
+                            //insert ignored
+
+                            const assocQuery = assocModel.getUniqueKeyValuePairsFrom(data);
+                            created = await assocModel.findOne_({ $query: assocQuery }, context.connOptions);
+                            if (!created) {
+                                throw new ApplicationError("The assoicated entity is duplicated on unique keys different from the pair of keys used to query", {
+                                    query: assocQuery,
+                                    data
+                                })
+                            }
+                        }
+
+                        context.raw[anchor] = created[assocMeta.field];    
                         return;
-                    }
-
-                    context.existing = await this.findOne_(context.options.$query, context.connOptions);
-                    if (!context.existing) {
-                        throw new ValidationError(`Specified "${this.meta.name}" not found.`, { query: context.options.$query });
-                    }
-                    destEntityId = context.existing[anchor];
-
-                    if (destEntityId == null && !(anchor in context.existing)) {
-                        throw new ApplicationError("Existing does not contain the referenced entity id.", {
-                            anchor,
-                            data,
-                            existing: context.existing,
-                            query: context.options.$query
-                        });
-                    }
+                    } 
                 }
 
                 if (destEntityId) {                    
