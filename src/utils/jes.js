@@ -293,6 +293,8 @@ const defaultManipulations = {
         return right.reduce((result, expr, key) => Object.assign(result, evaluateExpr(left, expr, jes, formatPrefix(key, prefix), { ...context })), {});
     },
     OP_FILTER: (left, right, jes, prefix, context) => {
+        if (left == null) return null;
+        
         if (typeof left !== "object") {
             throw new ValidationError(VALUE_NOT_COLLECTION('OP_FILTER'));
         }

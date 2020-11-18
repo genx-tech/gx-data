@@ -216,7 +216,7 @@ class EntityModel {
 
         await Features.applyRules_(Rules.RULE_BEFORE_FIND, this, context);  
 
-        const result = this._safeExecute_(async (context) => {            
+        const result = await this._safeExecute_(async (context) => {            
             let records = await this.db.connector.find_(
                 this.meta.name, 
                 context.options, 
