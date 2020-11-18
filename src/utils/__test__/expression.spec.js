@@ -1,6 +1,6 @@
 const JES = require("../jes");
 
-describe("unit:utils:expression", function () {
+describe.only("unit:utils:expression", function () {
     it("equal", function () {
         let obj = {
             key1: 2000,
@@ -518,12 +518,12 @@ describe("unit:utils:expression", function () {
                             $startWith: ":",
                         },
                     },
+                },                
+                {
+                    $addItem: [ "$test", "$$CURRENT.id" ]
                 },
                 {
                     $omit: [ 'id' ],
-                },
-                {
-                    $addItem: [ "$test", "$$CURRENT.id" ]
                 }
             ],
         });
@@ -535,5 +535,63 @@ describe("unit:utils:expression", function () {
             { user: 103, agency: 2, '$test': 4  },
             { user: 104, agency: 2, '$test': 5  },
         ]);
+    });
+
+    it('filter', function () {
+        let array = [
+            {
+                id: 1,
+                user: 100,
+                agency: 1,
+                ":user": { email: "email1", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                id: 2,
+                user: 101,
+                agency: 1,
+                ":user": { email: "email2", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                id: 3,
+                user: 102,
+                agency: 1,
+                ":user": { email: "email3", other: "any" },
+                ":agency": { name: "agency1", other: "any" },
+            },
+            {
+                id: 4,
+                user: 103,
+                agency: 2,
+                ":user": { email: "email4", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
+            {
+                id: 5,
+                user: 104,
+                agency: 2,
+                ":user": { email: "email5", other: "any" },
+                ":agency": { name: "agency2", other: "any" },
+            },
+        ];
+
+        let transformed = JES.evaluate(array, [{
+            $select: {
+                user: {
+                    $gte: 102
+                }
+            }
+        }, {
+            "|>$omit": {
+                $startWith: ':'
+            }
+        }]);
+
+        transformed.should.be.eql([
+            { id: 3, user: 102, agency: 1 },
+            { id: 4, user: 103, agency: 2 },
+            { id: 5, user: 104, agency: 2 }
+          ]);
     });
 });

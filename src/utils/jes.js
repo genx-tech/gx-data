@@ -68,6 +68,7 @@ const OP_SORT = [ '$sort', '$orderBy', '$sortBy' ];
 const OP_REVERSE = [ '$reverse' ];
 const OP_EVAL = [ '$eval', '$apply' ];
 const OP_MERGE = [ '$merge' ];
+const OP_FILTER = [ '$filter', '$select' ];
 
 //Condition operation
 const OP_IF = [ '$if' ];
@@ -118,6 +119,7 @@ addManToMap(OP_GROUP, ['OP_GROUP', false]);
 addManToMap(OP_SORT, ['OP_SORT', false]);
 addManToMap(OP_EVAL, ['OP_EVAL', false]);
 addManToMap(OP_MERGE, ['OP_MERGE', false]);
+addManToMap(OP_FILTER, ['OP_FILTER', false]);
 addManToMap(OP_IF, ['OP_IF', false]);
 
 const defaultJesHandlers = {
@@ -263,11 +265,23 @@ const defaultManipulations = {
             return _.pick(left, right);
         } 
 
-        return _.pickBy(left, (x, key) => match(key, right, jes, prefix)[0]);
+        return _.pickBy(left, (x, key) => match(key, right, jes, formatPrefix(key, prefix))[0]);
     },
     OP_GET_BY_INDEX: (left, right) => _.nth(left, right),
     OP_GET_BY_KEY: (left, right) => _.get(left, right),
-    OP_OMIT: (left, right) => left == null ? null : _.omit(left, right),
+    OP_OMIT: (left, right, jes, prefix) => {
+        if (left == null) return null;
+
+        if (typeof right !== "object") {
+            right = _.castArray(right);
+        }
+
+        if (Array.isArray(right)) {
+            return _.omit(left, right);
+        } 
+
+        return _.omitBy(left, (x, key) => match(key, right, jes, formatPrefix(key, prefix))[0]);
+    },
     OP_GROUP: (left, right) => _.groupBy(left, right),
     OP_SORT: (left, right) => _.sortBy(left, right),  
     OP_EVAL: evaluateExpr,
@@ -276,7 +290,14 @@ const defaultManipulations = {
             throw new Error(OPERAND_NOT_ARRAY('OP_MERGE'));
         }
         
-        return right.reduce((result, expr) => Object.assign(result, evaluateExpr(left, expr, jes, prefix, { ...context })), {});
+        return right.reduce((result, expr, key) => Object.assign(result, evaluateExpr(left, expr, jes, formatPrefix(key, prefix), { ...context })), {});
+    },
+    OP_FILTER: (left, right, jes, prefix, context) => {
+        if (typeof left !== "object") {
+            throw new ValidationError(VALUE_NOT_COLLECTION('OP_FILTER'));
+        }
+
+        return _.filter(left, (value, key) => test(value, 'OP_MATCH', right, jes, formatPrefix(key, prefix)));
     },
     OP_IF: (left, right, jes, prefix, context) => {
         if (!Array.isArray(right)) {
@@ -353,6 +374,7 @@ const defaultQueryExplanations = {
     OP_SORT: 'sortBy',
     OP_EVAL: 'evaluate',
     OP_MERGE: 'merge',
+    OP_FILTER: 'filter',
     OP_IF: 'evaluate if'
 };
 
