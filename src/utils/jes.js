@@ -15,7 +15,7 @@ const INVALID_TEST_HANLDER = op => `JES test operator "${op}" handler not found.
 const INVALID_COLLECTION_OP = op => `Invalid collection operator "${op}".`;
 const PRX_OP_NOT_FOR_EVAL = prefix => `Operator prefix "${prefix}" cannot be used in evaluation.`;
 
-const OPERAND_NOT_TUPLE = op => `The operand of a collection operator ${op ? '" + op + " ' : ''}must be a two-tuple.`;
+const OPERAND_NOT_TUPLE = op => `The operand of a collection operator ${op ? '"' + op + '" ' : ''}must be a two-tuple.`;
 const OPERAND_NOT_TUPLE_2_OR_3 = op => `The operand of a "${op}" operator must be either a 2-tuple or a 3-tuple.`;
 const OPERAND_NOT_ARRAY = op => `The operand of a "${op}" operator must be an array.`;
 const OPERAND_NOT_BOOL = op => `The operand of a "${op}" operator must be a boolean value.`;
@@ -294,7 +294,7 @@ const defaultManipulations = {
     },
     OP_FILTER: (left, right, jes, prefix, context) => {
         if (left == null) return null;
-        
+
         if (typeof left !== "object") {
             throw new ValidationError(VALUE_NOT_COLLECTION('OP_FILTER'));
         }
