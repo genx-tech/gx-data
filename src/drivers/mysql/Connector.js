@@ -545,8 +545,6 @@ class MySQLConnector extends Connector {
         }
 
         result.sql = sql;
-
-        //console.dir(result, { depth: 10, colors: true }); 
         
         return result;
     }
@@ -592,8 +590,6 @@ class MySQLConnector extends Connector {
      */
     _joinAssociations(associations, parentAliasKey, parentAlias, aliasMap, startId, params) {
         let joinings = [];
-
-        //console.log('associations:', Object.keys(associations));
 
         _.each(associations, (assocInfo, anchor) => { 
             let alias = assocInfo.alias || this._generateAlias(startId++, anchor); 
@@ -715,11 +711,11 @@ class MySQLConnector extends Connector {
             let aliasKey = mainEntity + '.' + parts.join('.');
             let alias = aliasMap[aliasKey];
             if (!alias) {
-                dev: {
-                    console.log(mainEntity, aliasKey, aliasMap);                
-                }
-                let msg = `Unknown column reference: ${fieldName}. Please check $association value.`;                
-                throw new InvalidArgument(msg);
+                throw new InvalidArgument(`Column reference "${fieldName}" not found in populated associations.`, {
+                    entity: mainEntity,
+                    alias: aliasKey,
+                    aliasMap
+                });
             }            
 
             return alias + '.' + mysql.escapeId(actualFieldName);

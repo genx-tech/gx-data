@@ -162,6 +162,9 @@ const numDeals = await this.findAll_({
     },
     $groupBy: "status",
 });
+
+
+
 ```
 * $offset
 * $limit

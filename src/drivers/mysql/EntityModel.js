@@ -389,7 +389,9 @@ class MySQLEntityModel extends EntityModel {
      * @param {*} findOptions
      */
     static _prepareAssociations(findOptions) {
-        let associations = _.uniq(findOptions.$association).sort();
+        const [ normalAssocs, customAssocs ] = _.partition(findOptions.$association, assoc => typeof assoc === 'string');
+
+        let associations =  _.uniq(normalAssocs).sort().concat(customAssocs);
         let assocTable = {},
             counter = 0,
             cache = {};
@@ -549,7 +551,7 @@ class MySQLEntityModel extends EntityModel {
                 let objKey = nestedKeyGetter(anchor);
                 let subObj = rowObject[objKey];
 
-                if (!subObj) {
+                if (!subObj) {                    
                     //associated entity not in result set, probably when custom projection is used
                     return;
                 }
@@ -566,7 +568,7 @@ class MySQLEntityModel extends EntityModel {
                             existingRow.rowObject[objKey] = [subObj];
                         }
                     }
-                    
+
                     return;
                 }
 
@@ -632,6 +634,7 @@ class MySQLEntityModel extends EntityModel {
                 if (list) {
                     if (!subObject) {
                         //associated entity not in result set, probably when custom projection is used
+                        rowObject[objKey] = [];
                         return;
                     }                    
 
@@ -642,13 +645,7 @@ class MySQLEntityModel extends EntityModel {
                         //when custom projection is used              
                         subObject = null;
                     } 
-                } /*else if (subObject && _.isNil(subObject[key])) {                    
-                    if (subAssocs) {
-                        subIndex.subIndexes = buildSubIndexes(subObject, subAssocs);
-                    }
-                    //rowObject[objKey] = null;
-                    return;
-                }*/
+                } 
 
                 if (subObject) {
                     if (subAssocs) {
@@ -664,23 +661,28 @@ class MySQLEntityModel extends EntityModel {
             return indexes;
         }
 
-        let arrayOfObjs = [];
+        let arrayOfObjs = [];        
         
         const tableTemplate = columns.reduce((result, col) => {
             if (col.table !== 'A') {
-                setValueByPath(result, [col.table, col.name], null);
+                let bucket = result[col.table];
+                if (bucket) {
+                    bucket[col.name] = null;
+                } else {
+                    result[col.table] = { [col.name]: null };
+                }
             }
 
             return result;
         }, {});
 
         //process each row
-        rows.forEach((row, i) => {
-            let rowObject = {}; // hash-style data row
+        rows.forEach((row) => {
             let tableCache = {}; // from alias to child prop of rowObject
 
-            row.reduce((result, value, i) => {
-                let col = columns[i];
+            // hash-style data row
+            let rowObject = row.reduce((result, value, colIdx) => {
+                let col = columns[colIdx];
 
                 if (col.table === "A") {
                     result[col.name] = value;
@@ -692,10 +694,10 @@ class MySQLEntityModel extends EntityModel {
                     } else {
                         tableCache[col.table] = { ...tableTemplate[col.table], [col.name]: value };                            
                     }
-                }
+                } 
 
                 return result;
-            }, rowObject);
+            }, {});             
 
             _.forOwn(tableCache, (obj, table) => {
                 let nodePath = aliasMap[table];                
