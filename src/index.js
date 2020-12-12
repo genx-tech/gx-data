@@ -24,7 +24,7 @@ module.exports = {
     DbModel,
     Utils: {         
         Lang: require('./utils/lang'), 
-        Expression: require('./utils/jes'), 
+        Expression: require('@genx/jes'), 
         Bulk: require('./utils/Bulk'), 
         cacheLocal,
         cacheLocal_,
