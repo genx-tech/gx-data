@@ -45,6 +45,7 @@
     "amqplib": "^0.5.3",
     "fast-csv": "^3.4.0",
     "hyperid": "^2.0.2",
+    "mongodb": "^3.6.3",
     "mysql2": "^2.1.0",
     "shortid": "^2.2.14",
     "stream-transform": "^2.0.1",
@@ -52,6 +53,8 @@
     "winston": "git+https://github.com/kitmi/winston.git"
   },
   "dependencies": {
+    "@genx/error": "^1.0.1",
+    "@genx/jes": "^1.0.0",
     "date-fns": "^2.8.1",
     "http-status-codes": "^1.4.0",
     "immutable": "^4.0.0-rc.12",
