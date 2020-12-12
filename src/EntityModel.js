@@ -11,7 +11,7 @@ const Features = require('./entityFeatures');
 const Rules = require('./enum/Rules');
 
 const { isNothing, hasValueIn } = require('./utils/lang');
-const JES = require('./utils/jes');
+const JES = require('@genx/jes');
 
 const NEED_OVERRIDE = 'Should be overrided by driver-specific subclass.';
 
