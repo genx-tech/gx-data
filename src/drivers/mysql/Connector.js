@@ -730,7 +730,7 @@ class MySQLConnector extends Connector {
             return this._replaceFieldNameWithAlias(fieldName, mainEntity, aliasMap); 
         }
 
-        return fieldName === '*' ? fieldName : mysql.escapeId(fieldName);
+        return (fieldName === '*' || fieldName.endsWith('.*')) ? fieldName : mysql.escapeId(fieldName);
     }
 
     _splitColumnsAsInput(data, params, hasJoining, aliasMap) {
