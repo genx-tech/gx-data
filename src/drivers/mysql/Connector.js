@@ -718,10 +718,10 @@ class MySQLConnector extends Connector {
                 });
             }            
 
-            return alias + '.' + mysql.escapeId(actualFieldName);
+            return alias + '.' + (actualFieldName === '*' ? '*' : mysql.escapeId(actualFieldName));
         }
 
-        return aliasMap[mainEntity] + '.' + (fieldName === '*' ? fieldName : mysql.escapeId(fieldName));
+        return aliasMap[mainEntity] + '.' + (fieldName === '*' ? '*' : mysql.escapeId(fieldName));
     }
 
     _escapeIdWithAlias(fieldName, mainEntity, aliasMap) {   
@@ -730,7 +730,7 @@ class MySQLConnector extends Connector {
             return this._replaceFieldNameWithAlias(fieldName, mainEntity, aliasMap); 
         }
 
-        return (fieldName === '*' || fieldName.endsWith('.*')) ? fieldName : mysql.escapeId(fieldName);
+        return (fieldName === '*') ? fieldName : mysql.escapeId(fieldName);
     }
 
     _splitColumnsAsInput(data, params, hasJoining, aliasMap) {
