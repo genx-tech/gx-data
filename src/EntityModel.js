@@ -547,6 +547,8 @@ class EntityModel {
                 if (!doneUpdateAssocs && !needUpdateAssocs) {
                     throw new InvalidArgument('Cannot do the update with empty record. Entity: ' + this.meta.name);
                 }
+
+
             } else {
                 const { $query, ...otherOptions } = context.options;
 
@@ -564,20 +566,20 @@ class EntityModel {
                     context.connOptions
                 );  
 
-                context.return = context.latest;
-
-                if (forSingleRecord) {
-                    await this._internalAfterUpdate_(context);
-
-                    if (!context.queryKey) {
-                        context.queryKey = this.getUniqueKeyValuePairsFrom($query);
-                    }
-                } else {
-                    await this._internalAfterUpdateMany_(context);
-                }            
-
-                await Features.applyRules_(Rules.RULE_AFTER_UPDATE, this, context);
+                context.return = context.latest;                
             }
+
+            if (forSingleRecord) {
+                await this._internalAfterUpdate_(context);
+
+                if (!context.queryKey) {
+                    context.queryKey = this.getUniqueKeyValuePairsFrom($query);
+                }
+            } else {
+                await this._internalAfterUpdateMany_(context);
+            }            
+
+            await Features.applyRules_(Rules.RULE_AFTER_UPDATE, this, context);
 
             if (needUpdateAssocs) {
                 await this._updateAssocs_(context, associations, false, forSingleRecord);

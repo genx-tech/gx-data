@@ -1,5 +1,3 @@
-const { InvalidArgument } = require("@genx/error");
-
 /**
  * Remap the keys of object elements in an array, like projection.
  * @param {*} object
@@ -7,7 +5,7 @@ const { InvalidArgument } = require("@genx/error");
  * @param {boolean} keepUnmapped - If true, will keep those not in mapping as its original key, otherwise filter out
  */
 function remap(object, mapping, keepUnmapped) {
-    if (typeof mapping !== "object") throw new InvalidArgument('"mapping" should be a key-value object.');
+    if (typeof mapping === "string") return { [mapping]: object };
 
     let newObj = {};
     Object.entries(object).map(([k, v]) => {
