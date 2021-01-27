@@ -230,7 +230,10 @@ class MySQLEntityModel extends EntityModel {
         const options = context.options;
 
         if (options.$retrieveDbResult) {
-            context.rawOptions.$result = context.result;
+            context.rawOptions.$result = context.result || {
+                affectedRows: 0,
+                changedRows: 0
+            };
         }
 
         let retrieveUpdated = options.$retrieveUpdated;
@@ -280,7 +283,10 @@ class MySQLEntityModel extends EntityModel {
         const options = context.options;
 
         if (options.$retrieveDbResult) {
-            context.rawOptions.$result = context.result;
+            context.rawOptions.$result = context.result || {
+                affectedRows: 0,
+                changedRows: 0
+            };
 
             /**
              * afterUpdateMany ResultSetHeader {
