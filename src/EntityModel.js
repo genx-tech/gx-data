@@ -543,15 +543,13 @@ class EntityModel {
                 return false;
             }
 
+            const { $query, ...otherOptions } = context.options;
+
             if (_.isEmpty(context.latest)) {
                 if (!doneUpdateAssocs && !needUpdateAssocs) {
                     throw new InvalidArgument('Cannot do the update with empty record. Entity: ' + this.meta.name);
                 }
-
-
             } else {
-                const { $query, ...otherOptions } = context.options;
-
                 if (needUpdateAssocs && !hasValueIn([$query, context.latest], this.meta.keyField) && !otherOptions.$retrieveUpdated) {
                     //has associated data depending on this record
                     //should ensure the latest result will contain the key of this record
