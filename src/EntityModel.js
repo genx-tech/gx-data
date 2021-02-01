@@ -204,7 +204,7 @@ class EntityModel {
      * @returns {*}
      */
     static async findOne_(findOptions, connOptions) { 
-        pre: findOptions;
+        let rawOptions = findOptions;
 
         findOptions = this._prepareQueries(findOptions, true /* for single record */);
         
@@ -223,6 +223,10 @@ class EntityModel {
                 context.connOptions
             );
             if (!records) throw new DatabaseError('connector.find_() returns undefined data record.');
+
+            if (rawOptions.$retrieveDbResult) {
+                rawOptions.$result = records.slice(1);
+            }
 
             if (findOptions.$relationships && !findOptions.$skipOrm) {  
                 //rows, coloumns, aliasMap                    
@@ -267,6 +271,8 @@ class EntityModel {
      * @returns {array}
      */
     static async findAll_(findOptions, connOptions) {  
+        let rawOptions = findOptions;
+
         findOptions = this._prepareQueries(findOptions);
 
         let context = {               
@@ -287,6 +293,10 @@ class EntityModel {
             );
 
             if (!records) throw new DatabaseError('connector.find_() returns undefined data record.');
+
+            if (rawOptions.$retrieveDbResult) {
+                rawOptions.$result = records.slice(1);
+            }
 
             if (findOptions.$relationships) {
                 if (findOptions.$totalCount) {
