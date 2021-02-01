@@ -224,7 +224,7 @@ class EntityModel {
             );
             if (!records) throw new DatabaseError('connector.find_() returns undefined data record.');
 
-            if (rawOptions.$retrieveDbResult) {
+            if (rawOptions && rawOptions.$retrieveDbResult) {
                 rawOptions.$result = records.slice(1);
             }
 
@@ -294,7 +294,7 @@ class EntityModel {
 
             if (!records) throw new DatabaseError('connector.find_() returns undefined data record.');
 
-            if (rawOptions.$retrieveDbResult) {
+            if (rawOptions && rawOptions.$retrieveDbResult) {
                 rawOptions.$result = records.slice(1);
             }
 
