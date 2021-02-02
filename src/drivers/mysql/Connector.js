@@ -35,6 +35,9 @@ class MySQLConnector extends Connector {
         alias: alias || 'count'
     }); 
 
+    $call = (name, alias, args) => ({ type: 'function', name, alias, args });
+    $as = (name, alias) => ({ type: 'column', name, alias });
+
     //in mysql, null value comparison will never return true, even null != 1
     nullOrIs = (fieldName, value) => [{ [fieldName]: { $exists: false } }, { [fieldName]: { $eq: value } }];
 
@@ -1046,6 +1049,10 @@ class MySQLConnector extends Connector {
 
             if (col.type === 'expression') {
                 return this._joinCondition(col.expr, params, null, hasJoining, aliasMap);
+            }
+
+            if (col.type === 'column') {
+                return this._escapeIdWithAlias(col.name, hasJoining, aliasMap);
             }
         }
 
