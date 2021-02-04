@@ -59,9 +59,26 @@ class EntityModel {
     static fieldMeta(name) {
         const meta = this.meta.fields[name];
         if (!meta) {
-            throw new InvalidArgument(`Uknown field "${name}" of entity "${this.meta.name}".`)
+            throw new InvalidArgument(`Unknown field "${name}" of entity "${this.meta.name}".`)
         }
         return _.omit(meta, ['default']);
+    }
+
+    static inputSchema(inputSetName, options) {                
+        const key = inputSetName + (options == null ? '{}' : JSON.stringify(options));
+
+        if (this._cachedSchema) {
+            const cache = this._cachedSchema[key];
+            if (cache) {
+                return cache;
+            }
+        } else {
+            this._cachedSchema = {};
+        }
+
+        const schemaGenerator = this.db.require(`inputs/${this.meta.name}-${inputSetName}`);
+
+        return (this._cachedSchema[key] = schemaGenerator(options));
     }
 
     /**
