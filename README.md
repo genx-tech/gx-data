@@ -125,8 +125,10 @@ $projection: [
 ```
 * $association - No trailing (s).
 ```
-$association = [ 'person' ];
+// use an associated name inferred by foreign key
+const association = [ 'person' ];
 
+// use an explicit joining between two entities without connection by foreign key
 {
     "$query": {
         "ownerUser.mobile": "+61412345673"
@@ -136,6 +138,7 @@ $association = [ 'person' ];
         {
             "entity": "user",
             "alias": "ownerUser",
+            "output": true,
             "on": {
                 "id": {
                     "oorType": "ColumnReference",
@@ -145,6 +148,29 @@ $association = [ 'person' ];
         }
     ]
 }
+
+// complex usage with dynamic result selected
+const association = [
+    "listing.prices", 
+    "address", 
+    "propertyTypes",
+    {
+        "entity": "resource",
+        "alias": "resource",
+        "output": true,
+        "on": {
+            "listing.resourceGroup": {
+                "oorType": "ColumnReference",
+                "name": "resource.group"
+            }
+        },
+        "dataset": {
+            $query: {
+                "mediaTag": "LOGO"
+            }
+        }
+    }
+];
 ```
 
 * $relationships - Transformed from raw $association, used by the EntityModel internally 

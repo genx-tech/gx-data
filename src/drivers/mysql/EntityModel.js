@@ -726,6 +726,12 @@ class MySQLEntityModel extends EntityModel {
         return arrayOfObjs;
     }
 
+    /**
+     * Pre-process assoicated db operation
+     * @param {*} data 
+     * @param {*} isNew - New record flag, true for creating, false for updating
+     * @returns 
+     */
     static _extractAssociations(data, isNew) {
         const raw = {},
             assocs = {},
