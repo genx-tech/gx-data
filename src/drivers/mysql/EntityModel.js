@@ -158,6 +158,15 @@ class MySQLEntityModel extends EntityModel {
         return true;
     }
 
+    static _fillResult(context) {
+        if (this.hasAutoIncrement && context.result.affectedRows > 0) {
+            let { insertId } = context.result;            
+            context.return = context.latest = { ...context.latest, [this.meta.features.autoId.field]: insertId };
+        } else {
+            context.return = context.latest;
+        }        
+    }
+
     /**
      * Post create processing.
      * @param {*} context
@@ -206,8 +215,6 @@ class MySQLEntityModel extends EntityModel {
                     let { insertId } = context.result;
                     context.queryKey = { [this.meta.features.autoId.field]: insertId };
                 }
-
-                context.return = context.latest = { ...context.return, ...context.queryKey };
             }
         }
     }

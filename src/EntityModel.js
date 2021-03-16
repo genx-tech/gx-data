@@ -430,7 +430,11 @@ class EntityModel {
                 );
             }
 
-            context.return = context.latest;
+            this._fillResult(context);
+
+            if (needCreateAssocs) {               
+                await this._createAssocs_(context, associations);
+            }
 
             await this._internalAfterCreate_(context);
 
@@ -438,11 +442,7 @@ class EntityModel {
                 context.queryKey = this.getUniqueKeyValuePairsFrom(context.latest);
             }            
 
-            await Features.applyRules_(Rules.RULE_AFTER_CREATE, this, context);
-
-            if (needCreateAssocs) {               
-                await this._createAssocs_(context, associations);
-            }
+            await Features.applyRules_(Rules.RULE_AFTER_CREATE, this, context);            
             
             return true;
         }, context);
