@@ -53,17 +53,31 @@ class EntityModel {
     }
 
     /**
-     * 
-     * @param {*} data 
+     * Get a field schema based on the metadata of the field.
+     * @param {string} name - Field name
+     * @param {object} [extra] - Extra schema options
+     * @return {object} Schema object
      */
-    static fieldMeta(name) {
+    static fieldSchema(name, extra) {
         const meta = this.meta.fields[name];
         if (!meta) {
             throw new InvalidArgument(`Unknown field "${name}" of entity "${this.meta.name}".`)
         }
-        return _.omit(meta, ['default']);
+
+        const schema = _.omit(meta, ['default']);
+        if (extra) {
+            Object.assign(schema, extra);
+        }
+
+        return schema;
     }
 
+    /**
+     * Get a map of fields schema by predefined input set.
+     * @param {string} inputSetName - Input set name, predefined in geml
+     * @param {object} [options] - Input set options
+     * @return {object} Schema object
+     */
     static inputSchema(inputSetName, options) {                
         const key = inputSetName + (options == null ? '{}' : JSON.stringify(options));
 
