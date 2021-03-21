@@ -426,16 +426,16 @@ class EntityModel {
             
             if (!(await this._internalBeforeCreate_(context))) {
                 return false;
-            }
+            }            
 
-            if (context.options.$upsert) {
+            if (context.options.$upsert) {                
                 context.result = await this.db.connector.upsertOne_(
                     this.meta.name, 
                     context.latest, 
                     this.getUniqueKeyFieldsFrom(context.latest),
                     context.connOptions,
                     context.options.$upsert
-                );
+                );                
             } else {
                 context.result = await this.db.connector.create_(
                     this.meta.name, 

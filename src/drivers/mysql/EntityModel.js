@@ -170,10 +170,12 @@ class MySQLEntityModel extends EntityModel {
     static _fillResult(context) {
         if (this.hasAutoIncrement && context.result.affectedRows > 0) {
             let { insertId } = context.result;
-            context.return = context.latest = { ...context.latest, [this.meta.features.autoId.field]: insertId };
-        } else {
-            context.return = context.latest;
-        }
+            if (insertId > 0) {
+                context.latest = { ...context.latest, [this.meta.features.autoId.field]: insertId };
+            }
+        } 
+
+        context.return = context.latest;
     }
 
     /**
@@ -879,7 +881,7 @@ class MySQLEntityModel extends EntityModel {
         const finished = {};
 
         //todo: double check to ensure including all required options
-        const passOnOptions = _.pick(context.options, ["$skipModifiers", "$migration", "$variables"]);
+        const passOnOptions = _.pick(context.options, ["$skipModifiers", "$migration", "$variables", "$upsert"]);
 
         await eachAsync_(assocs, async (data, anchor) => {
             let assocMeta = meta[anchor];
@@ -926,10 +928,12 @@ class MySQLEntityModel extends EntityModel {
 
             passOnOptions.$retrieveDbResult = true;
             let created = await assocModel.create_(data, passOnOptions, context.connOptions);
-            if (passOnOptions.$result.affectedRows === 0) {
-                //insert ignored
+
+            if (passOnOptions.$result.affectedRows === 0 || (assocModel.hasAutoIncrement && passOnOptions.$result.insertId === 0)) {
+                //insert ignored or upserted
 
                 const assocQuery = assocModel.getUniqueKeyValuePairsFrom(data);
+                
                 created = await assocModel.findOne_({ $query: assocQuery }, context.connOptions);
                 if (!created) {
                     throw new ApplicationError(
@@ -970,7 +974,7 @@ class MySQLEntityModel extends EntityModel {
         const pendingAssocs = {};
 
         //todo: double check to ensure including all required options
-        const passOnOptions = _.pick(context.options, ["$skipModifiers", "$migration", "$variables"]);
+        const passOnOptions = _.pick(context.options, ["$skipModifiers", "$migration", "$variables", "$upsert"]);
 
         await eachAsync_(assocs, async (data, anchor) => {
             let assocMeta = meta[anchor];
