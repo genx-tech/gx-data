@@ -501,7 +501,7 @@ class MySQLConnector extends Connector {
             sql += ' A ' + joinings.join(' ');
         }
 
-        if ($query) {            
+        if ($query) {          
             let whereClause = this._joinCondition($query, params, null, hasJoining, aliasMap);   
             if (whereClause) {
                 sql += ' WHERE ' + whereClause;
@@ -830,8 +830,7 @@ class MySQLConnector extends Connector {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <> ' + v;
                                 }
 
-                                params.push(v);
-                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <> ?';
+                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` <> ${this._packValue(v, params, hasJoining, aliasMap)}`;
     
                             case '$>':
                             case '$gt':
@@ -842,8 +841,7 @@ class MySQLConnector extends Connector {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' > ' + v;
                                 }
         
-                                params.push(v);
-                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' > ?';
+                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` > ${this._packValue(v, params, hasJoining, aliasMap)}`;
         
                             case '$>=':
                             case '$gte':
@@ -854,8 +852,7 @@ class MySQLConnector extends Connector {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' >= ' + v;
                                 }
         
-                                params.push(v);
-                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' >= ?';
+                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` >= ${this._packValue(v, params, hasJoining, aliasMap)}`;
     
                             case '$<':
                             case '$lt':
@@ -866,8 +863,7 @@ class MySQLConnector extends Connector {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' < ' + v;
                                 }
         
-                                params.push(v);
-                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' < ?';
+                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` < ${this._packValue(v, params, hasJoining, aliasMap)}`;
     
                             case '$<=':
                             case '$lte':
@@ -878,8 +874,7 @@ class MySQLConnector extends Connector {
                                     return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <= ' + v;
                                 }
         
-                                params.push(v);
-                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ' <= ?';
+                                return this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) + ` <= ${this._packValue(v, params, hasJoining, aliasMap)}`;
     
                             case '$in':
                                 if (_.isPlainObject(v) && v.oorType === 'DataSet') {
