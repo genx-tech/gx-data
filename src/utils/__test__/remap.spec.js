@@ -3,7 +3,7 @@
 const path = require('path');
 const remap = require('../remap');
 
-describe.only('unit:remap', function () {    
+describe('unit:remap', function () {    
     it('remap an object', async function () {
 
         const source = {

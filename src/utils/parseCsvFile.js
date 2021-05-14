@@ -1,8 +1,7 @@
-const { fs, Promise } = require('rk-utils');
-const { tryRequire } = require('./lib');
+const { fs, tryRequire } = require('@genx/sys');
 
 module.exports = async (csvFile, options, transformer) => {
-    const csv = tryRequire('fast-csv');    
+    const csv = tryRequire('fast-csv', __dirname);    
 
     const readStream = fs.createReadStream(csvFile);
     const parser = csv.parse({

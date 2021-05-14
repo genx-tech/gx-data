@@ -1,6 +1,6 @@
-const { Promise, _ } = require('rk-utils');
-const { tryRequire } = require('../../utils/lib');
-const AmqpNode = tryRequire('amqplib');
+const { _ } = require('@genx/july');
+const { tryRequire } = require('@genx/sys');
+const AmqpNode = tryRequire('amqplib', __dirname);
 const Connector = require('../../Connector');
 
 /**

@@ -1,6 +1,6 @@
 "use strict";
 
-const { _, quote } = require('rk-utils');
+const { _, quote } = require('@genx/july');
 const { isNothing } = require('../utils/lang');
 const any = require('./any');
 const { ValidationError } = require('../utils/Errors');

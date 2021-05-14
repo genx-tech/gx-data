@@ -1,4 +1,4 @@
-const { _ } = require('rk-utils');
+const { _ } = require('@genx/july');
 const { ValidationError } = require('../utils/Errors');
 
 function normalizePhone(phone, defaultArea) {

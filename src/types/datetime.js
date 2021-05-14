@@ -1,6 +1,6 @@
 "use strict";
 
-const _ = require('rk-utils')._;
+const { _ } = require('@genx/july');
 const { DateTime } = require('luxon');
 const any = require('./any');
 const { ValidationError } = require('../utils/Errors');

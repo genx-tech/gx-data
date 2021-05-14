@@ -1,6 +1,6 @@
-const { _, waitUntil_ } = require('rk-utils');
-const { tryRequire } = require('../../utils/lib');
-const mongodb = tryRequire('mongodb');
+const { _ } = require('@genx/july');
+const { tryRequire } = require('@genx/sys');
+const mongodb = tryRequire('mongodb', __dirname);
 const { MongoClient, GridFSBucket } = mongodb;
 const Connector = require('../../Connector');
 const Generators = require('../../Generators');

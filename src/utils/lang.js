@@ -1,6 +1,6 @@
 "use strict";
 
-const { _ } = require('rk-utils');
+const { _ } = require('@genx/july');
 
 const SupportedDrivers = [ 'mysql', 'mongodb', 'rabbitmq' ];
 const JsPrimitiveTypes = new Set([ 'number', 'boolean', 'string', 'symbol', 'undefined' ]);

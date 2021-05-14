@@ -1,6 +1,6 @@
 "use strict";
 
-const { _ } = require('rk-utils');
+const { _ } = require('@genx/july');
 const Rules = require('../enum/Rules');
 const { DATETIME } = require('../types');
 const { ApplicationError } = require('../utils/Errors')

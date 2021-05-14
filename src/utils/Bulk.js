@@ -1,4 +1,4 @@
-const { waitUntil_ } = require('rk-utils');
+const { waitUntil_ } = require('@genx/july');
 
 class Bulk {
     constructor(limit, bulkAction, total) {

@@ -1,9 +1,9 @@
-const { _, eachAsync_, setValueByPath } = require('rk-utils');
-const { tryRequire } = require('../../utils/lib');
-const mysql = tryRequire('mysql2/promise');
+const { _ } = require('@genx/july');
+const { tryRequire } = require('@genx/sys');
+const mysql = tryRequire('mysql2/promise', __dirname);
 const Connector = require('../../Connector');
 const { ApplicationError, InvalidArgument } = require('../../utils/Errors');
-const { isQuoted, isPrimitive } = require('../../utils/lang');
+const { isQuoted } = require('../../utils/lang');
 const ntol = require('number-to-letter');
 
 /**

@@ -1,11 +1,11 @@
 "use strict";
 
-const { tryRequire } = require('../utils/lib');
+const { tryRequire } = require('@genx/sys');
 
 let flInstance, instance;
 
 module.exports = function (info, i18n, options) {
-    const hyperid = tryRequire('hyperid');
+    const hyperid = tryRequire('hyperid', __dirname);
 
     if (info && info.fixedLength) {
         if (!flInstance) {

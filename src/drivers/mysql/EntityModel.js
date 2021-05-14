@@ -1,7 +1,6 @@
 -"use strict";
 
-const Util = require("rk-utils");
-const { _, getValueByPath, setValueByPath, eachAsync_ } = Util;
+const { _, eachAsync_ } = require("@genx/july");
 const EntityModel = require("../../EntityModel");
 const {
     ApplicationError,
@@ -33,7 +32,7 @@ class MySQLEntityModel extends EntityModel {
      * @param {*} keyPath
      */
     static getNestedObject(entityObj, keyPath) {
-        return getValueByPath(
+        return _.get(
             entityObj,
             keyPath
                 .split(".")
@@ -729,7 +728,7 @@ class MySQLEntityModel extends EntityModel {
 
             _.forOwn(tableCache, (obj, table) => {
                 let nodePath = aliasMap[table];
-                setValueByPath(rowObject, nodePath, obj);
+                _.set(rowObject, nodePath, obj);
             });
 
             let rowKey = rowObject[self.meta.keyField];

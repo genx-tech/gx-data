@@ -1,4 +1,4 @@
-const { _, pascalCase, sleep_ } = require("rk-utils");
+const { _, naming, sleep_ } = require("@genx/july");
 
 const retryFailed = (error) => [false, error];
 const retryOK = (result) => [true, result];
@@ -25,7 +25,7 @@ class DbModel {
     model(entityName) {
         if (this._modelCache[entityName]) return this._modelCache[entityName];
 
-        let modelClassName = pascalCase(entityName);
+        let modelClassName = naming.pascalCase(entityName);
         if (this._modelCache[modelClassName]) return this._modelCache[modelClassName];
 
         let entityCustomClassFactory = this.loadCustomModel(modelClassName);

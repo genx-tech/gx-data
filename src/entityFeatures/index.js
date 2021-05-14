@@ -1,7 +1,8 @@
 "use strict";
 
 const path = require('path');
-const { _, fs } = require('rk-utils');
+const { _ } = require('@genx/july');
+const { fs } = require('@genx/sys');
 
 const basePath = path.resolve(__dirname);
 const features = fs.readdirSync(basePath);

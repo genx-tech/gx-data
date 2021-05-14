@@ -1,7 +1,7 @@
 'use strict';
 
 const Types = require('..');
-const { _ } = require('rk-utils');
+const { _ } = require('@genx/july');
 
 describe('unit:types:text', function () {       
 

@@ -1,6 +1,6 @@
 "use strict";
 
-const { _, replaceAll } = require('rk-utils');
+const { _, replaceAll } = require('@genx/july');
 
 const normalizePhone = require('./processors/normalizePhone');
 

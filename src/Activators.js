@@ -1,7 +1,7 @@
 "use strict";
 
-const { _ } = require('rk-utils');
-const { ApplicationError, InvalidArgument } = require('./utils/Errors');
+const { _ } = require('@genx/july');
+const { ApplicationError } = require('./utils/Errors');
 const Generators = require('./Generators');
 
 module.exports = {

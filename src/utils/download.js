@@ -1,9 +1,8 @@
 const path = require('path');
-const { fs, Promise } = require('rk-utils');
-const { tryRequire } = require('./lib');
+const { fs, tryRequire } = require('@genx/sys');
 
 module.exports = async (url, targetFile) => {
-    const request = tryRequire('superagent');
+    const request = tryRequire('superagent', __dirname);
 
     const dirName = path.dirname(targetFile);
 

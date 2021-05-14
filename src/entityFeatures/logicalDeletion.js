@@ -3,7 +3,7 @@
 const Rules = require('../enum/Rules');
 const { mergeCondition } = require('../utils/lang');
 const Generators = require('../Generators');
-const { _ } = require("rk-utils");
+const { _ } = require("@genx/july");
 
 /**
  * A rule specifies the entity will not be deleted physically.

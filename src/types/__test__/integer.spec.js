@@ -1,7 +1,6 @@
 "use strict";
 
 const Types = require("..");
-const { _ } = require("rk-utils");
 
 describe("unit:types:integer", function () {
     const fixtures = [

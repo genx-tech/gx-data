@@ -1,7 +1,7 @@
 "use strict";
 
 const HttpCode = require('http-status-codes');
-const { _, eachAsync_, getValueByPath, hasKeyByPath } = require('rk-utils');
+const { _, eachAsync_ } = require('@genx/july');
 const Errors = require('./utils/Errors');
 const Generators = require('./Generators');
 const Convertors = require('./Convertors');
@@ -121,7 +121,7 @@ class EntityModel {
      */
     static getNestedObject(entityObj, keyPath, defaultValue) {
         let nodes = (Array.isArray(keyPath) ? keyPath : keyPath.split('.')).map(key => key[0] === ':' ? key : (':' + key));
-        return getValueByPath(entityObj, nodes, defaultValue);
+        return _.get(entityObj, nodes, defaultValue);
     }
 
     /**
@@ -176,7 +176,7 @@ class EntityModel {
      * @returns {*} 
      */
     static getValueFromContext(context, key) {
-        return getValueByPath(context, 'options.$variables.' + key);
+        return _.get(context, 'options.$variables.' + key);
     }
 
     /**
@@ -1074,7 +1074,7 @@ class EntityModel {
     static _dependencyChanged(fieldName, context) {
         let deps = this.meta.fieldDependencies[fieldName];
 
-        return _.find(deps, d => _.isPlainObject(d) ? hasKeyByPath(context, d.reference) : hasKeyByPath(context, d));
+        return _.find(deps, d => _.isPlainObject(d) ? _.hasIn(context, d.reference) : _.hasIn(context, d));
     }
 
     static _referenceExist(input, ref) {

@@ -1,16 +1,17 @@
 "use strict";
 
 const path = require('path');
-const Util = require('rk-utils');
+const { _ } = require('@genx/july');
+const { fs } = require('@genx/sys');
 
 const basePath = path.resolve(__dirname, 'auto');
 
-let generators = Util.fs.readdirSync(basePath);
+let generators = fs.readdirSync(basePath);
 let G = {};
 
 generators.forEach(file => {
     let f = path.join(basePath, file);
-    if (Util.fs.statSync(f).isFile() && Util._.endsWith(file, '.js')) {
+    if (fs.statSync(f).isFile() && _.endsWith(file, '.js')) {
         let g = path.basename(file, '.js');
         G[g] = require(f);
     }

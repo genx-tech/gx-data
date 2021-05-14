@@ -1,7 +1,7 @@
 "use strict";
 
 const { URL } = require('url');
-const { _ } = require('rk-utils');
+const { _ } = require('@genx/july');
 const { SupportedDrivers } = require('./utils/lang');
 
 /**

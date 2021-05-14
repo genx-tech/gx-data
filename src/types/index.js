@@ -1,4 +1,4 @@
- const { _ } = require('rk-utils');
+ const { _ } = require('@genx/july');
  const { Set } = require('immutable');
 
 const ARRAY = require('./array');

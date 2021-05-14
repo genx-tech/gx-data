@@ -1,8 +1,7 @@
 "use strict";
 
 const validator = require("validator");
-const { _ } = require("rk-utils");
-const remap = require('./utils/remap');
+const { _ } = require("@genx/july");
 
 exports.toBoolean = (value) => (typeof value === "boolean" ? value : validator.toBoolean(value.toString(), true));
 
