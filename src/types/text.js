@@ -1,7 +1,5 @@
-"use strict";
-
 const Convertors = require('../Convertors');
-const randomstring = require("randomstring");
+const randomstring = require('randomstring');
 const { _ } = require('@genx/july');
 const { ValidationError } = require('../utils/Errors');
 const any = require('./any');
@@ -9,11 +7,11 @@ const any = require('./any');
 module.exports = {
     name: 'text',
 
-    alias: [ 'string', 'char' ],
+    alias: ['string', 'char'],
 
-    sanitize: (value, info, i18n) => {    
+    sanitize: (value, info, i18n) => {
         if (value == null) return null;
-    
+
         if (!info || !info.skipTypeCast) {
             value = Convertors.toText(value, info && info.noTrim);
         }
@@ -24,15 +22,36 @@ module.exports = {
 
         if (!_.isNil(value)) {
             if (info && info.fixedLength && value.length !== info.fixedLength) {
-                throw new ValidationError(`The length of the ${info.name || 'text'} value is not correct (expected: ${info.fixedLength}, actual: ${value.length}).`, { value, feild: info })
+                throw new ValidationError(
+                    `The length of the ${
+                        info.name || 'text'
+                    } value is not correct (expected: ${
+                        info.fixedLength
+                    }, actual: ${value.length}).`,
+                    { value, feild: info }
+                );
             }
 
             if (info && info.maxLength && value.length > info.maxLength) {
-                throw new ValidationError(`The length of the ${info.name || 'text'} value exceeds max limit (maximum: ${info.maxLength}, actual: ${value.length}).`, { value, feild: info })
+                throw new ValidationError(
+                    `The length of the ${
+                        info.name || 'text'
+                    } value exceeds max limit (maximum: ${
+                        info.maxLength
+                    }, actual: ${value.length}).`,
+                    { value, feild: info }
+                );
             }
 
             if (info && info.minLength && value.length < info.minLength) {
-                throw new ValidationError(`The length of the ${info.name || 'text'} value does not reach min requirement (minimum: ${info.minLength}, actual: ${value.length}).`, { value, feild: info })
+                throw new ValidationError(
+                    `The length of the ${
+                        info.name || 'text'
+                    } value does not reach min requirement (minimum: ${
+                        info.minLength
+                    }, actual: ${value.length}).`,
+                    { value, feild: info }
+                );
             }
         }
 
@@ -61,9 +80,9 @@ module.exports = {
         }
 
         return randomstring.generate(randOpt);
-    },  
+    },
 
-    serialize: value => value,
+    serialize: (value) => value,
 
     qualifiers: any.qualifiers.concat([
         'fixedLength',
@@ -72,6 +91,6 @@ module.exports = {
         'allowedChars',
         'caps',
         'noTrim',
-        'emptyAsNull'
-    ])
+        'emptyAsNull',
+    ]),
 };

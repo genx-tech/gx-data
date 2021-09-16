@@ -1,6 +1,4 @@
-"use strict";
-
-const Types = require('./types'); 
+const Types = require('./types');
 const Activators = require('./Activators');
 const Connector = require('./Connector');
 const Convertors = require('./Convertors');
@@ -12,22 +10,22 @@ const DbModel = require('./DbModel');
 
 const { cacheLocal, cacheLocal_ } = require('./utils/cacheLocal');
 
-module.exports = { 
-    Types, 
-    Errors, 
-    Activators, 
+module.exports = {
+    Types,
+    Errors,
+    Activators,
     Connector,
-    Convertors,   
+    Convertors,
     Generators,
-    Processors, 
+    Processors,
     Validators,
     DbModel,
-    Utils: {         
-        Lang: require('./utils/lang'), 
-        Bulk: require('./utils/Bulk'), 
+    Utils: {
+        Lang: require('./utils/lang'),
+        Bulk: require('./utils/Bulk'),
         cacheLocal,
         cacheLocal_,
-        parseCsvFile:require('./utils/parseCsvFile'), 
-        download: require('./utils/download') 
-    }        
+        parseCsvFile: require('./utils/parseCsvFile'),
+        download: require('./utils/download'),
+    },
 };

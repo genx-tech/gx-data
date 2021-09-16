@@ -1,5 +1,3 @@
-"use strict";
-
 const Rules = require('../enum/Rules');
 const { InvalidArgument } = require('../utils/Errors');
 
@@ -11,7 +9,9 @@ function addCreatedBy_(entityModel, feature, context) {
 
     let uid = entityModel.getValueFromContext(context, feature.uidSource);
     if (uid == null) {
-        throw new InvalidArgument(`Context "${feature.uidSource}" not found. Entity: ${entityModel.meta.name}`)
+        throw new InvalidArgument(
+            `Context "${feature.uidSource}" not found. Entity: ${entityModel.meta.name}`
+        );
     }
     context.latest[feature.fields.createdBy] = uid;
     return true;
@@ -19,12 +19,12 @@ function addCreatedBy_(entityModel, feature, context) {
 
 function addUpdatedBy_(entityModel, feature, context) {
     if (context.options.$skipUpdateTracking) return true;
-    
+
     let uid = entityModel.getValueFromContext(context, feature.uidSource);
     if (uid == null) {
-        throw new InvalidArgument(`Context "${feature.uidSource}" not found.`)
+        throw new InvalidArgument(`Context "${feature.uidSource}" not found.`);
     }
-    context.latest[feature.fields.updatedBy] = uid;    
+    context.latest[feature.fields.updatedBy] = uid;
     //revision++
     return true;
 }
@@ -35,5 +35,8 @@ function addUpdatedBy_(entityModel, feature, context) {
  */
 
 module.exports = {
-    [Rules.RULE_BEFORE_VALIDATION]: (feature, entityModel, context) => context.op === 'create' ? addCreatedBy_(entityModel, feature, context) : addUpdatedBy_(entityModel, feature, context)
+    [Rules.RULE_BEFORE_VALIDATION]: (feature, entityModel, context) =>
+        context.op === 'create'
+            ? addCreatedBy_(entityModel, feature, context)
+            : addUpdatedBy_(entityModel, feature, context),
 };

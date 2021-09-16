@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>@gx/erml Index</title>
+	<title>@genx/data Index</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -20,7 +20,7 @@
 <div class="navbar navbar-default navbar-fixed-top navbar-inverse">
 <div class="container">
 	<div class="navbar-header">
-		<a class="navbar-brand" href="index.html">@gx/erml</a>
+		<a class="navbar-brand" href="index.html">@genx/data</a>
 		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
@@ -47,7 +47,7 @@
 			<li class="dropdown">
 				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
 				<ul class="dropdown-menu ">
-					<li><a href="global.html#DSL_OUTPUT_PATH">DSL_OUTPUT_PATH</a></li><li><a href="global.html#DSL_SOURCE_PATH">DSL_SOURCE_PATH</a></li><li><a href="global.html#MANIFEST_OUTPUT_PATH">MANIFEST_OUTPUT_PATH</a></li><li><a href="global.html#mapFilter">mapFilter</a></li><li><a href="global.html#mapKeysDeep">mapKeysDeep</a></li><li><a href="global.html#mergeCondition">mergeCondition</a></li><li><a href="global.html#MODEL_OUTPUT_PATH">MODEL_OUTPUT_PATH</a></li><li><a href="global.html#MODEL_SOURCE_PATH">MODEL_SOURCE_PATH</a></li><li><a href="global.html#SCRIPT_OUTPUT_PATH">SCRIPT_OUTPUT_PATH</a></li><li><a href="global.html#SCRIPT_SOURCE_PATH">SCRIPT_SOURCE_PATH</a></li><li><a href="global.html#validate">validate</a></li>
+					<li><a href="global.html#DSL_OUTPUT_PATH">DSL_OUTPUT_PATH</a></li><li><a href="global.html#DSL_SOURCE_PATH">DSL_SOURCE_PATH</a></li><li><a href="global.html#MANIFEST_OUTPUT_PATH">MANIFEST_OUTPUT_PATH</a></li><li><a href="global.html#mapFilter">mapFilter</a></li><li><a href="global.html#mapKeysDeep">mapKeysDeep</a></li><li><a href="global.html#mergeCondition">mergeCondition</a></li><li><a href="global.html#MODEL_OUTPUT_PATH">MODEL_OUTPUT_PATH</a></li><li><a href="global.html#MODEL_SOURCE_PATH">MODEL_SOURCE_PATH</a></li><li><a href="global.html#remap">remap</a></li><li><a href="global.html#SCRIPT_OUTPUT_PATH">SCRIPT_OUTPUT_PATH</a></li><li><a href="global.html#SCRIPT_SOURCE_PATH">SCRIPT_SOURCE_PATH</a></li><li><a href="global.html#validate">validate</a></li>
 				</ul>
 			</li>
 			
@@ -118,34 +118,34 @@
 </li>
 </ul>
 <pre class="prettyprint source"><code>  // Model usage
-  
+
   // inside a entity model
   let User = this.db.model('User');
-  
+
   // inside a controll or anywhere the app instance is applicable
   let User = app.db('dbName').model('User');
-  
+
   // call CRUD
   await User.create_(...);
-  
-  
+
+
   // Transaction
   return this.db.doTransaction_(async (connOpts) => {
-      
+
       let ret = await this.sendToGroup_(senderId, group.id, msg, connOpts);
       await this.sendToGroup_(senderId, group.peer, msg, connOpts);
 
       return ret;
-  });     
-  
-  
+  });
+
+
   // Retry and transaction combination usage
-  
+
   return this.db.retry_('transaction name for logging', async (ok, failed) => {
       return this.db.doTransaction_(async (connOpts) => {
           //...operations need to compute
           // result set
-          
+
           return ok(result);
       }, failed);
   });
@@ -174,7 +174,7 @@
 <pre class="prettyprint source"><code>module.exports = Base => class extends Base {
     static async getStreetTypes_() {
         const streetTypes = require('../../data/streetTypes.json');
-        return streetTypes;            
+        return streetTypes;
     }
 };
 </code></pre>
@@ -232,23 +232,25 @@
 $projection: [ this.db.connector.queryCount() ],
 
 $projection: [
-    '*',            
+    '*',
     'bookableResources.type',
     {
         alias: 'bookableResources.count',
-        type: 'function', 
+        type: 'function',
         name: 'COUNT',
         prefix: 'DISTINCT',
         args: [ 'bookableResources.id' ]
     }
-],  
+],
 
 </code></pre>
 <ul>
 <li>$association - No trailing (s).</li>
 </ul>
-<pre class="prettyprint source"><code>$association = [ 'person' ];
+<pre class="prettyprint source"><code>// use an associated name inferred by foreign key
+const association = [ 'person' ];
 
+// use an explicit joining between two entities without connection by foreign key
 {
     &quot;$query&quot;: {
         &quot;ownerUser.mobile&quot;: &quot;+61412345673&quot;
@@ -258,6 +260,7 @@ $projection: [
         {
             &quot;entity&quot;: &quot;user&quot;,
             &quot;alias&quot;: &quot;ownerUser&quot;,
+            &quot;output&quot;: true,
             &quot;on&quot;: {
                 &quot;id&quot;: {
                     &quot;oorType&quot;: &quot;ColumnReference&quot;,
@@ -267,6 +270,29 @@ $projection: [
         }
     ]
 }
+
+// complex usage with dynamic result selected
+const association = [
+    &quot;listing.prices&quot;,
+    &quot;address&quot;,
+    &quot;propertyTypes&quot;,
+    {
+        &quot;entity&quot;: &quot;resource&quot;,
+        &quot;alias&quot;: &quot;resource&quot;,
+        &quot;output&quot;: true,
+        &quot;on&quot;: {
+            &quot;listing.resourceGroup&quot;: {
+                &quot;oorType&quot;: &quot;ColumnReference&quot;,
+                &quot;name&quot;: &quot;resource.group&quot;
+            }
+        },
+        &quot;dataset&quot;: {
+            $query: {
+                &quot;mediaTag&quot;: &quot;LOGO&quot;
+            }
+        }
+    }
+];
 </code></pre>
 <ul>
 <li>$relationships - Transformed from raw $association, used by the EntityModel internally</li>

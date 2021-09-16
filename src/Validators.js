@@ -1,5 +1,3 @@
-"use strict";
-
 const { _ } = require('@genx/july');
 const { tryRequire } = require('@genx/sys');
 const { isNothing } = require('./utils/lang');
@@ -7,7 +5,7 @@ const { ValidationError } = require('./utils/Errors');
 const validator = require('validator');
 const Types = require('./types');
 
-module.exports = _.pick(validator, [ 
+module.exports = _.pick(validator, [
     'equals',
     'contains',
     'matches',
@@ -59,14 +57,14 @@ module.exports = _.pick(validator, [
     'isBase64',
     'isDataURI',
     'isMimeType',
-    'isLatLong'
+    'isLatLong',
 ]);
 
 const RE_PHONE = /^((\+|00)\d+)?(\(\d+\))?((\ |-)?\d+)*$/;
 
 module.exports.isPhone = function (value) {
     return RE_PHONE.test(value);
-}
+};
 
 module.exports.min = function (value, minValue) {
     return value >= minValue;
@@ -98,14 +96,14 @@ module.exports.notNullIf = function (value, condition) {
 
 /**
  * Validate an obj with condition like mongo-style query
- * @param {*} obj 
- * @param {array|object} condition 
+ * @param {*} obj
+ * @param {array|object} condition
  * @returns {boolean}
  */
-function validate(obj, condition) {    
-    const { Query } = tryRequire('mingo', __dirname);
+function validate(obj, condition) {
+    const { Query } = tryRequire('mingo');
     let query = new Query(condition);
-    
+
     // test if an object matches query
     return query.test(obj);
 }
@@ -119,26 +117,41 @@ const NIL = Symbol('nil');
 function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
     if (fieldName in raw) {
         let value = raw[fieldName];
-        
+
         //sanitize first
         if (isNothing(value)) {
-            if (!fieldInfo.optional && isNothing(fieldInfo.default)) {               
-                throw new ValidationError(`Value of property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}" cannot be null`);
+            if (!fieldInfo.optional && isNothing(fieldInfo.default)) {
+                throw new ValidationError(
+                    `Value of property "${
+                        prefix ? prefix + '.' : ''
+                    }${fieldName}${
+                        fieldInfo.comment ? ' - ' + fieldInfo.comment : ''
+                    }" cannot be null`
+                );
             }
 
             return fieldInfo.default ?? null;
-        } 
-        
+        }
+
         if (fieldInfo.type) {
-            return Types.sanitize(value, fieldInfo, i18n, (prefix ? prefix + '.' : '') + fieldName);
-        } 
+            return Types.sanitize(
+                value,
+                fieldInfo,
+                i18n,
+                (prefix ? prefix + '.' : '') + fieldName
+            );
+        }
 
         return value;
-    }       
+    }
 
     if (!fieldInfo.optional) {
-        throw new ValidationError(`Missing required property "${prefix ? prefix + '.' : ''}${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}"`);
-    }        
+        throw new ValidationError(
+            `Missing required property "${
+                prefix ? prefix + '.' : ''
+            }${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}"`
+        );
+    }
 
     if ('default' in fieldInfo) {
         return fieldInfo.default;
@@ -147,47 +160,60 @@ function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
     return NIL;
 }
 
-function validateObjectBySchema(raw, schema, i18n, prefix) {   
-    let latest = {};    
+function validateObjectBySchema(raw, schema, i18n, prefix) {
+    let latest = {};
 
     if (typeof raw !== 'object') {
         throw new ValidationError('The value is not an object.', {
             raw,
-            prefix
+            prefix,
         });
     }
 
-    _.forOwn(schema, (fieldInfo, fieldName) => {  
+    _.forOwn(schema, (fieldInfo, fieldName) => {
         if (Array.isArray(fieldInfo)) {
-            if (!fieldInfo.find(fieldInfoOption => {
-                let validated;
-                let hasError = false;
+            if (
+                !fieldInfo.find((fieldInfoOption) => {
+                    let validated;
+                    let hasError = false;
 
-                try {
-                    validated = validateObjectMember(raw, fieldName, { ...fieldInfoOption, skipTypeCast: true }, i18n, prefix);
-                } catch (error) {                    
-                    hasError = true;
-                    validated = NIL;
-                }
+                    try {
+                        validated = validateObjectMember(
+                            raw,
+                            fieldName,
+                            { ...fieldInfoOption, skipTypeCast: true },
+                            i18n,
+                            prefix
+                        );
+                    } catch (error) {
+                        hasError = true;
+                        validated = NIL;
+                    }
 
-                if (validated !== NIL) {
-                    latest[fieldName] = validated;                    
-                }  
-                
-                return !hasError;
-            })) {
+                    if (validated !== NIL) {
+                        latest[fieldName] = validated;
+                    }
+
+                    return !hasError;
+                })
+            ) {
                 throw new ValidationError(`Invalid "${fieldName}" value.`, {
                     raw,
-                    prefix
+                    prefix,
                 });
-            }   
-
+            }
         } else {
-            const validated = validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix);
+            const validated = validateObjectMember(
+                raw,
+                fieldName,
+                fieldInfo,
+                i18n,
+                prefix
+            );
             if (validated !== NIL) {
                 latest[fieldName] = validated;
-            }      
-        }           
+            }
+        }
     });
 
     return latest;

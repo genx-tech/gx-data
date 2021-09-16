@@ -1,5 +1,3 @@
-"use strict";
-
 const { URL } = require('url');
 const { _ } = require('@genx/july');
 const { SupportedDrivers } = require('./utils/lang');
@@ -11,9 +9,9 @@ const { SupportedDrivers } = require('./utils/lang');
 class Connector {
     /**
      * Create a connector.
-     * @param {*} driver 
-     * @param {*} connectionString 
-     * @param {*} options 
+     * @param {*} driver
+     * @param {*} connectionString
+     * @param {*} options
      */
     static createConnector(driver, connectionString, options) {
         if (SupportedDrivers.indexOf(driver) === -1) {
@@ -25,15 +23,15 @@ class Connector {
         }
 
         let ConnectorClass = require(`./drivers/${driver}/Connector`);
-        
+
         return new ConnectorClass(connectionString, options);
     }
 
-    /**     
+    /**
      * @param {string} driver - Data storage type
      * @param {string} connectionString - The connection string
      * @param {object} [options] - Connector options
-     * @property {boolean} [options.logger] - Logger instance 
+     * @property {boolean} [options.logger] - Logger instance
      */
     constructor(driver, connectionString, options) {
         /**
@@ -52,14 +50,14 @@ class Connector {
          * Connector options
          * @member {object}
          */
-        this.options = options || {};      
+        this.options = options || {};
 
         /**
          * Is the database a relational database
          * @member {boolean}
          */
         this.relational = false;
-        
+
         /**
          * Map of connection object to unique id, for tracing purpose
          * @private
@@ -69,7 +67,7 @@ class Connector {
 
     /**
      * Make a new connection components from current connection string and given components.
-     * @param {object} components 
+     * @param {object} components
      * @property {string} [components.username]
      * @property {string} [components.password]
      * @property {string} [components.database]
@@ -88,13 +86,16 @@ class Connector {
 
         if (components.hasOwnProperty('database')) {
             url.pathname = '/' + components['database'];
-        }        
+        }
 
         if (components.hasOwnProperty('options')) {
             let options = components.options;
 
             _.forOwn(options, (value, key) => {
-                url.searchParams.set(key, typeof value === 'boolean' ? (value ? 1 : 0) : value);
+                url.searchParams.set(
+                    key,
+                    typeof value === 'boolean' ? (value ? 1 : 0) : value
+                );
             });
         }
 
@@ -107,7 +108,7 @@ class Connector {
      */
     getConnectionStringWithoutCredential() {
         let url = new URL(this.connectionString);
-        
+
         url.username = '';
         url.password = '';
 
@@ -120,7 +121,7 @@ class Connector {
      */
     get database() {
         if (!this._database) {
-            this._database = (new URL(this.connectionString)).pathname.substr(1);
+            this._database = new URL(this.connectionString).pathname.substr(1);
         }
 
         return this._database;
@@ -136,7 +137,7 @@ class Connector {
 
     /**
      * Write log.
-     * @param  {...any} args 
+     * @param  {...any} args
      */
     log(...args) {
         if (this.options.logger) {

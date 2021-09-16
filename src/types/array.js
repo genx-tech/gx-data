@@ -1,5 +1,3 @@
-"use strict";
-
 const { _, quote } = require('@genx/july');
 const { isNothing } = require('../utils/lang');
 const any = require('./any');
@@ -24,36 +22,46 @@ function sanitize(value, info, i18n, prefix) {
     if (Array.isArray(value)) {
         if (info.elementSchema) {
             const Validators = require('../Validators');
-            return value.map((a, i) => Validators.validateAny(a, info.elementSchema, i18n, prefix + `[${i}]`));
+            return value.map((a, i) =>
+                Validators.validateAny(
+                    a,
+                    info.elementSchema,
+                    i18n,
+                    prefix + `[${i}]`
+                )
+            );
         }
 
         return value;
-    }    
+    }
 
-    throw new ValidationError('Invalid array value', { value: raw, field: info });
+    throw new ValidationError('Invalid array value', {
+        value: raw,
+        field: info,
+    });
 }
 
 module.exports = {
     name: 'array',
 
-    alias: [ 'list' ],
+    alias: ['list'],
 
     sanitize: sanitize,
 
     defaultValue: [],
 
-    generate: (info, i18n) => ([]),
+    generate: (info, i18n) => [],
 
     //when it's csv, should call toCsv in driver specific EntityModel
-    serialize: (value) => isNothing(value) ? null :  JSON.stringify(value),
+    serialize: (value) => (isNothing(value) ? null : JSON.stringify(value)),
 
-    qualifiers: any.qualifiers.concat([
-        'csv',
-        'of',
-        'elementSchema'
-    ]),
+    qualifiers: any.qualifiers.concat(['csv', 'of', 'elementSchema']),
 
-    toCsv: (data, separator = ',') => data.map(
-        elem => { elem = elem.toString(); return elem.indexOf(separator) != -1 ? quote(elem, '"') : elem; }
-        ).join(separator)
+    toCsv: (data, separator = ',') =>
+        data
+            .map((elem) => {
+                elem = elem.toString();
+                return elem.indexOf(separator) != -1 ? quote(elem, '"') : elem;
+            })
+            .join(separator),
 };

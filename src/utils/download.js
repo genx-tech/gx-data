@@ -2,7 +2,7 @@ const path = require('path');
 const { fs, tryRequire } = require('@genx/sys');
 
 module.exports = async (url, targetFile) => {
-    const request = tryRequire('superagent', __dirname);
+    const request = tryRequire('superagent');
 
     const dirName = path.dirname(targetFile);
 
@@ -19,7 +19,6 @@ module.exports = async (url, targetFile) => {
             reject(err);
         });
 
-        request.get(url).pipe(stream);    
+        request.get(url).pipe(stream);
     });
 };
-    

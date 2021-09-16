@@ -1,5 +1,3 @@
-"use strict";
-
-const Errors = require("@genx/error");
+const Errors = require('@genx/error');
 
 module.exports = Errors;

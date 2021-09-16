@@ -1,24 +1,23 @@
-"use strict";
-
 const Convertors = require('../Convertors');
 const any = require('./any');
 
 module.exports = {
     name: 'number',
 
-    alias: [ 'float', 'decimal', 'double' ],
+    alias: ['float', 'decimal', 'double'],
 
-    sanitize: (value, info, i18n) => value == null ? null : Convertors.toFloat(value),
+    sanitize: (value, info, i18n) =>
+        value == null ? null : Convertors.toFloat(value),
 
     defaultValue: 0,
 
     generate: (info, i18n) => 0,
 
-    serialize: value => value,
+    serialize: (value) => value,
 
     qualifiers: any.qualifiers.concat([
         'exact',
-        'totalDigits',        
-        'decimalDigits'
-    ])
+        'totalDigits',
+        'decimalDigits',
+    ]),
 };

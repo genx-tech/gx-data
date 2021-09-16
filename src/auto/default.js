@@ -1,11 +1,10 @@
-"use strict";
-
 const Types = require('../types');
 
 function auto(info, i18n) {
     pre: {
-        Types.Builtin.has(info.type), `Unknown primitive type: "${info.type}"."`;
-        info.auto, `Not an automatically generated field "${ info.name }".`;
+        Types.Builtin.has(info.type),
+            `Unknown primitive type: "${info.type}"."`;
+        info.auto, `Not an automatically generated field "${info.name}".`;
     }
 
     if (info.generator) {
@@ -29,10 +28,10 @@ function auto(info, i18n) {
         const G = require('../Generators');
         let gtor = G[name];
         return gtor(info, i18n, options);
-    } 
+    }
 
     let typeObjerct = Types[info.type];
     return typeObjerct.generate(info, i18n);
-};
+}
 
 module.exports = auto;

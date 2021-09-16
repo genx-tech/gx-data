@@ -1,4 +1,4 @@
-const { _, naming, sleep_ } = require("@genx/july");
+const { _, naming, sleep_ } = require('@genx/july');
 
 const retryFailed = (error) => [false, error];
 const retryOK = (result) => [true, result];
@@ -20,20 +20,21 @@ class DbModel {
 
     /**
      * Get entity model class by entity name.
-     * @param {*} entityName 
+     * @param {*} entityName
      */
     model(entityName) {
         if (this._modelCache[entityName]) return this._modelCache[entityName];
 
         let modelClassName = naming.pascalCase(entityName);
-        if (this._modelCache[modelClassName]) return this._modelCache[modelClassName];
+        if (this._modelCache[modelClassName])
+            return this._modelCache[modelClassName];
 
         let entityCustomClassFactory = this.loadCustomModel(modelClassName);
         let entityClassFactory = this.loadModel(modelClassName);
 
         let BaseEntityModel = require(`./drivers/${this.driver}/EntityModel`);
         if (entityCustomClassFactory) {
-            BaseEntityModel = entityCustomClassFactory(BaseEntityModel);            
+            BaseEntityModel = entityCustomClassFactory(BaseEntityModel);
         }
 
         const modelClass = entityClassFactory(BaseEntityModel);
@@ -42,7 +43,7 @@ class DbModel {
         if (modelClass.__init) {
             modelClass.__init();
         }
- 
+
         this._modelCache[entityName] = modelClass;
         if (modelClassName !== entityName) {
             this._modelCache[modelClassName] = modelClass;
@@ -54,20 +55,30 @@ class DbModel {
     entitiesOfType(baseEntityName) {
         return _.filter(this.entities, (entityName) => {
             let Model = this.model(entityName);
-            return Model.baseClasses && Model.baseClasses.indexOf(baseEntityName) > -1;
+            return (
+                Model.baseClasses &&
+                Model.baseClasses.indexOf(baseEntityName) > -1
+            );
         });
     }
 
     /**
-     * Run an action and automatically retry when failed. 
-     * @param {*} transactionName 
-     * @param {*} action_ 
-     * @param {*} connOptions 
-     * @param {*} maxRetry 
-     * @param {*} interval 
-     * @param {*} onRetry_ 
+     * Run an action and automatically retry when failed.
+     * @param {*} transactionName
+     * @param {*} action_
+     * @param {*} connOptions
+     * @param {*} maxRetry
+     * @param {*} interval
+     * @param {*} onRetry_
      */
-    async retry_(transactionName, action_, connOptions, maxRetry, interval, onRetry_) {
+    async retry_(
+        transactionName,
+        action_,
+        connOptions,
+        maxRetry,
+        interval,
+        onRetry_
+    ) {
         //retry will be ignored, if the transaction is a part of another transaction
         if (connOptions && connOptions.connection) {
             return action_(directReturn, directReturn);
@@ -88,11 +99,11 @@ class DbModel {
             }
 
             this.app.logException(
-                "warn",
+                'warn',
                 result,
-                `Unable to complete "${transactionName}" and will try ${maxRetry - i} more times after ${
-                    interval || 0
-                } ms.`
+                `Unable to complete "${transactionName}" and will try ${
+                    maxRetry - i
+                } more times after ${interval || 0} ms.`
             );
 
             if (interval != null) {
@@ -106,18 +117,30 @@ class DbModel {
     }
 
     /**
-     * Run an action as transaction and automatically retry when failed. 
-     * @param {*} transactionName 
-     * @param {*} action_ 
-     * @param {*} connOptions 
-     * @param {*} maxRetry 
-     * @param {*} interval 
-     * @param {*} onRetry_ 
+     * Run an action as transaction and automatically retry when failed.
+     * @param {*} transactionName
+     * @param {*} action_
+     * @param {*} connOptions
+     * @param {*} maxRetry
+     * @param {*} interval
+     * @param {*} onRetry_
      */
-    async safeRetry_(transactionName, action_, connOptions, maxRetry, interval, onRetry_) {
+    async safeRetry_(
+        transactionName,
+        action_,
+        connOptions,
+        maxRetry,
+        interval,
+        onRetry_
+    ) {
         return this.retry_(
             transactionName,
-            (ok, failed) => this.doTransaction_(async (connOpts) => ok(await action_(connOpts)), failed, connOptions),
+            (ok, failed) =>
+                this.doTransaction_(
+                    async (connOpts) => ok(await action_(connOpts)),
+                    failed,
+                    connOptions
+                ),
             connOptions,
             maxRetry,
             interval,

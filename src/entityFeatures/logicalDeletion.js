@@ -1,9 +1,7 @@
-"use strict";
-
 const Rules = require('../enum/Rules');
 const { mergeCondition } = require('../utils/lang');
 const Generators = require('../Generators');
-const { _ } = require("@genx/july");
+const { _ } = require('@genx/july');
 
 /**
  * A rule specifies the entity will not be deleted physically.
@@ -14,7 +12,9 @@ module.exports = {
     [Rules.RULE_BEFORE_FIND]: (feature, entityModel, context) => {
         let findOptions = context.options;
         if (!findOptions.$includeDeleted) {
-            findOptions.$query = mergeCondition(findOptions.$query, { [feature.field]: { $ne: feature.value } });
+            findOptions.$query = mergeCondition(findOptions.$query, {
+                [feature.field]: { $ne: feature.value },
+            });
         }
 
         return true;
@@ -24,29 +24,37 @@ module.exports = {
         if (!options.$physicalDeletion) {
             let { field, value, timestampField } = feature;
             let updateTo = {
-                [field]: value
+                [field]: value,
             };
 
             if (timestampField) {
-                updateTo[timestampField] = Generators.default(entityModel.meta.fields[timestampField], context.i18n);
+                updateTo[timestampField] = Generators.default(
+                    entityModel.meta.fields[timestampField],
+                    context.i18n
+                );
             }
 
-            const updateOpts = { 
-                $query: options.$query, 
-                $retrieveUpdated: options.$retrieveDeleted,                
+            const updateOpts = {
+                $query: options.$query,
+                $retrieveUpdated: options.$retrieveDeleted,
                 $bypassReadOnly: new Set([field, timestampField]),
-                ..._.pick(options, [ '$retrieveDeleted', '$retrieveDbResult' ])
-            }
+                ..._.pick(options, ['$retrieveDeleted', '$retrieveDbResult']),
+            };
 
-            context.return = await entityModel._update_(updateTo, updateOpts, context.connOptions, context.forSingleRecord);
+            context.return = await entityModel._update_(
+                updateTo,
+                updateOpts,
+                context.connOptions,
+                context.forSingleRecord
+            );
 
             if (options.$retrieveDbResult) {
-                context.rawOptions.$result = updateOpts.$result;                   
+                context.rawOptions.$result = updateOpts.$result;
             }
 
             return false;
         }
 
         return true;
-    }
+    },
 };

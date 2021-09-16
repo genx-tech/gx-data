@@ -1,10 +1,8 @@
-"use strict";
-
 const any = require('./any');
 const { ValidationError } = require('../utils/Errors');
 
 module.exports = {
-    name: 'enum',    
+    name: 'enum',
 
     sanitize: (value, info) => {
         if (value == null) return null;
@@ -13,7 +11,10 @@ module.exports = {
         value = (typeof value !== 'string' ? value.toString() : value).trim();
 
         if (info.values && info.values.indexOf(value) === -1) {
-            throw new ValidationError('Invalid enum value', { value: raw, field: info });
+            throw new ValidationError('Invalid enum value', {
+                value: raw,
+                field: info,
+            });
         }
 
         return value;
@@ -23,9 +24,7 @@ module.exports = {
 
     generate: (info) => info.values && info.values.length > 0 && info.values[0],
 
-    serialize: value => value,
+    serialize: (value) => value,
 
-    qualifiers: any.qualifiers.concat([
-        'values'
-    ])
+    qualifiers: any.qualifiers.concat(['values']),
 };

@@ -1,9 +1,5 @@
-"use strict";
-
-const { List } = require('immutable');
-
 module.exports = {
-    qualifiers: List([
+    qualifiers: [
         'code',
         'optional',
         'default',
@@ -17,6 +13,6 @@ module.exports = {
         'generator',
         'constraintOnUpdate',
         'constraintOnDelete',
-        'hasActivator'
-    ])
+        'hasActivator',
+    ],
 };

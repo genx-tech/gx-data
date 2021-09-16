@@ -1,5 +1,3 @@
-"use strict";
-
 const { _ } = require('@genx/july');
 const { isNothing } = require('../utils/lang');
 const { ValidationError } = require('../utils/Errors');
@@ -7,9 +5,9 @@ const any = require('./any');
 
 const jsonStarter = new Set('"', '[', '{');
 const jsonEnding = {
-    '"': '"', 
-    '[': ']', 
-    '{': '}'
+    '"': '"',
+    '[': ']',
+    '{': '}',
 };
 
 // info.dontParse
@@ -18,7 +16,7 @@ const jsonEnding = {
 module.exports = {
     name: 'object',
 
-    alias: [ 'json' ],
+    alias: ['json'],
 
     sanitize: (value, info, i18n, prefix) => {
         if (value == null) return null;
@@ -28,13 +26,18 @@ module.exports = {
 
         switch (type) {
             case 'string':
-                if (!info.dontParse && value.length > 0 && jsonStarter.has(value[0]) && jsonEnding[value[0]] === value[value.length-1]) {
+                if (
+                    !info.dontParse &&
+                    value.length > 0 &&
+                    jsonStarter.has(value[0]) &&
+                    jsonEnding[value[0]] === value[value.length - 1]
+                ) {
                     value = JSON.parse(value);
-                } 
+                }
                 break;
 
             case 'boolean':
-            case 'number':            
+            case 'number':
             case 'bigint':
                 //skip, keep original value
                 break;
@@ -42,18 +45,26 @@ module.exports = {
             case 'object':
                 if (!Array.isArray(value)) {
                     value = _.toPlainObject(value);
-                }                
+                }
                 break;
-            
+
             default:
-                throw new ValidationError('Invalid object value', { value: raw, feild: info });
+                throw new ValidationError('Invalid object value', {
+                    value: raw,
+                    feild: info,
+                });
         }
 
         if (info.schema) {
             const Validators = require('../Validators');
-            return Validators.validateObjectBySchema(value, info.schema, i18n, prefix);
+            return Validators.validateObjectBySchema(
+                value,
+                info.schema,
+                i18n,
+                prefix
+            );
         }
-        
+
         return value;
     },
 
@@ -61,9 +72,7 @@ module.exports = {
 
     generate: (info, i18n) => ({}),
 
-    serialize: (value) => isNothing(value) ? null : JSON.stringify(value),
+    serialize: (value) => (isNothing(value) ? null : JSON.stringify(value)),
 
-    qualifiers: any.qualifiers.concat([
-        'schema'
-    ])
+    qualifiers: any.qualifiers.concat(['schema']),
 };

@@ -1,5 +1,3 @@
-"use strict";
-
 const Convertors = require('../Convertors');
 const { ValidationError } = require('../utils/Errors');
 const any = require('./any');
@@ -7,7 +5,7 @@ const any = require('./any');
 module.exports = {
     name: 'integer',
 
-    alias: [ 'int' ],
+    alias: ['int'],
 
     sanitize: (value, info, i18n) => {
         if (value == null) return null;
@@ -15,7 +13,10 @@ module.exports = {
         let raw = value;
         value = Convertors.toInt(value);
         if (isNaN(value)) {
-            throw new ValidationError('Invalid integer value', { value: raw, field: info });
+            throw new ValidationError('Invalid integer value', {
+                value: raw,
+                field: info,
+            });
         }
 
         return value;
@@ -25,11 +26,7 @@ module.exports = {
 
     generate: (info, i18n) => 0,
 
-    serialize: value => value,
+    serialize: (value) => value,
 
-    qualifiers: any.qualifiers.concat([
-        'bytes',
-        'digits',        
-        'unsigned'
-    ])
+    qualifiers: any.qualifiers.concat(['bytes', 'digits', 'unsigned']),
 };

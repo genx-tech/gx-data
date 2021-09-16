@@ -1,13 +1,23 @@
 const { _ } = require('@genx/july');
 const { tryRequire } = require('@genx/sys');
-const mongodb = tryRequire('mongodb', __dirname);
+const mongodb = tryRequire('mongodb');
 const { MongoClient, GridFSBucket } = mongodb;
 const Connector = require('../../Connector');
 const Generators = require('../../Generators');
 const { InvalidArgument, DatabaseError } = require('../../utils/Errors');
 
-const UpdateOpsField = [ '$currentDate', '$inc', '$min', '$max', '$mul', '$rename', '$set', '$setOnInsert', '$unset' ];
-const UpdateOpsArray = [ '$addToSet', '$pop', '$pull', '$push', '$pullAll' ];
+const UpdateOpsField = [
+    '$currentDate',
+    '$inc',
+    '$min',
+    '$max',
+    '$mul',
+    '$rename',
+    '$set',
+    '$setOnInsert',
+    '$unset',
+];
+const UpdateOpsArray = ['$addToSet', '$pop', '$pull', '$push', '$pullAll'];
 const UpdateOps = UpdateOpsField.concat(UpdateOpsArray);
 
 /**
@@ -16,14 +26,14 @@ const UpdateOps = UpdateOpsField.concat(UpdateOpsArray);
  * @extends Connector
  */
 class MongodbConnector extends Connector {
-    /**          
-     * @param {string} name 
-     * @param {object} options 
-     * @property {boolean} [options.usePreparedStatement] - 
+    /**
+     * @param {string} name
+     * @param {object} options
+     * @property {boolean} [options.usePreparedStatement] -
      */
-    constructor(connectionString, options) {        
-        super('mongodb', connectionString, options);    
-        
+    constructor(connectionString, options) {
+        super('mongodb', connectionString, options);
+
         this.lockerField = this.options.lockerField || '__lock__';
     }
 
@@ -34,7 +44,7 @@ class MongodbConnector extends Connector {
 
     /**
      * Throw db error if no record inserted
-     * @param {insertOneWriteOpResultObject} opReturn 
+     * @param {insertOneWriteOpResultObject} opReturn
      */
     ensureInsertOne(opReturn) {
         if (opReturn.result.ok !== 1 || opReturn.result.n !== 1) {
@@ -46,10 +56,13 @@ class MongodbConnector extends Connector {
 
     /**
      * Throw db error if no record updated
-     * @param {updateWriteOpResultObject} opReturn 
+     * @param {updateWriteOpResultObject} opReturn
      */
     ensureUpdateOne(opReturn, enforceUpdated) {
-        if (opReturn.result.ok !== 1 || (enforceUpdated && opReturn.result.nModified !== 1)) {
+        if (
+            opReturn.result.ok !== 1 ||
+            (enforceUpdated && opReturn.result.nModified !== 1)
+        ) {
             throw new DatabaseError('Mongodb "updateOne" operation failed');
         }
     }
@@ -60,14 +73,17 @@ class MongodbConnector extends Connector {
     async end_() {
         if (this.client && this.client.isConnected()) {
             await this.client.close();
-            this.log('verbose', `mongodb: successfully disconnected from "${this.getConnectionStringWithoutCredential()}".`);                      
+            this.log(
+                'verbose',
+                `mongodb: successfully disconnected from "${this.getConnectionStringWithoutCredential()}".`
+            );
         }
 
         delete this.client;
     }
 
     /**
-     * Create a database connection based on the default connection string of the connector and given options.     
+     * Create a database connection based on the default connection string of the connector and given options.
      * @param {Object} [options] - Extra options for the connection, optional.
      * @property {bool} [options.multipleStatements=false] - Allow running multiple statements at a time.
      * @property {bool} [options.createDatabase=false] - Flag to used when creating a database.
@@ -75,38 +91,42 @@ class MongodbConnector extends Connector {
      */
     async connect_(options) {
         if (!this.client || !this.client.isConnected()) {
-            let client = new MongoClient(this.connectionString, {useNewUrlParser: true});
-            this.client = await client.connect(); 
-            this.log('verbose', `mongodb: successfully connected to "${this.getConnectionStringWithoutCredential()}".`);                      
-        }       
+            let client = new MongoClient(this.connectionString, {
+                useNewUrlParser: true,
+            });
+            this.client = await client.connect();
+            this.log(
+                'verbose',
+                `mongodb: successfully connected to "${this.getConnectionStringWithoutCredential()}".`
+            );
+        }
 
         return this.client.db(this.database);
     }
-    
+
     /**
      * Close a database connection.
      * @param {Db} conn - MySQL connection.
      */
-    async disconnect_(conn) {
-    }
+    async disconnect_(conn) {}
 
-    async ping_() {  
-        return this.execute_(db => {
+    async ping_() {
+        return this.execute_((db) => {
             return db.listCollections(null, { nameOnly: true }).toArray();
-        });  
+        });
     }
 
     async execute_(dbExecutor) {
         let db;
-    
+
         try {
             db = await this.connect_();
 
             return await dbExecutor(db);
-        } catch(err) {            
+        } catch (err) {
             throw err;
         } finally {
-            db && await this.disconnect_(db);
+            db && (await this.disconnect_(db));
         }
     }
 
@@ -125,41 +145,52 @@ class MongodbConnector extends Connector {
 
     /**
      * Create a new entity.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} options 
+     * @param {string} model
+     * @param {object} data
+     * @param {*} options
      */
     async insertOne_(model, data, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'insertOne: ' + JSON.stringify({model, data, options}));
+            this.log(
+                'verbose',
+                'insertOne: ' + JSON.stringify({ model, data, options })
+            );
         }
 
-        return this.onCollection_(model, (coll) => coll.insertOne(data, options));
+        return this.onCollection_(model, (coll) =>
+            coll.insertOne(data, options)
+        );
     }
 
     /**
      * Create an array of new entity.
-     * @param {string} model 
-     * @param {array} data 
-     * @param {*} options 
+     * @param {string} model
+     * @param {array} data
+     * @param {*} options
      */
     async insertMany_(model, data, options) {
         options = { ordered: false, ...options };
         if (this.options.logStatement) {
-            this.log('verbose', 'insertMany: ' + JSON.stringify({model, count: data.length, options}));
+            this.log(
+                'verbose',
+                'insertMany: ' +
+                    JSON.stringify({ model, count: data.length, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.insertMany(data, options));
+        return this.onCollection_(model, (coll) =>
+            coll.insertMany(data, options)
+        );
     }
 
     /**
      * Create a new entity if not exist.
-     * @param {string} model 
-     * @param {*} data 
-     * @param {*} options 
+     * @param {string} model
+     * @param {*} data
+     * @param {*} options
      */
     async insertOneIfNotExist_(model, data, options) {
         try {
-            return await this.insertOne_(model, data, options)
+            return await this.insertOne_(model, data, options);
         } catch (error) {
             if (error.code === 11000) {
                 return false;
@@ -171,42 +202,52 @@ class MongodbConnector extends Connector {
 
     /**
      * Update an existing entity.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {string} model
+     * @param {object} data
+     * @param {*} condition
+     * @param {*} options
      */
-    async updateOne_(model, data, condition, options) { 
+    async updateOne_(model, data, condition, options) {
         data = this._translateUpdate(data);
         if (this.options.logStatement) {
-            this.log('verbose', 'updateOne: ' + JSON.stringify({model, data, condition, options}));
+            this.log(
+                'verbose',
+                'updateOne: ' +
+                    JSON.stringify({ model, data, condition, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.updateOne(condition, data, options));
+        return this.onCollection_(model, (coll) =>
+            coll.updateOne(condition, data, options)
+        );
     }
 
     /**
      * Update an existing entity and return the updated record.
-     * @param {string} model 
-     * @param {*} data 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {string} model
+     * @param {*} data
+     * @param {*} condition
+     * @param {*} options
      */
-    async updateOneAndReturn_(model, data, condition, options) {            
-        let ret = await this.findOneAndUpdate_(model, data, condition, { ...options, upsert: false, returnOriginal: false });
+    async updateOneAndReturn_(model, data, condition, options) {
+        let ret = await this.findOneAndUpdate_(model, data, condition, {
+            ...options,
+            upsert: false,
+            returnOriginal: false,
+        });
         return ret && ret.value;
     }
 
     /**
      * Update an existing entity.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {string} model
+     * @param {object} data
+     * @param {*} condition
+     * @param {*} options
      * @param {object} dataOnInsert - Shared data on insert
      */
-    async upsertOne_(model, data, condition, options, dataOnInsert) { 
+    async upsertOne_(model, data, condition, options, dataOnInsert) {
         let trans = this._translateUpdate(data);
-        let { _id, ...others } = trans.$set || {}; 
+        let { _id, ...others } = trans.$set || {};
         if (!_.isNil(_id)) {
             trans.$set = others;
             trans.$setOnInsert = { _id };
@@ -219,23 +260,29 @@ class MongodbConnector extends Connector {
         options = { ...options, upsert: true };
 
         if (this.options.logStatement) {
-            this.log('verbose', 'upsertOne: ' + JSON.stringify({model, data: trans, condition, options}));
+            this.log(
+                'verbose',
+                'upsertOne: ' +
+                    JSON.stringify({ model, data: trans, condition, options })
+            );
         }
 
-        return this.onCollection_(model, (coll) => coll.updateOne(condition, trans, options));        
+        return this.onCollection_(model, (coll) =>
+            coll.updateOne(condition, trans, options)
+        );
     }
 
     /**
      * Upsert an entity and return updated.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {string} model
+     * @param {object} data
+     * @param {*} condition
+     * @param {*} options
      * @param {object} dataOnInsert - Shared data on insert
      */
-    async upsertOneAndReturn_(model, data, condition, options, dataOnInsert) { 
+    async upsertOneAndReturn_(model, data, condition, options, dataOnInsert) {
         let trans = this._translateUpdate(data);
-        let { _id, ...others } = trans.$set || {}; 
+        let { _id, ...others } = trans.$set || {};
         if (!_.isNil(_id)) {
             trans.$set = others;
             trans.$setOnInsert = { _id };
@@ -248,23 +295,29 @@ class MongodbConnector extends Connector {
         options = { ...options, upsert: true, returnOriginal: false };
 
         if (this.options.logStatement) {
-            this.log('verbose', 'upsertOne: ' + JSON.stringify({model, data: trans, condition, options}));
+            this.log(
+                'verbose',
+                'upsertOne: ' +
+                    JSON.stringify({ model, data: trans, condition, options })
+            );
         }
 
-        let ret = await this.onCollection_(model, (coll) => coll.findOneAndUpdate(condition, trans, options));
+        let ret = await this.onCollection_(model, (coll) =>
+            coll.findOneAndUpdate(condition, trans, options)
+        );
         return ret && ret.value;
     }
 
     /**
      * Update many entities.
-     * @param {string} model 
+     * @param {string} model
      * @param {object} data - Array of record with _id
      * @param {array} uniqueKeys - Unique keys in the data record used as filter
-     * @param {*} options 
+     * @param {*} options
      * @param {object} dataOnInsert - Shared data on insert
      */
-    async upsertMany_(model, data, uniqueKeys, options, dataOnInsert) { 
-        let ops = data.map(record => {
+    async upsertMany_(model, data, uniqueKeys, options, dataOnInsert) {
+        let ops = data.map((record) => {
             let { _id, ...updateData } = record;
 
             let updateOp = this._translateUpdate(updateData);
@@ -276,209 +329,309 @@ class MongodbConnector extends Connector {
             }
 
             return {
-                updateOne: { filter: { ..._.pick(record, uniqueKeys) }, update: updateOp, upsert: true }
+                updateOne: {
+                    filter: { ..._.pick(record, uniqueKeys) },
+                    update: updateOp,
+                    upsert: true,
+                },
             };
         });
 
         options = { ordered: false, ...options };
 
         if (this.options.logStatement) {
-            this.log('verbose', 'bulkWrite: ' + JSON.stringify({model, count: ops.length, options}));
+            this.log(
+                'verbose',
+                'bulkWrite: ' +
+                    JSON.stringify({ model, count: ops.length, options })
+            );
         }
 
-        return this.onCollection_(model, (coll) => coll.bulkWrite(ops, options));
+        return this.onCollection_(model, (coll) =>
+            coll.bulkWrite(ops, options)
+        );
     }
 
     /**
      * Update many entities and return updated.
-     * @param {*} model 
-     * @param {*} data 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {*} model
+     * @param {*} data
+     * @param {*} condition
+     * @param {*} options
      */
-    async updateManyAndReturn_(model, data, condition, options) {        
+    async updateManyAndReturn_(model, data, condition, options) {
         let lockerId = Generators.shortid();
 
         if (this.options.logStatement) {
-            this.log('verbose', 'updateMany+find+updateMany: ' + JSON.stringify({model, count: data.length, condition, options}));
+            this.log(
+                'verbose',
+                'updateMany+find+updateMany: ' +
+                    JSON.stringify({
+                        model,
+                        count: data.length,
+                        condition,
+                        options,
+                    })
+            );
         }
 
         return this.onCollection_(model, async (coll) => {
             //1.update and set locker
             let ret = await coll.updateMany(
                 { ...condition, [this.lockerField]: { $exists: false } }, // for all non-locked
-                { $set: { ...data, [this.lockerField]: lockerId } }, // lock it 
-                { ...options, upsert: false } );
-            
+                { $set: { ...data, [this.lockerField]: lockerId } }, // lock it
+                { ...options, upsert: false }
+            );
+
             try {
                 //2.return all locked records
-                return await coll.find({ [this.lockerField]: lockerId }, { projection: { [this.lockerField]: 0 } }).toArray(); // return all locked
-            } finally {    
+                return await coll
+                    .find(
+                        { [this.lockerField]: lockerId },
+                        { projection: { [this.lockerField]: 0 } }
+                    )
+                    .toArray(); // return all locked
+            } finally {
                 //3.remove lockers
-                if (ret.result.nModified > 0) { // unlock
-                    await coll.updateMany({ [this.lockerField]: lockerId }, { $unset: { [this.lockerField]: "" } }, { upsert: false });    
+                if (ret.result.nModified > 0) {
+                    // unlock
+                    await coll.updateMany(
+                        { [this.lockerField]: lockerId },
+                        { $unset: { [this.lockerField]: '' } },
+                        { upsert: false }
+                    );
                 }
             }
-        });         
+        });
     }
 
     /**
      * Insert many entities if not exist.
-     * @param {*} model 
-     * @param {*} data 
-     * @param {*} uniqueKeys 
-     * @param {*} options 
+     * @param {*} model
+     * @param {*} data
+     * @param {*} uniqueKeys
+     * @param {*} options
      */
     async insertManyIfNotExist_(model, data, uniqueKeys, options) {
         console.log('buggy: tofix');
-        let ops = data.map(record => ({
-            updateOne: { filter: { ..._.pick(record, uniqueKeys) }, update: { $setOnInsert: record }, upsert: true }
+        let ops = data.map((record) => ({
+            updateOne: {
+                filter: { ..._.pick(record, uniqueKeys) },
+                update: { $setOnInsert: record },
+                upsert: true,
+            },
         }));
 
-        return this.onCollection_(model, (coll) => coll.bulkWrite(ops, { ordered: false, ...options }));
+        return this.onCollection_(model, (coll) =>
+            coll.bulkWrite(ops, { ordered: false, ...options })
+        );
     }
 
     /**
      * Update multiple documents.
-     * @param {string} model 
-     * @param {*} data 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {string} model
+     * @param {*} data
+     * @param {*} condition
+     * @param {*} options
      */
-    async updateMany_(model, data, condition, options) { 
+    async updateMany_(model, data, condition, options) {
         data = this._translateUpdate(data);
         if (this.options.logStatement) {
-            this.log('verbose', 'updateMany: ' + JSON.stringify({model, count: data.length, condition, options}));
+            this.log(
+                'verbose',
+                'updateMany: ' +
+                    JSON.stringify({
+                        model,
+                        count: data.length,
+                        condition,
+                        options,
+                    })
+            );
         }
 
-        return this.onCollection_(model, (coll) => coll.updateMany(condition, data, options));
+        return this.onCollection_(model, (coll) =>
+            coll.updateMany(condition, data, options)
+        );
     }
 
     /**
      * Replace an existing entity or create a new one.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} options 
+     * @param {string} model
+     * @param {object} data
+     * @param {*} options
      */
     async replaceOne_(model, data, condition, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'replaceOne: ' + JSON.stringify({model, data, condition, options}));
+            this.log(
+                'verbose',
+                'replaceOne: ' +
+                    JSON.stringify({ model, data, condition, options })
+            );
         }
 
-        return this.onCollection_(model, (coll) => coll.replaceOne(condition, data, options));
+        return this.onCollection_(model, (coll) =>
+            coll.replaceOne(condition, data, options)
+        );
     }
 
     /**
      * Remove an existing entity.
-     * @param {string} model 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {string} model
+     * @param {*} condition
+     * @param {*} options
      */
     async deleteOne_(model, condition, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'deleteOne: ' + JSON.stringify({model, condition, options}));
+            this.log(
+                'verbose',
+                'deleteOne: ' + JSON.stringify({ model, condition, options })
+            );
         }
 
-        return this.onCollection_(model, (coll) => coll.deleteOne(condition, options));
+        return this.onCollection_(model, (coll) =>
+            coll.deleteOne(condition, options)
+        );
     }
 
     /**
      * Remove an existing entity.
-     * @param {string} model 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {string} model
+     * @param {*} condition
+     * @param {*} options
      */
     async deleteMany_(model, condition, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'deleteMany: ' + JSON.stringify({model, condition, options}));
+            this.log(
+                'verbose',
+                'deleteMany: ' + JSON.stringify({ model, condition, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.deleteMany(condition, options));
+        return this.onCollection_(model, (coll) =>
+            coll.deleteMany(condition, options)
+        );
     }
 
     /**
      * Replace (insert or update for exsisting) an entity and return original record.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} options 
+     * @param {string} model
+     * @param {object} data
+     * @param {*} options
      */
     async findOneAndReplace_(model, data, condition, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'findOneAndReplace: ' + JSON.stringify({model, data, options}));
+            this.log(
+                'verbose',
+                'findOneAndReplace: ' + JSON.stringify({ model, data, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.findOneAndReplace(condition, data, options));
+        return this.onCollection_(model, (coll) =>
+            coll.findOneAndReplace(condition, data, options)
+        );
     }
 
     /**
      * Find a document and update it in one atomic operation. Requires a write lock for the duration of the operation.
-     * @param {string} model 
-     * @param {object} data 
-     * @param {*} options 
+     * @param {string} model
+     * @param {object} data
+     * @param {*} options
      */
-    async findOneAndUpdate_(model, data, condition, options) {     
+    async findOneAndUpdate_(model, data, condition, options) {
         data = this._translateUpdate(data);
         if (this.options.logStatement) {
-            this.log('verbose', 'findOneAndUpdate: ' + JSON.stringify({model, data, condition, options}));
+            this.log(
+                'verbose',
+                'findOneAndUpdate: ' +
+                    JSON.stringify({ model, data, condition, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.findOneAndUpdate(condition, data, options));
+        return this.onCollection_(model, (coll) =>
+            coll.findOneAndUpdate(condition, data, options)
+        );
     }
 
     async findOneAndDelete_(model, condition, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'findOneAndDelete: ' + JSON.stringify({model, condition, options}));
+            this.log(
+                'verbose',
+                'findOneAndDelete: ' +
+                    JSON.stringify({ model, condition, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.findOneAndDelete(condition, options));
+        return this.onCollection_(model, (coll) =>
+            coll.findOneAndDelete(condition, options)
+        );
     }
 
     async findOne_(model, condition, options) {
-        let queryOptions = {...options};
+        let queryOptions = { ...options };
         let query;
 
         if (!_.isEmpty(condition)) {
             let { $projection, $query, ...others } = condition;
 
             if ($projection) {
-                queryOptions.projection = $projection;                
+                queryOptions.projection = $projection;
             }
 
             query = { ...others, ...$query };
         } else {
-            throw new InvalidArgument('findOne requires non-empty query condition.');
+            throw new InvalidArgument(
+                'findOne requires non-empty query condition.'
+            );
         }
 
         if (this.options.logStatement) {
-            this.log('verbose', 'findOne: ' + JSON.stringify({model, condition: query, options: queryOptions}));
+            this.log(
+                'verbose',
+                'findOne: ' +
+                    JSON.stringify({
+                        model,
+                        condition: query,
+                        options: queryOptions,
+                    })
+            );
         }
 
-        return this.onCollection_(model, (coll) => coll.findOne(query, queryOptions));
+        return this.onCollection_(model, (coll) =>
+            coll.findOne(query, queryOptions)
+        );
     }
 
     /**
      * Perform select operation.
-     * @param {*} model 
-     * @param {*} condition 
-     * @param {*} options 
+     * @param {*} model
+     * @param {*} condition
+     * @param {*} options
      */
     async find_(model, condition, options) {
-        let queryOptions = {...options};
+        let queryOptions = { ...options };
         let query, requireTotalCount;
 
         if (!_.isEmpty(condition)) {
-            let { $projection, $totalCount, $orderBy, $offset, $limit, $query, ...others } = condition;
+            let {
+                $projection,
+                $totalCount,
+                $orderBy,
+                $offset,
+                $limit,
+                $query,
+                ...others
+            } = condition;
 
             if ($projection) {
-                queryOptions.projection = $projection;                
+                queryOptions.projection = $projection;
             }
 
             if ($orderBy) {
-                queryOptions.sort = $orderBy;                
+                queryOptions.sort = $orderBy;
             }
 
             if ($offset) {
-                queryOptions.skip = $offset;                
+                queryOptions.skip = $offset;
             }
 
             if ($limit) {
-                queryOptions.limit = $limit;                
+                queryOptions.limit = $limit;
             }
 
             query = { ...others, ...$query };
@@ -489,44 +642,67 @@ class MongodbConnector extends Connector {
         }
 
         if (this.options.logStatement) {
-            this.log('verbose', 'find: ' + JSON.stringify({model, condition: query, options: queryOptions}));
+            this.log(
+                'verbose',
+                'find: ' +
+                    JSON.stringify({
+                        model,
+                        condition: query,
+                        options: queryOptions,
+                    })
+            );
         }
 
-        return this.onCollection_(model, async coll => {            
+        return this.onCollection_(model, async (coll) => {
             let result = await coll.find(query, queryOptions).toArray();
 
             if (requireTotalCount) {
                 let totalCount = await coll.find(query).count();
-                return [ result, totalCount ];
+                return [result, totalCount];
             }
 
             return result;
         });
-    }   
-
-    async aggregate_(model, pipeline, options) {        
-        if (this.options.logStatement) {
-            this.log('verbose', 'aggregate: ' + JSON.stringify({model, pipeline, options}));
-        }
-        return this.onCollection_(model, (coll) => coll.aggregate(pipeline, options).toArray());
     }
 
-    async distinct_(model, field, query, options) {        
+    async aggregate_(model, pipeline, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'distinct: ' + JSON.stringify({model, field, query, options}));
+            this.log(
+                'verbose',
+                'aggregate: ' + JSON.stringify({ model, pipeline, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.distinct(field, query, options));
-    }    
+        return this.onCollection_(model, (coll) =>
+            coll.aggregate(pipeline, options).toArray()
+        );
+    }
+
+    async distinct_(model, field, query, options) {
+        if (this.options.logStatement) {
+            this.log(
+                'verbose',
+                'distinct: ' + JSON.stringify({ model, field, query, options })
+            );
+        }
+        return this.onCollection_(model, (coll) =>
+            coll.distinct(field, query, options)
+        );
+    }
 
     async count_(model, query, options) {
         if (this.options.logStatement) {
-            this.log('verbose', 'count: ' + JSON.stringify({model, query, options}));
+            this.log(
+                'verbose',
+                'count: ' + JSON.stringify({ model, query, options })
+            );
         }
-        return this.onCollection_(model, (coll) => coll.countDocuments(query, options));        
+        return this.onCollection_(model, (coll) =>
+            coll.countDocuments(query, options)
+        );
     }
 
     async onCollection_(model, executor) {
-        return this.execute_(db => executor(db.collection(model)));
+        return this.execute_((db) => executor(db.collection(model)));
     }
 
     _translateUpdate(update) {

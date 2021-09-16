@@ -1,5 +1,3 @@
-"use strict";
-
 const path = require('path');
 const util = require('util');
 const Util = require('./util.js');
@@ -19,20 +17,27 @@ class I18n {
     constructor(config) {
         config || (config = {});
 
-        this.supportedLocales = config.supportedLocales ? config.supportedLocales.map(l => I18n.normalizeLocale(l)) : [ 'en_AU', 'en_US', 'zh_CN' ];
-        this.reverseUpdate = util.isNullOrUndefined(config.reverseUpdate) ? false :  Convertors.toBoolean(config.reverseUpdate);
-        this.updateWithMeta = util.isNullOrUndefined(config.updateWithMeta) ? false : Convertors.toBoolean(config.updateWithMeta);
+        this.supportedLocales = config.supportedLocales
+            ? config.supportedLocales.map((l) => I18n.normalizeLocale(l))
+            : ['en_AU', 'en_US', 'zh_CN'];
+        this.reverseUpdate = util.isNullOrUndefined(config.reverseUpdate)
+            ? false
+            : Convertors.toBoolean(config.reverseUpdate);
+        this.updateWithMeta = util.isNullOrUndefined(config.updateWithMeta)
+            ? false
+            : Convertors.toBoolean(config.updateWithMeta);
         this.timezone = config.timezone;
         this.pendingUpdates = {};
     }
 
     isLocaleSupported(locale) {
         let n = locale && I18n.normalizeLocale(locale);
-        return this.supportedLocales.some(l => n === l);
+        return this.supportedLocales.some((l) => n === l);
     }
 
     async setupAsync(locale) {
-        if (!this.isLocaleSupported(locale)) return Promise.reject('unsupported_locale');
+        if (!this.isLocaleSupported(locale))
+            return Promise.reject('unsupported_locale');
 
         this.dictionary = {};
 
@@ -68,7 +73,10 @@ class I18n {
 
     addToDictionary(token, text, saveImmediate) {
         if (this.updateWithMeta) {
-            text = { text: text, comment: 'Added at ' + this.datetime().format() }
+            text = {
+                text: text,
+                comment: 'Added at ' + this.datetime().format(),
+            };
         }
 
         Util.setValueByPath(this.dictionary, token, text);
@@ -93,7 +101,9 @@ class I18n {
     }
 
     flush() {
-        if (this.reverseUpdate) { this.save(); }
+        if (this.reverseUpdate) {
+            this.save();
+        }
     }
 
     get dashForm() {
@@ -125,11 +135,10 @@ class I18n {
         if (pos == -1) return '';
 
         return locale.substr(pos + 1);
-    }    
+    }
 }
 
 class FileI18n extends I18n {
-
     constructor(config) {
         super(config);
 
@@ -145,28 +154,31 @@ class FileI18n extends I18n {
             Util.fs.readdir(dir, function (err, files) {
                 if (err) return finish(err);
 
-                Util.async.each(files, function (file, cb) {
-                    let langFilePath = path.join(dir, file);
-                    let stats = Util.fs.statSync(langFilePath);
+                Util.async.each(
+                    files,
+                    function (file, cb) {
+                        let langFilePath = path.join(dir, file);
+                        let stats = Util.fs.statSync(langFilePath);
 
-                    if (stats.isDirectory()) {
-                        dict[file] = {};
-                        return loadDir(dict[file], langFilePath, cb);
-                    }
+                        if (stats.isDirectory()) {
+                            dict[file] = {};
+                            return loadDir(dict[file], langFilePath, cb);
+                        }
 
-                    let extName = path.extname(file);
-                    if (extName.toLowerCase() !== '.json') return cb();
+                        let extName = path.extname(file);
+                        if (extName.toLowerCase() !== '.json') return cb();
 
-                    Util.fs.readJson(langFilePath, function (err, content) {
-                        if (err) return cb(err);
+                        Util.fs.readJson(langFilePath, function (err, content) {
+                            if (err) return cb(err);
 
-                        let basename = path.basename(file, extName);
-                        dict[basename] = content;
+                            let basename = path.basename(file, extName);
+                            dict[basename] = content;
 
-                        cb();
-                    });
-
-                }, finish);
+                            cb();
+                        });
+                    },
+                    finish
+                );
             });
         }
 

@@ -16,7 +16,7 @@ exports.DSL_SOURCE_PATH = 'oolong';
 /**
  * Path of reversely generated oolong schema files
  */
-exports.DSL_OUTPUT_PATH = 'oolong'; 
+exports.DSL_OUTPUT_PATH = 'oolong';
 
 /**
  * Path of generated DAO model source files
@@ -31,4 +31,4 @@ exports.SCRIPT_OUTPUT_PATH = 'src/scripts';
 /**
  * Path of generated manifest files, e.g. API gateway config
  */
-exports.MANIFEST_OUTPUT_PATH = 'conf'; 
+exports.MANIFEST_OUTPUT_PATH = 'conf';

@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/utils/Errors.js"],"names":["Errors","require","module","exports"],"mappings":";;;;AAAA,MAAMA,MAAM,GAAGC,OAAO,CAAC,aAAD,CAAtB;;AAEAC,MAAM,CAACC,OAAP,GAAiBH,MAAjB","sourcesContent":["const Errors = require('@genx/error');\n\nmodule.exports = Errors;\n"],"file":"Errors.js"}

@@ -1,23 +1,26 @@
-"use strict";
-
 const { isNothing } = require('../utils/lang');
 const any = require('./any');
 
 module.exports = {
     name: 'binary',
 
-    alias: [ 'blob', 'buffer' ],
+    alias: ['blob', 'buffer'],
 
-    sanitize: (value, info, i18n) => value == null ? null : (value instanceof Buffer) ? input : Buffer.from(value.toString()),
+    sanitize: (value, info, i18n) =>
+        value == null
+            ? null
+            : value instanceof Buffer
+            ? input
+            : Buffer.from(value.toString()),
 
     defaultValue: 0,
 
     generate: (info, i18n) => null,
 
-    serialize: (value, options) => isNothing(value) ? null : value.toString(options && options.encoding || 'base64'),
+    serialize: (value, options) =>
+        isNothing(value)
+            ? null
+            : value.toString((options && options.encoding) || 'base64'),
 
-    qualifiers: any.qualifiers.concat([
-        'fixedLength',
-        'maxLength'
-    ])
+    qualifiers: any.qualifiers.concat(['fixedLength', 'maxLength']),
 };

@@ -1,5 +1,3 @@
-"use strict";
-
 const { _ } = require('@genx/july');
 const { DateTime } = require('luxon');
 const any = require('./any');
@@ -10,11 +8,11 @@ module.exports = {
 
     typeObject: DateTime,
 
-    alias: [ 'date', 'time', 'timestamp' ],
+    alias: ['date', 'time', 'timestamp'],
 
-    sanitize: (value, info, i18n) => {   
+    sanitize: (value, info, i18n) => {
         if (value == null) return null;
-        
+
         let opts = { zone: i18n?.timezone || 'local' };
 
         let raw = value;
@@ -23,7 +21,7 @@ module.exports = {
             value = DateTime.fromJSDate(value, opts);
         } else {
             let type = typeof value;
-        
+
             if (type === 'string' && !info.dontParse) {
                 if (info.inputFormat) {
                     value = DateTime.fromFormat(value, info.inputFormat, opts);
@@ -32,25 +30,31 @@ module.exports = {
                 }
             } else if (type === 'number') {
                 value = DateTime.fromMillis(value, opts);
-            } else if (type !== 'object' || !value.isLuxonDateTime) {                
-                throw new ValidationError('Invalid datetime object.', { value: raw, field: info });
-            }             
+            } else if (type !== 'object' || !value.isLuxonDateTime) {
+                throw new ValidationError('Invalid datetime object.', {
+                    value: raw,
+                    field: info,
+                });
+            }
         }
-        
+
         if (!value.isValid) {
-            throw new ValidationError('Invalid datetime object.', { value: raw, field: info });
+            throw new ValidationError('Invalid datetime object.', {
+                value: raw,
+                field: info,
+            });
         }
-        
+
         return value;
     },
 
     defaultValue: 0,
 
-    generate: (info, i18n) => i18n ? i18n.now() : DateTime.local(),
+    generate: (info, i18n) => (i18n ? i18n.now() : DateTime.local()),
 
-    serialize: value => {
+    serialize: (value) => {
         if (value && value.toISO) {
-            return value.toISO({ includeOffset: false }); 
+            return value.toISO({ includeOffset: false });
         }
 
         return value;
@@ -61,6 +65,6 @@ module.exports = {
         'dateOnly',
         'timeOnly',
         'inputFormat',
-        'dontParse'
-    ])
+        'dontParse',
+    ]),
 };
