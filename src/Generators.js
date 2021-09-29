@@ -4,13 +4,13 @@ const { fs } = require('@genx/sys');
 
 const basePath = path.resolve(__dirname, 'auto');
 
-let generators = fs.readdirSync(basePath);
-let G = {};
+const generators = fs.readdirSync(basePath);
+const G = {};
 
 generators.forEach((file) => {
-    let f = path.join(basePath, file);
+    const f = path.join(basePath, file);
     if (fs.statSync(f).isFile() && _.endsWith(file, '.js')) {
-        let g = path.basename(file, '.js');
+        const g = path.basename(file, '.js');
         G[g] = require(f);
     }
 });

@@ -21,8 +21,8 @@ module.exports = {
     sanitize: (value, info, i18n, prefix) => {
         if (value == null) return null;
 
-        let raw = value;
-        let type = typeof value;
+        const raw = value;
+        const type = typeof value;
 
         switch (type) {
             case 'string':

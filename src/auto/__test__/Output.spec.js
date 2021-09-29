@@ -5,9 +5,27 @@ const uniqid = require('../uniqid');
 const uuid = require('../uuid');
 
 describe('unit:generators:auto', function () {        
-    describe('hyperid', function () {
-        it('length', async function () {
+    describe.only('hyperid', function () {
+        it('var length', async function () {
             let id = hyperid({ type: 'text' });
+            
+            console.log(id);
+        });
+
+        it('var length url unsafe', async function () {
+            let id = hyperid({ type: 'text' }, null, { urlSafe: false });
+            
+            console.log(id);
+        });
+
+        it('fixed length', async function () {
+            let id = hyperid({ fixedLength: true });
+            
+            console.log(id);
+        });
+
+        it('fixed length url unsafe', async function () {
+            let id = hyperid({ fixedLength: true }, null, { urlSafe: false });
             
             console.log(id);
         });

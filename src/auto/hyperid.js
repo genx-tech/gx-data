@@ -1,21 +1,36 @@
 const { tryRequire } = require('@genx/sys');
 
-let flInstance, instance;
+const instances = [ null, null, null, null ];
 
 module.exports = function (info, i18n, options) {
     const hyperid = tryRequire('hyperid');
 
-    if (info && info.fixedLength) {
-        if (!flInstance) {
-            flInstance = hyperid({ urlSafe: true, fixedLength: true });
+    let index = info && info.fixedLength ? 1 : 0;
+    index += (options == null || options.urlSafe) ? 0 : 2;
+
+    let generator = instances[index];
+
+    if (generator == null) {
+        switch (index) {
+            case 0: 
+                generator = hyperid({ urlSafe: true });
+                break;
+
+            case 1:
+                generator = hyperid({ urlSafe: true, fixedLength: true });
+                break;
+
+            case 2:
+                generator = hyperid();
+                break; 
+
+            case 3:
+                generator = hyperid({ fixedLength: true });
+                break; 
         }
 
-        return flInstance();
+        instances[index] = generator;
     }
 
-    if (!instance) {
-        instance = hyperid();
-    }
-
-    return instance();
+    return generator();
 };

@@ -421,6 +421,33 @@ class EntityModel {
     }
 
     /**
+     * Regenerate creation data and try again if duplicate record exists
+     * @param {Function} dataGenerator_ 
+     * @param {Object} connOptions 
+     */
+    static async retryCreateOnDuplicate_(dataGenerator_, maxRery, createOptions, connOptions) {
+        let counter = 0; 
+        let errorRet;
+        maxRery || (maxRery = 10);
+
+        while (counter++ < maxRery) {
+            const data = await dataGenerator_();           
+
+            try {
+                return await this.create_(data, createOptions, connOptions);
+            } catch (error) {
+                if (error.code !== 'E_DUPLICATE') {
+                    throw error;
+                }
+
+                errorRet = error;
+            }
+        }      
+        
+        return errorRet;
+    }
+
+    /**
      * Create a new entity with given data.
      * @param {object} data - Entity data
      * @param {object} [createOptions] - Create options
@@ -431,7 +458,7 @@ class EntityModel {
      * @returns {EntityModel}
      */
     static async create_(data, createOptions, connOptions) {
-        let rawOptions = createOptions;
+        const rawOptions = createOptions;
 
         if (!createOptions) {
             createOptions = {};
@@ -442,7 +469,7 @@ class EntityModel {
             true
         );
 
-        let context = {
+        const context = {
             op: 'create',
             raw,
             rawOptions,
@@ -454,7 +481,7 @@ class EntityModel {
             return context.return;
         }
 
-        let success = await this._safeExecute_(async (context) => {
+        const success = await this._safeExecute_(async (context) => {
             if (!_.isEmpty(references)) {
                 await this.ensureTransaction_(context);
                 await this._populateReferences_(context, references);
@@ -469,7 +496,7 @@ class EntityModel {
                     associations,
                     true /* before create */
                 );
-                //check any other associations left
+                // check any other associations left
                 needCreateAssocs = !_.isEmpty(associations);
             }
 

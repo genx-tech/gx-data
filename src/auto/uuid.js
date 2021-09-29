@@ -1,7 +1,7 @@
 const { tryRequire } = require('@genx/sys');
 
 module.exports = function (info, i18n, options) {
-    const uuidv4 = tryRequire('uuid/v4');
+    const { v4: uuidv4 } = tryRequire('uuid');
 
     return uuidv4();
 };

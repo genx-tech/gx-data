@@ -1,4 +1,5 @@
 const { _ } = require('@genx/july');
+const { InvalidArgument } = require('@genx/error');
 
 const ARRAY = require('./array');
 const BINARY = require('./binary');
@@ -39,13 +40,12 @@ const Types = {
     ]),
 
     sanitize: function (value, info, ...others) {
-        pre: {
-            Types.Builtin.has(info.type),
-                `Unknown primitive type: "${info.type}"."`;
+        if (!Types.Builtin.has(info.type)) {
+            throw new InvalidArgument(`Unknown primitive type: "${info.type}"."`);
         }
 
-        let typeObjerct = Types[info.type];
-        return typeObjerct.sanitize(value, info, ...others);
+        const typeObject = Types[info.type];
+        return typeObject.sanitize(value, info, ...others);
     },
 };
 

@@ -10,7 +10,7 @@ module.exports = {
         value == null
             ? null
             : value instanceof Buffer
-            ? input
+            ? value
             : Buffer.from(value.toString()),
 
     defaultValue: 0,
