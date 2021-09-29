@@ -1055,9 +1055,9 @@ class MySQLConnector extends Connector {
     }
 
     _buildGroupBy(groupBy, params, hasJoining, aliasMap) {
-        if (typeof groupBy === 'string') return 'GROUP BY ' + this._escapeIdWithAlias(groupBy, hasJoining, aliasMap);
+        if (typeof groupBy === 'string') return 'GROUP BY ' + this._buildColumn(groupBy, params, hasJoining, aliasMap);
 
-        if (Array.isArray(groupBy)) return 'GROUP BY ' + groupBy.map(by => this._escapeIdWithAlias(by, hasJoining, aliasMap)).join(', ');
+        if (Array.isArray(groupBy)) return 'GROUP BY ' + this._buildColumns(groupBy, params, hasJoining, aliasMap);
 
         if (_.isPlainObject(groupBy)) {
             let { columns, having } = groupBy;
