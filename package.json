@@ -1,6 +1,6 @@
 {
     "name": "@genx/data",
-    "version": "2.0.0",
+    "version": "2.0.2",
     "description": "Gen-X Suite data abstract layer.",
     "main": "lib/index.js",
     "publishConfig": {
@@ -68,10 +68,10 @@
         "winston": "git+https://github.com/kitmi/winston.git"
     },
     "dependencies": {
-        "@genx/error": "^1.1.1",
-        "@genx/jes": "^1.1.3",
+        "@genx/error": "^1.1.2",
+        "@genx/jes": "^1.2.2",
         "@genx/july": "^0.3.2",
-        "@genx/sys": "^0.1.4",
+        "@genx/sys": "^0.1.5",
         "luxon": "^1.28.0",
         "number-to-letter": "^1.0.1",
         "randomstring": "^1.1.5",

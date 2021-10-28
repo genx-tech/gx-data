@@ -1,5 +1,4 @@
 const { _ } = require('@genx/july');
-const { tryRequire } = require('@genx/sys');
 const { isNothing } = require('./utils/lang');
 const { ValidationError } = require('./utils/Errors');
 const validator = require('validator');
@@ -94,24 +93,6 @@ module.exports.notNullIf = function (value, condition) {
     return !condition || !isNothing(value);
 };
 
-/**
- * Validate an obj with condition like mongo-style query
- * @param {*} obj
- * @param {array|object} condition
- * @returns {boolean}
- */
-function validate(obj, condition) {
-    const { Query } = tryRequire('mingo');
-    let query = new Query(condition);
-
-    // test if an object matches query
-    return query.test(obj);
-}
-
-module.exports.validate = validate;
-
-module.exports.validateAny = Types.sanitize;
-
 const NIL = Symbol('nil');
 
 function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
@@ -170,7 +151,12 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
         });
     }
 
-    _.forOwn(schema, (fieldInfo, fieldName) => {
+    if (typeof schema === 'function') {
+        //use deferred activation of schema to avoid circullar reference
+        schema = schema();
+    }
+
+    _.forOwn(schema, (fieldInfo, fieldName) => {  
         if (Array.isArray(fieldInfo)) {
             if (
                 !fieldInfo.find((fieldInfoOption) => {
