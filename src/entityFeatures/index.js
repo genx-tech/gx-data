@@ -8,17 +8,19 @@ const features = fs.readdirSync(basePath);
 const featureRules = {};
 
 features.forEach((file) => {
-    let f = path.join(basePath, file);
+    const f = path.join(basePath, file);
     if (fs.statSync(f).isFile() && _.endsWith(file, '.js')) {
-        let featureName = path.basename(file, '.js');
+        const featureName = path.basename(file, '.js');
         if (featureName === 'index') return;
 
-        let feature = require(f);
+        const feature = require(f);
 
         _.forOwn(feature, (action, ruleName) => {
-            let key = featureName + '.' + ruleName;
+            const key = featureName + '.' + ruleName;
 
-            assert: !(key in featureRules), key;
+            if (key in featureRules) {
+                throw new Error(`Duplicate feature rule: ${key}`);
+            }
             featureRules[key] = action;
         });
     }
@@ -26,18 +28,18 @@ features.forEach((file) => {
 
 module.exports = {
     applyRules_: async (ruleName, entityModel, context) => {
-        for (let featureName in entityModel.meta.features) {
-            let key = featureName + '.' + ruleName;
-            let action = featureRules[key];
+        for (const featureName in entityModel.meta.features) {
+            const key = featureName + '.' + ruleName;
+            const action = featureRules[key];
 
             if (action) {
                 let featureInfo = entityModel.meta.features[featureName];
 
                 if (
                     context.options.$features &&
-                    context.options.$features.hasOwnProperty(featureName)
+                    featureName in context.options.$features
                 ) {
-                    let customFeatureInfo =
+                    const customFeatureInfo =
                         context.options.$features[featureName];
                     if (!customFeatureInfo) {
                         continue;
@@ -46,7 +48,7 @@ module.exports = {
                     featureInfo = { ...featureInfo, ...customFeatureInfo };
                 }
 
-                let asExpected = await action(
+                const asExpected = await action(
                     featureInfo,
                     entityModel,
                     context

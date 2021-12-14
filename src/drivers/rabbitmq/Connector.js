@@ -74,12 +74,12 @@ class RabbitmqConnector extends Connector {
             }
         }
 
-        let opts = {
+        const opts = {
             direction: 'out',
             ...options,
         };
 
-        let chKey = opts.exchange
+        const chKey = opts.exchange
             ? `[X]${opts.exchange}|${opts.direction}`
             : `[Q]${opts.queue}|${opts.direction}`;
 
@@ -130,13 +130,13 @@ class RabbitmqConnector extends Connector {
      * @param {*} obj
      */
     async sendToWorkers_(queue, obj) {
-        let ch = await this.connect_({ queue, direction: 'out' });
+        const ch = await this.connect_({ queue, direction: 'out' });
 
         await ch.assertQueue(queue, {
             durable: true,
         });
 
-        let ret = await ch.sendToQueue(
+        const ret = await ch.sendToQueue(
             queue,
             Buffer.from(JSON.stringify(obj)),
             {
@@ -145,7 +145,7 @@ class RabbitmqConnector extends Connector {
             }
         );
 
-        let logMsg = `rabbitmq: new message enqueued to [${queue}].`;
+        const logMsg = `rabbitmq: new message enqueued to [${queue}].`;
 
         if (this.options.logMessage) {
             this.log('verbose', logMsg, { msg: obj });
@@ -163,7 +163,7 @@ class RabbitmqConnector extends Connector {
      * @param {workerFunction} consumerMethod
      */
     async workerConsume_(queue, consumerMethod) {
-        let ch = await this.connect_({ queue, direction: 'in' });
+        const ch = await this.connect_({ queue, direction: 'in' });
 
         await ch.assertQueue(queue, {
             durable: true,
@@ -171,7 +171,7 @@ class RabbitmqConnector extends Connector {
 
         await ch.prefetch(1);
 
-        let logMsg = `rabbitmq: new message dequeued from [${queue}].`;
+        const logMsg = `rabbitmq: new message dequeued from [${queue}].`;
 
         return ch.consume(
             queue,
@@ -201,13 +201,13 @@ class RabbitmqConnector extends Connector {
      * @param {*} routeKey
      */
     async publish_(exchange, obj, routeKey) {
-        let ch = await this.connect_({ exchange, direction: 'out' });
+        const ch = await this.connect_({ exchange, direction: 'out' });
 
         await ch.assertExchange(exchange, 'fanout', {
             durable: false,
         });
 
-        let ret = await ch.publish(
+        const ret = await ch.publish(
             exchange,
             routeKey || '',
             Buffer.from(JSON.stringify(obj)),
@@ -216,7 +216,7 @@ class RabbitmqConnector extends Connector {
             }
         );
 
-        let logMsg = `rabbitmq: new message published to exchange [${exchange}].`;
+        const logMsg = `rabbitmq: new message published to exchange [${exchange}].`;
 
         if (this.options.logMessage) {
             this.log('verbose', logMsg, { msg: obj });
@@ -234,19 +234,19 @@ class RabbitmqConnector extends Connector {
      * @param {*} routeKey
      */
     async subscribe_(exchange, subscriberMethod, routeKey) {
-        let ch = await this.connect_({ exchange, direction: 'in' });
+        const ch = await this.connect_({ exchange, direction: 'in' });
 
         await ch.assertExchange(exchange, 'fanout', {
             durable: false,
         });
 
-        let q = await ch.assertQueue('', {
+        const q = await ch.assertQueue('', {
             exclusive: true,
         });
 
         await ch.bindQueue(q.queue, exchange, routeKey || '');
 
-        let logMsg = `rabbitmq: new message dequeued from [${queueName}].`;
+        const logMsg = `rabbitmq: new message received from exchange [${exchange}].`;
 
         return ch.consume(
             q.queue,

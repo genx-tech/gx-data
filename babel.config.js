@@ -1,4 +1,4 @@
-//babel config for node.js app
+// babel config for node.js app
 const targetLTSVersion = '14';
 
 const isBabelRegister = (caller) =>
@@ -25,10 +25,15 @@ module.exports = function (api) {
             [
                 '@babel/plugin-proposal-decorators',
                 {
-                    decoratorsBeforeExport: true,
+                    legacy: true,
                 },
             ],
-            '@babel/plugin-proposal-class-properties',
+            [
+                '@babel/plugin-proposal-class-properties',
+                {
+                    loose: true,
+                },
+            ],
         ]
     );
 
@@ -39,6 +44,7 @@ module.exports = function (api) {
             [
                 '@babel/env',
                 {
+                    loose: true,
                     ...targets,
                 },
             ],

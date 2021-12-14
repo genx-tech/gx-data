@@ -59,7 +59,7 @@ module.exports = _.pick(validator, [
     'isLatLong',
 ]);
 
-const RE_PHONE = /^((\+|00)\d+)?(\(\d+\))?((\ |-)?\d+)*$/;
+const RE_PHONE = /^((\+|00)\d+)?(\(\d+\))?(( |-)?\d+)*$/;
 
 module.exports.isPhone = function (value) {
     return RE_PHONE.test(value);
@@ -97,9 +97,9 @@ const NIL = Symbol('nil');
 
 function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
     if (fieldName in raw) {
-        let value = raw[fieldName];
+        const value = raw[fieldName];
 
-        //sanitize first
+        // sanitize first
         if (isNothing(value)) {
             if (!fieldInfo.optional && isNothing(fieldInfo.default)) {
                 throw new ValidationError(
@@ -142,7 +142,7 @@ function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
 }
 
 function validateObjectBySchema(raw, schema, i18n, prefix) {
-    let latest = {};
+    const latest = {};
 
     if (typeof raw !== 'object') {
         throw new ValidationError('The value is not an object.', {
@@ -152,7 +152,7 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
     }
 
     if (typeof schema === 'function') {
-        //use deferred activation of schema to avoid circullar reference
+        // use deferred activation of schema to avoid circullar reference
         schema = schema();
     }
 

@@ -4,7 +4,7 @@ const { DATETIME } = require('../types');
 const { ApplicationError } = require('../utils/Errors');
 
 function getConnector(entityModel, feature) {
-    let app = entityModel.db.app;
+    const app = entityModel.db.app;
 
     if (!app) {
         entityModel.db.connector.log(
@@ -18,7 +18,7 @@ function getConnector(entityModel, feature) {
 }
 
 async function createLogEntry_(entityModel, feature, context, operation) {
-    let logEntry = {
+    const logEntry = {
         entity: entityModel.meta.name,
         operation,
         which: context.queryKey,
@@ -32,7 +32,7 @@ async function createLogEntry_(entityModel, feature, context, operation) {
     }
 
     if (feature.withUser) {
-        let user = entityModel.getValueFromContext(context, feature.withUser);
+        const user = entityModel.getValueFromContext(context, feature.withUser);
         if (_.isNil(user)) {
             throw new ApplicationError(
                 `Cannot get value of [${feature.withUser}] from context. Entity: ${entityModel.meta.name}, operation: ${operation}`
@@ -42,7 +42,7 @@ async function createLogEntry_(entityModel, feature, context, operation) {
         logEntry.changedBy = user;
     }
 
-    let clConnector = getConnector(entityModel, feature);
+    const clConnector = getConnector(entityModel, feature);
     await clConnector.insertOne_(
         feature.storeEntity,
         logEntry,

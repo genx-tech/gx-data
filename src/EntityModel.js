@@ -14,13 +14,13 @@ const JES = require('@genx/jes');
 const NEED_OVERRIDE = 'Should be overrided by driver-specific subclass.';
 
 function minifyAssocs(assocs) {
-    let sorted = _.uniq(assocs).sort().reverse();
+    const sorted = _.uniq(assocs).sort().reverse();
 
-    let minified = _.take(sorted, 1),
-        l = sorted.length - 1;
+    const minified = _.take(sorted, 1);
+    const l = sorted.length - 1;
 
     for (let i = 1; i < l; i++) {
-        let k = sorted[i] + '.';
+        const k = sorted[i] + '.';
 
         if (!_.find(minified, (a) => a.startsWith(k))) {
             minified.push(sorted[i]);
@@ -48,7 +48,7 @@ class EntityModel {
      */
     constructor(rawData) {
         if (rawData) {
-            //only pick those that are fields of this entity
+            // only pick those that are fields of this entity
             Object.assign(this, rawData);
         }
     }
@@ -120,9 +120,7 @@ class EntityModel {
      * @param {object} data - Input data.
      */
     static getUniqueKeyValuePairsFrom(data) {
-        pre: typeof data === 'object';
-
-        let ukFields = this.getUniqueKeyFieldsFrom(data);
+        const ukFields = this.getUniqueKeyFieldsFrom(data);
         return _.pick(data, ukFields);
     }
 
@@ -132,9 +130,9 @@ class EntityModel {
      * @param {*} keyPath
      */
     static getNestedObject(entityObj, keyPath, defaultValue) {
-        let nodes = (Array.isArray(keyPath) ? keyPath : keyPath.split('.')).map(
-            (key) => (key[0] === ':' ? key : ':' + key)
-        );
+        const nodes = (
+            Array.isArray(keyPath) ? keyPath : keyPath.split('.')
+        ).map((key) => (key[0] === ':' ? key : ':' + key));
         return _.get(entityObj, nodes, defaultValue);
     }
 
@@ -145,9 +143,7 @@ class EntityModel {
      */
     static ensureRetrieveCreated(context, customOptions) {
         if (!context.options.$retrieveCreated) {
-            context.options.$retrieveCreated = customOptions
-                ? customOptions
-                : true;
+            context.options.$retrieveCreated = customOptions || true;
         }
     }
 
@@ -158,9 +154,7 @@ class EntityModel {
      */
     static ensureRetrieveUpdated(context, customOptions) {
         if (!context.options.$retrieveUpdated) {
-            context.options.$retrieveUpdated = customOptions
-                ? customOptions
-                : true;
+            context.options.$retrieveUpdated = customOptions || true;
         }
     }
 
@@ -171,9 +165,7 @@ class EntityModel {
      */
     static ensureRetrieveDeleted(context, customOptions) {
         if (!context.options.$retrieveDeleted) {
-            context.options.$retrieveDeleted = customOptions
-                ? customOptions
-                : true;
+            context.options.$retrieveDeleted = customOptions || true;
         }
     }
 
@@ -260,14 +252,14 @@ class EntityModel {
      * @returns {*}
      */
     static async findOne_(findOptions, connOptions) {
-        let rawOptions = findOptions;
+        const rawOptions = findOptions;
 
         findOptions = this._prepareQueries(
             findOptions,
             true /* for single record */
         );
 
-        let context = {
+        const context = {
             op: 'find',
             options: findOptions,
             connOptions,
@@ -291,7 +283,7 @@ class EntityModel {
             }
 
             if (findOptions.$relationships && !findOptions.$skipOrm) {
-                //rows, coloumns, aliasMap
+                // rows, coloumns, aliasMap
                 if (records[0].length === 0) return undefined;
 
                 records = this._mapRecordsToObjects(
@@ -311,7 +303,7 @@ class EntityModel {
                 );
             }
 
-            let result = records[0];
+            const result = records[0];
 
             return result;
         }, context);
@@ -341,11 +333,11 @@ class EntityModel {
      * @returns {array}
      */
     static async findAll_(findOptions, connOptions) {
-        let rawOptions = findOptions;
+        const rawOptions = findOptions;
 
         findOptions = this._prepareQueries(findOptions);
 
-        let context = {
+        const context = {
             op: 'find',
             options: findOptions,
             connOptions,
@@ -404,7 +396,7 @@ class EntityModel {
         }
 
         if (findOptions.$totalCount) {
-            let ret = { totalItems: totalCount, items: rows };
+            const ret = { totalItems: totalCount, items: rows };
 
             if (!isNothing(findOptions.$offset)) {
                 ret.offset = findOptions.$offset;
@@ -422,16 +414,21 @@ class EntityModel {
 
     /**
      * Regenerate creation data and try again if duplicate record exists
-     * @param {Function} dataGenerator_ 
-     * @param {Object} connOptions 
+     * @param {Function} dataGenerator_
+     * @param {Object} connOptions
      */
-    static async retryCreateOnDuplicate_(dataGenerator_, maxRery, createOptions, connOptions) {
-        let counter = 0; 
+    static async retryCreateOnDuplicate_(
+        dataGenerator_,
+        maxRery,
+        createOptions,
+        connOptions
+    ) {
+        let counter = 0;
         let errorRet;
         maxRery || (maxRery = 10);
 
         while (counter++ < maxRery) {
-            const data = await dataGenerator_();           
+            const data = await dataGenerator_();
 
             try {
                 return await this.create_(data, createOptions, connOptions);
@@ -442,8 +439,8 @@ class EntityModel {
 
                 errorRet = error;
             }
-        }      
-        
+        }
+
         return errorRet;
     }
 
@@ -599,11 +596,11 @@ class EntityModel {
     }
 
     static async _update_(data, updateOptions, connOptions, forSingleRecord) {
-        let rawOptions = updateOptions;
+        const rawOptions = updateOptions;
 
         if (!updateOptions) {
-            //if no condition given, extract from data
-            let conditionFields = this.getUniqueKeyFieldsFrom(data);
+            // if no condition given, extract from data
+            const conditionFields = this.getUniqueKeyFieldsFrom(data);
             if (_.isEmpty(conditionFields)) {
                 throw new InvalidArgument(
                     'Primary key value(s) or at least one group of unique key value(s) is required for updating an entity.',
@@ -617,10 +614,10 @@ class EntityModel {
             data = _.omit(data, conditionFields);
         }
 
-        //see if there is associated entity data provided together
+        // see if there is associated entity data provided together
         let [raw, associations, references] = this._extractAssociations(data);
 
-        let context = {
+        const context = {
             op: 'update',
             raw,
             rawOptions,
@@ -632,7 +629,7 @@ class EntityModel {
             forSingleRecord,
         };
 
-        //see if there is any runtime feature stopping the update
+        // see if there is any runtime feature stopping the update
         let toUpdate;
 
         if (forSingleRecord) {
@@ -645,7 +642,7 @@ class EntityModel {
             return context.return;
         }
 
-        let success = await this._safeExecute_(async (context) => {
+        const success = await this._safeExecute_(async (context) => {
             if (!_.isEmpty(references)) {
                 await this.ensureTransaction_(context);
                 await this._populateReferences_(context, references);
@@ -708,8 +705,8 @@ class EntityModel {
                     !hasValueIn([$query, context.latest], this.meta.keyField) &&
                     !otherOptions.$retrieveUpdated
                 ) {
-                    //has associated data depending on this record
-                    //should ensure the latest result will contain the key of this record
+                    // has associated data depending on this record
+                    // should ensure the latest result will contain the key of this record
                     otherOptions.$retrieveUpdated = true;
                 }
 
@@ -766,10 +763,10 @@ class EntityModel {
      * @param {*} connOptions
      */
     static async replaceOne_(data, updateOptions, connOptions) {
-        let rawOptions = updateOptions;
+        const rawOptions = updateOptions;
 
         if (!updateOptions) {
-            let conditionFields = this.getUniqueKeyFieldsFrom(data);
+            const conditionFields = this.getUniqueKeyFieldsFrom(data);
             if (_.isEmpty(conditionFields)) {
                 throw new InvalidArgument(
                     'Primary key value(s) or at least one group of unique key value(s) is required for replacing an entity.',
@@ -788,7 +785,7 @@ class EntityModel {
             updateOptions = this._prepareQueries(updateOptions, true);
         }
 
-        let context = {
+        const context = {
             op: 'replace',
             raw: data,
             rawOptions,
@@ -842,7 +839,7 @@ class EntityModel {
      * @property {object} [connOptions.connection]
      */
     static async _delete_(deleteOptions, connOptions, forSingleRecord) {
-        let rawOptions = deleteOptions;
+        const rawOptions = deleteOptions;
 
         deleteOptions = this._prepareQueries(
             deleteOptions,
@@ -862,7 +859,7 @@ class EntityModel {
             );
         }
 
-        let context = {
+        const context = {
             op: 'delete',
             rawOptions,
             options: deleteOptions,
@@ -882,7 +879,7 @@ class EntityModel {
             return context.return;
         }
 
-        let deletedCount = await this._safeExecute_(async (context) => {
+        const deletedCount = await this._safeExecute_(async (context) => {
             if (
                 !(await Features.applyRules_(
                     Rules.RULE_BEFORE_DELETE,
@@ -951,8 +948,8 @@ class EntityModel {
     static _containsUniqueKey(data) {
         let hasKeyNameOnly = false;
 
-        let hasNotNullKey = _.find(this.meta.uniqueKeys, (fields) => {
-            let hasKeys = _.every(fields, (f) => f in data);
+        const hasNotNullKey = _.find(this.meta.uniqueKeys, (fields) => {
+            const hasKeys = _.every(fields, (f) => f in data);
             hasKeyNameOnly = hasKeyNameOnly || hasKeys;
 
             return _.every(fields, (f) => !_.isNil(data[f]));
@@ -966,7 +963,7 @@ class EntityModel {
      * @param {*} condition
      */
     static _ensureContainsUniqueKey(condition) {
-        let [containsUniqueKeyAndValue, containsUniqueKeyOnly] =
+        const [containsUniqueKeyAndValue, containsUniqueKeyOnly] =
             this._containsUniqueKey(condition);
 
         if (!containsUniqueKeyAndValue) {
@@ -999,20 +996,20 @@ class EntityModel {
         isUpdating = false,
         forSingleRecord = true
     ) {
-        let meta = this.meta;
-        let i18n = this.i18n;
-        let { name, fields } = meta;
+        const meta = this.meta;
+        const i18n = this.i18n;
+        const { name, fields } = meta;
 
-        let { raw } = context;
-        let latest = {},
-            existing = context.options.$existing;
+        const { raw } = context;
+        let latest = {};
+        let existing = context.options.$existing;
         context.latest = latest;
 
         if (!context.i18n) {
             context.i18n = i18n;
         }
 
-        let opOptions = context.options;
+        const opOptions = context.options;
 
         if (
             isUpdating &&
@@ -1042,8 +1039,8 @@ class EntityModel {
         await Features.applyRules_(Rules.RULE_BEFORE_VALIDATION, this, context);
 
         await eachAsync_(fields, async (fieldInfo, fieldName) => {
-            let value,
-                useRaw = false;
+            let value;
+            let useRaw = false;
 
             if (fieldName in raw) {
                 value = raw[fieldName];
@@ -1053,7 +1050,7 @@ class EntityModel {
             }
 
             if (typeof value !== 'undefined') {
-                //field value given in raw data
+                // field value given in raw data
                 if (fieldInfo.readOnly && useRaw) {
                     if (
                         !opOptions.$migration &&
@@ -1061,7 +1058,7 @@ class EntityModel {
                             !opOptions.$bypassReadOnly ||
                             !opOptions.$bypassReadOnly.has(fieldName))
                     ) {
-                        //read only, not allow to set by input value
+                        // read only, not allow to set by input value
                         throw new ValidationError(
                             `Read-only field "${fieldName}" is not allowed to be set by manual input.`,
                             {
@@ -1073,11 +1070,14 @@ class EntityModel {
                 }
 
                 if (isUpdating && fieldInfo.freezeAfterNonDefault) {
-                    assert: existing,
-                        '"freezeAfterNonDefault" qualifier requires existing data.';
+                    if (!existing) {
+                        throw new Error(
+                            '"freezeAfterNonDefault" qualifier requires existing data.'
+                        );
+                    }
 
                     if (existing[fieldName] !== fieldInfo.default) {
-                        //freezeAfterNonDefault, not allow to change if value is non-default
+                        // freezeAfterNonDefault, not allow to change if value is non-default
                         throw new ValidationError(
                             `FreezeAfterNonDefault field "${fieldName}" is not allowed to be changed.`,
                             {
@@ -1099,11 +1099,11 @@ class EntityModel {
                     }
                 } */
 
-                //sanitize first
+                // sanitize first
                 if (isNothing(value)) {
-                    if (fieldInfo['default']) {
-                        //has default setting in meta data
-                        latest[fieldName] = fieldInfo['default'];
+                    if (fieldInfo.default) {
+                        // has default setting in meta data
+                        latest[fieldName] = fieldInfo.default;
                     } else if (!fieldInfo.optional) {
                         throw new ValidationError(
                             `The "${fieldName}" value of "${name}" entity cannot be null.`,
@@ -1144,15 +1144,15 @@ class EntityModel {
                 return;
             }
 
-            //not given in raw data
+            // not given in raw data
             if (isUpdating) {
                 if (fieldInfo.forceUpdate) {
-                    //has force update policy, e.g. updateTimestamp
+                    // has force update policy, e.g. updateTimestamp
                     if (fieldInfo.updateByDb || fieldInfo.hasActivator) {
                         return;
                     }
 
-                    //require generator to refresh auto generated value
+                    // require generator to refresh auto generated value
                     if (fieldInfo.auto) {
                         latest[fieldName] = await Generators.default(
                             fieldInfo,
@@ -1173,21 +1173,21 @@ class EntityModel {
                 return;
             }
 
-            //new record
+            // new record
             if (!fieldInfo.createByDb) {
-                if (fieldInfo.hasOwnProperty('default')) {
-                    //has default setting in meta data
+                if ('default' in fieldInfo) {
+                    // has default setting in meta data
                     latest[fieldName] = fieldInfo.default;
                 } else if (fieldInfo.optional) {
-                    return;
+                    // ignore
                 } else if (fieldInfo.auto) {
-                    //automatically generated
+                    // automatically generated
                     latest[fieldName] = await Generators.default(
                         fieldInfo,
                         i18n
                     );
                 } else if (!fieldInfo.hasActivator) {
-                    //skip those have activators
+                    // skip those have activators
 
                     throw new ValidationError(
                         `Field "${fieldName}" of "${name}" entity is required.`,
@@ -1213,18 +1213,17 @@ class EntityModel {
             await this.applyModifiers_(context, isUpdating);
         }
 
-        //final round process before entering database
+        // final round process before entering database
         context.latest = _.mapValues(latest, (value, key) => {
             if (value == null) return value;
 
             if (_.isPlainObject(value) && value.oorType) {
-                //there is special input column which maybe a function or an expression
+                // there is special input column which maybe a function or an expression
                 opOptions.$requireSplitColumns = true;
                 return value;
             }
 
-            let fieldInfo = fields[key];
-            assert: fieldInfo;
+            const fieldInfo = fields[key];
 
             return this._serializeByTypeInfo(value, fieldInfo);
         });
@@ -1245,9 +1244,9 @@ class EntityModel {
         }
 
         try {
-            let result = await executor(context);
+            const result = await executor(context);
 
-            //if the executor have initiated a transaction
+            // if the executor have initiated a transaction
             if (context.connOptions && context.connOptions.connection) {
                 await this.db.connector.commit_(context.connOptions.connection);
                 delete context.connOptions.connection;
@@ -1255,7 +1254,7 @@ class EntityModel {
 
             return result;
         } catch (error) {
-            //we have to rollback if error occurred in a transaction
+            // we have to rollback if error occurred in a transaction
             if (context.connOptions && context.connOptions.connection) {
                 this.db.connector.log(
                     'error',
@@ -1278,7 +1277,7 @@ class EntityModel {
     }
 
     static _dependencyChanged(fieldName, context) {
-        let deps = this.meta.fieldDependencies[fieldName];
+        const deps = this.meta.fieldDependencies[fieldName];
 
         return _.find(deps, (d) =>
             _.isPlainObject(d)
@@ -1288,7 +1287,7 @@ class EntityModel {
     }
 
     static _referenceExist(input, ref) {
-        let pos = ref.indexOf('.');
+        const pos = ref.indexOf('.');
 
         if (pos > 0) {
             return ref.substr(pos + 1) in input;
@@ -1298,12 +1297,12 @@ class EntityModel {
     }
 
     static _dependsOnExistingData(input) {
-        //check modifier dependencies
-        let deps = this.meta.fieldDependencies;
+        // check modifier dependencies
+        const deps = this.meta.fieldDependencies;
         let hasDepends = false;
 
         if (deps) {
-            let nullDepends = new Set();
+            const nullDepends = new Set();
 
             hasDepends = _.find(deps, (dep, fieldName) =>
                 _.find(dep, (d) => {
@@ -1329,7 +1328,7 @@ class EntityModel {
                 return true;
             }
 
-            for (let dep of nullDepends) {
+            for (const dep of nullDepends) {
                 if (
                     _.find(
                         dep,
@@ -1341,8 +1340,8 @@ class EntityModel {
             }
         }
 
-        //check by special rules
-        let atLeastOneNotNull = this.meta.features.atLeastOneNotNull;
+        // check by special rules
+        const atLeastOneNotNull = this.meta.features.atLeastOneNotNull;
         if (atLeastOneNotNull) {
             hasDepends = _.find(atLeastOneNotNull, (fields) =>
                 _.find(
@@ -1383,8 +1382,8 @@ class EntityModel {
                 : {};
         }
 
-        let normalizedOptions = {},
-            query = {};
+        const normalizedOptions = {};
+        const query = {};
 
         _.forOwn(options, (v, k) => {
             if (k[0] === '$') {
@@ -1547,12 +1546,12 @@ class EntityModel {
         throw new Error(NEED_OVERRIDE);
     }
 
-    //will update context.raw if applicable
+    // will update context.raw if applicable
     static async _populateReferences_(context, references) {
         throw new Error(NEED_OVERRIDE);
     }
 
-    //will update context.raw if applicable
+    // will update context.raw if applicable
     static async _createAssocs_(context, assocs) {
         throw new Error(NEED_OVERRIDE);
     }
@@ -1589,7 +1588,7 @@ class EntityModel {
                             !(value.name in variables.session)) &&
                         !value.optional
                     ) {
-                        let errArgs = [];
+                        const errArgs = [];
                         if (value.missingMessage) {
                             errArgs.push(value.missingMessage);
                         }
@@ -1641,7 +1640,7 @@ class EntityModel {
         }
 
         if (Array.isArray(value)) {
-            let ret = value.map((v) =>
+            const ret = value.map((v) =>
                 this._translateValue(
                     v,
                     variables,

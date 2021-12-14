@@ -38,7 +38,7 @@ class MySQLConnector extends Connector {
     $call = (name, alias, args) => ({ type: 'function', name, alias, args });
     $as = (name, alias) => ({ type: 'column', name, alias });
 
-    //in mysql, null value comparison will never return true, even null != 1
+    // in mysql, null value comparison will never return true, even null != 1
     nullOrIs = (fieldName, value) => [
         { [fieldName]: { $exists: false } },
         { [fieldName]: { $eq: value } },
@@ -79,10 +79,9 @@ class MySQLConnector extends Connector {
      */
     async end_() {
         if (this.acitveConnections.size > 0) {
-            for (let conn of this.acitveConnections) {
+            for (const conn of this.acitveConnections) {
                 await this.disconnect_(conn);
             }
-            assert: this.acitveConnections.size === 0;
         }
 
         if (this.pool) {
@@ -109,10 +108,10 @@ class MySQLConnector extends Connector {
         }
 
         if (options) {
-            let connProps = {};
+            const connProps = {};
 
             if (options.createDatabase) {
-                //remove the database from connection
+                // remove the database from connection
                 connProps.database = '';
             }
 
@@ -131,7 +130,7 @@ class MySQLConnector extends Connector {
             this.pool = mysql.createPool(csKey);
         }
 
-        let conn = await this.pool.getConnection();
+        const conn = await this.pool.getConnection();
         this.acitveConnections.add(conn);
 
         this.log('debug', `Connect to ${csKey}`);
@@ -158,7 +157,7 @@ class MySQLConnector extends Connector {
         const conn = await this.connect_();
 
         if (options && options.isolationLevel) {
-            //only allow valid option value to avoid injection attach
+            // only allow valid option value to avoid injection attach
             const isolationLevel = _.find(
                 MySQLConnector.IsolationLevels,
                 (value, key) =>
@@ -253,7 +252,7 @@ class MySQLConnector extends Connector {
                     );
                 }
 
-                let [rows1] = await conn.execute(sql, params);
+                const [rows1] = await conn.execute(sql, params);
 
                 return rows1;
             }
@@ -266,7 +265,7 @@ class MySQLConnector extends Connector {
                 return await conn.query({ sql, rowsAsArray: true }, params);
             }
 
-            let [rows2] = await conn.query(sql, params);
+            const [rows2] = await conn.query(sql, params);
 
             return rows2;
         } catch (err) {
@@ -281,7 +280,7 @@ class MySQLConnector extends Connector {
     }
 
     async ping_() {
-        let [ping] = await this.execute_('SELECT 1 AS result');
+        const [ping] = await this.execute_('SELECT 1 AS result');
         return ping && ping.result === 1;
     }
 
@@ -298,8 +297,8 @@ class MySQLConnector extends Connector {
 
         const { insertIgnore, ...restOptions } = options || {};
 
-        let sql = `INSERT ${insertIgnore ? 'IGNORE ' : ''}INTO ?? SET ?`;
-        let params = [model];
+        const sql = `INSERT ${insertIgnore ? 'IGNORE ' : ''}INTO ?? SET ?`;
+        const params = [model];
         params.push(data);
 
         return this.execute_(sql, params, restOptions);
@@ -316,19 +315,19 @@ class MySQLConnector extends Connector {
             throw new ApplicationError(`Creating with empty "${model}" data.`);
         }
 
-        let dataWithoutUK = _.omit(data, uniqueKeys);
-        let insertData = { ...data, ...dataOnInsert };
+        const dataWithoutUK = _.omit(data, uniqueKeys);
+        const insertData = { ...data, ...dataOnInsert };
 
         if (_.isEmpty(dataWithoutUK)) {
-            //if dupliate, dont need to update
+            // if dupliate, dont need to update
             return this.create_(model, insertData, {
                 ...options,
                 insertIgnore: true,
             });
         }
 
-        let sql = `INSERT INTO ?? SET ? ON DUPLICATE KEY UPDATE ?`;
-        let params = [model];
+        const sql = `INSERT INTO ?? SET ? ON DUPLICATE KEY UPDATE ?`;
+        const params = [model];
         params.push(insertData);
         params.push(dataWithoutUK);
 
@@ -352,22 +351,12 @@ class MySQLConnector extends Connector {
             );
         }
 
-        dev: {
-            data.forEach((row) => {
-                if (!Array.isArray(row)) {
-                    throw new ApplicationError(
-                        'Element of "data" array to bulk insert should be an array of record values.'
-                    );
-                }
-            });
-        }
-
         const { insertIgnore, ...restOptions } = options || {};
 
-        let sql = `INSERT ${insertIgnore ? 'IGNORE ' : ''}INTO ?? (${fields
+        const sql = `INSERT ${insertIgnore ? 'IGNORE ' : ''}INTO ?? (${fields
             .map((f) => this.escapeId(f))
             .join(', ')}) VALUES ?`;
-        let params = [model];
+        const params = [model];
         params.push(data);
 
         return this.execute_(sql, params, restOptions);
@@ -391,11 +380,11 @@ class MySQLConnector extends Connector {
             });
         }
 
-        let params = [],
-            aliasMap = { [model]: 'A' },
-            joinings,
-            hasJoining = false,
-            joiningParams = [];
+        const params = [];
+        const aliasMap = { [model]: 'A' };
+        let joinings;
+        let hasJoining = false;
+        const joiningParams = [];
 
         if (queryOptions && queryOptions.$relationships) {
             joinings = this._joinAssociations(
@@ -431,7 +420,7 @@ class MySQLConnector extends Connector {
         }
 
         if (query) {
-            let whereClause = this._joinCondition(
+            const whereClause = this._joinCondition(
                 query,
                 params,
                 null,
@@ -455,9 +444,9 @@ class MySQLConnector extends Connector {
      * @param {*} options
      */
     async replace_(model, data, options) {
-        let params = [model, data];
+        const params = [model, data];
 
-        let sql = 'REPLACE ?? SET ?';
+        const sql = 'REPLACE ?? SET ?';
 
         return this.execute_(sql, params, options);
     }
@@ -470,11 +459,11 @@ class MySQLConnector extends Connector {
      * @param {*} options
      */
     async delete_(model, query, deleteOptions, options) {
-        let params = [model],
-            aliasMap = { [model]: 'A' },
-            joinings,
-            hasJoining = false,
-            joiningParams = [];
+        const params = [model];
+        const aliasMap = { [model]: 'A' };
+        let joinings;
+        let hasJoining = false;
+        const joiningParams = [];
 
         if (deleteOptions && deleteOptions.$relationships) {
             joinings = this._joinAssociations(
@@ -497,7 +486,7 @@ class MySQLConnector extends Connector {
             sql = 'DELETE FROM ??';
         }
 
-        let whereClause = this._joinCondition(
+        const whereClause = this._joinCondition(
             query,
             params,
             null,
@@ -518,17 +507,17 @@ class MySQLConnector extends Connector {
      * @param {*} connOptions
      */
     async find_(model, condition, connOptions) {
-        let sqlInfo = this.buildQuery(model, condition);
+        const sqlInfo = this.buildQuery(model, condition);
 
         let result, totalCount;
 
         if (sqlInfo.countSql) {
-            let [countResult] = await this.execute_(
+            const [countResult] = await this.execute_(
                 sqlInfo.countSql,
                 sqlInfo.params,
                 connOptions
             );
-            totalCount = countResult['count'];
+            totalCount = countResult.count;
         }
 
         if (sqlInfo.hasJoining) {
@@ -539,14 +528,14 @@ class MySQLConnector extends Connector {
                 connOptions
             );
 
-            let reverseAliasMap = _.reduce(
+            const reverseAliasMap = _.reduce(
                 sqlInfo.aliasMap,
                 (result, alias, nodePath) => {
                     result[alias] = nodePath
                         .split('.')
                         .slice(
                             1
-                        ) /*.map(n => ':' + n) changed to be padding by orm and can be customized with other key getter */;
+                        ) /* .map(n => ':' + n) changed to be padding by orm and can be customized with other key getter */;
                     return result;
                 },
                 {}
@@ -588,11 +577,11 @@ class MySQLConnector extends Connector {
             $totalCount,
         }
     ) {
-        let params = [],
-            aliasMap = { [model]: 'A' },
-            joinings,
-            hasJoining = false,
-            joiningParams = [];
+        const params = [];
+        const aliasMap = { [model]: 'A' };
+        let joinings;
+        let hasJoining = false;
+        const joiningParams = [];
 
         // build alias map first
         // cache params
@@ -608,7 +597,7 @@ class MySQLConnector extends Connector {
             hasJoining = model;
         }
 
-        let selectColomns = $projection
+        const selectColomns = $projection
             ? this._buildColumns($projection, params, hasJoining, aliasMap)
             : '*';
 
@@ -623,7 +612,7 @@ class MySQLConnector extends Connector {
         }
 
         if ($query) {
-            let whereClause = this._joinCondition(
+            const whereClause = this._joinCondition(
                 $query,
                 params,
                 null,
@@ -645,7 +634,7 @@ class MySQLConnector extends Connector {
             sql += ' ' + this._buildOrderBy($orderBy, hasJoining, aliasMap);
         }
 
-        let result = { params, hasJoining, aliasMap };
+        const result = { params, hasJoining, aliasMap };
 
         if ($totalCount) {
             let countSubject;
@@ -696,7 +685,7 @@ class MySQLConnector extends Connector {
     }
 
     _generateAlias(index, anchor) {
-        let alias = ntol(index);
+        const alias = ntol(index);
 
         if (this.options.verboseAlias) {
             return _.snakeCase(anchor).toUpperCase() + '_' + alias;
@@ -733,7 +722,7 @@ class MySQLConnector extends Connector {
         let joinings = [];
 
         _.each(associations, (assocInfo, anchor) => {
-            let alias =
+            const alias =
                 assocInfo.alias || this._generateAlias(startId++, anchor);
             let { joinType, on } = assocInfo;
 
@@ -760,12 +749,12 @@ class MySQLConnector extends Connector {
                 return;
             }
 
-            let { entity, subAssocs } = assocInfo;
-            let aliasKey = parentAliasKey + '.' + anchor;
+            const { entity, subAssocs } = assocInfo;
+            const aliasKey = parentAliasKey + '.' + anchor;
             aliasMap[aliasKey] = alias;
 
             if (subAssocs) {
-                let subJoinings = this._joinAssociations(
+                const subJoinings = this._joinAssociations(
                     subAssocs,
                     aliasKey,
                     alias,
@@ -854,8 +843,9 @@ class MySQLConnector extends Connector {
                     key.startsWith('$and_')
                 ) {
                     // for avoiding dupliate, $or_1, $or_2 is valid
-                    assert: Array.isArray(value) || _.isPlainObject(value),
-                        '"$and" operator value should be an array or plain object.';
+                    if (!Array.isArray(value) && !_.isPlainObject(value)) {
+                        throw new Error('"$and" operator value should be an array or plain object.');
+                    }
 
                     return (
                         '(' +
@@ -872,8 +862,11 @@ class MySQLConnector extends Connector {
 
                 if (key === '$any' || key === '$or' || key.startsWith('$or_')) {
                     // for avoiding dupliate, $or_1, $or_2 is valid
-                    assert: Array.isArray(value) || _.isPlainObject(value),
-                        '"$or" operator value should be an array or plain object.';
+                    if (!Array.isArray(value) && !_.isPlainObject(value)) {
+                        throw new Error(
+                            '"$or" operator value should be an array or plain object.'
+                        );
+                    }
 
                     return (
                         '(' +
@@ -890,8 +883,11 @@ class MySQLConnector extends Connector {
 
                 if (key === '$not') {
                     if (Array.isArray(value)) {
-                        assert: value.length > 0,
-                            '"$not" operator value should be non-empty.';
+                        if (value.length === 0) {
+                            throw new Error(
+                                '"$not" operator value should be non-empty.'
+                            );
+                        }
 
                         return (
                             'NOT (' +
@@ -907,9 +903,11 @@ class MySQLConnector extends Connector {
                     }
 
                     if (_.isPlainObject(value)) {
-                        let numOfElement = Object.keys(value).length;
-                        assert: numOfElement > 0,
-                            '"$not" operator value should be non-empty.';
+                        if (_.isEmpty(value)) {
+                            throw new Error(
+                                '"$not" operator value should be non-empty.'
+                            );
+                        }
 
                         return (
                             'NOT (' +
@@ -924,7 +922,9 @@ class MySQLConnector extends Connector {
                         );
                     }
 
-                    assert: typeof value === 'string', 'Unsupported condition!';
+                    if (typeof value !== 'string') {
+                        throw new Error('Unsupported condition!');
+                    }
 
                     return 'NOT (' + condition + ')';
                 }
@@ -934,13 +934,13 @@ class MySQLConnector extends Connector {
                     value.oorType &&
                     value.oorType === 'BinaryExpression'
                 ) {
-                    let left = this._packValue(
+                    const left = this._packValue(
                         value.left,
                         params,
                         hasJoining,
                         aliasMap
                     );
-                    let right = this._packValue(
+                    const right = this._packValue(
                         value.right,
                         params,
                         hasJoining,
@@ -969,11 +969,11 @@ class MySQLConnector extends Connector {
     }
 
     _replaceFieldNameWithAlias(fieldName, mainEntity, aliasMap) {
-        let parts = fieldName.split('.');
+        const parts = fieldName.split('.');
         if (parts.length > 1) {
-            let actualFieldName = parts.pop();
-            let aliasKey = mainEntity + '.' + parts.join('.');
-            let alias = aliasMap[aliasKey];
+            const actualFieldName = parts.pop();
+            const aliasKey = mainEntity + '.' + parts.join('.');
+            const alias = aliasMap[aliasKey];
             if (!alias) {
                 throw new InvalidArgument(
                     `Column reference "${fieldName}" not found in populated associations.`,
@@ -1015,9 +1015,6 @@ class MySQLConnector extends Connector {
 
     _splitColumnsAsInput(data, params, hasJoining, aliasMap) {
         return _.map(data, (v, fieldName) => {
-            assert: fieldName.indexOf('.') === -1,
-                'Column of direct input data cannot be a dot-separated name.';
-
             return (
                 this._escapeIdWithAlias(fieldName, hasJoining, aliasMap) +
                 '=' +
@@ -1060,20 +1057,21 @@ class MySQLConnector extends Connector {
                             ')'
                         );
 
-                    case 'BinaryExpression':
-                        let left = this._packValue(
+                    case 'BinaryExpression': {
+                        const left = this._packValue(
                             value.left,
                             params,
                             hasJoining,
                             aliasMap
                         );
-                        let right = this._packValue(
+                        const right = this._packValue(
                             value.right,
                             params,
                             hasJoining,
                             aliasMap
                         );
                         return left + ` ${value.op} ` + right;
+                    }
 
                     default:
                         throw new Error(`Unknown oor type: ${value.oorType}`);
@@ -1126,7 +1124,7 @@ class MySQLConnector extends Connector {
                 );
             }
 
-            let hasOperator = _.find(
+            const hasOperator = _.find(
                 Object.keys(value),
                 (k) => k && k[0] === '$'
             );
@@ -1427,8 +1425,6 @@ class MySQLConnector extends Connector {
                                     );
                                 }
 
-                                assert: !inject;
-
                                 params.push(`${v}%`);
                                 return (
                                     this._escapeIdWithAlias(
@@ -1446,8 +1442,6 @@ class MySQLConnector extends Connector {
                                     );
                                 }
 
-                                assert: !inject;
-
                                 params.push(`%${v}`);
                                 return (
                                     this._escapeIdWithAlias(
@@ -1464,8 +1458,6 @@ class MySQLConnector extends Connector {
                                         'The value should be a string when using "$like" operator.'
                                     );
                                 }
-
-                                assert: !inject;
 
                                 params.push(`%${v}%`);
                                 return (
@@ -1486,8 +1478,6 @@ class MySQLConnector extends Connector {
                                     );
                                 }
 
-                                assert: !inject;
-
                                 params.push(v);
                                 return `FIND_IN_SET(?, ${this._escapeIdWithAlias(
                                     fieldName,
@@ -1507,8 +1497,6 @@ class MySQLConnector extends Connector {
                     }
                 }).join(' AND ');
             }
-
-            assert: !inject;
 
             params.push(JSON.stringify(value));
             return (
@@ -1541,7 +1529,7 @@ class MySQLConnector extends Connector {
 
     _buildColumn(col, params, hasJoining, aliasMap) {
         if (typeof col === 'string') {
-            //it's a string if it's quoted when passed in
+            // it's a string if it's quoted when passed in
             return isQuoted(col)
                 ? col
                 : this._escapeIdWithAlias(col, hasJoining, aliasMap);
@@ -1553,8 +1541,6 @@ class MySQLConnector extends Connector {
 
         if (_.isPlainObject(col)) {
             if (col.alias) {
-                assert: typeof col.alias === 'string';
-
                 const lastDotIndex = col.alias.lastIndexOf('.');
                 let alias =
                     lastDotIndex > 0
@@ -1599,7 +1585,7 @@ class MySQLConnector extends Connector {
             }
 
             if (col.type === 'function') {
-                let name = col.name.toUpperCase();
+                const name = col.name.toUpperCase();
                 if (
                     name === 'COUNT' &&
                     col.args.length === 1 &&
@@ -1662,7 +1648,7 @@ class MySQLConnector extends Connector {
             );
 
         if (_.isPlainObject(groupBy)) {
-            let { columns, having } = groupBy;
+            const { columns, having } = groupBy;
 
             if (!columns || !Array.isArray(columns)) {
                 throw new ApplicationError(
@@ -1671,7 +1657,7 @@ class MySQLConnector extends Connector {
             }
 
             let groupByClause = this._buildGroupBy(columns);
-            let havingCluse =
+            const havingCluse =
                 having &&
                 this._joinCondition(having, params, null, hasJoining, aliasMap);
             if (havingCluse) {
@@ -1710,7 +1696,7 @@ class MySQLConnector extends Connector {
                     orderBy,
                     (asc, col) =>
                         this._escapeIdWithAlias(col, hasJoining, aliasMap) +
-                        (asc === false || asc == '-1' ? ' DESC' : '')
+                        (asc === false || asc === '-1' ? ' DESC' : '')
                 ).join(', ')
             );
         }

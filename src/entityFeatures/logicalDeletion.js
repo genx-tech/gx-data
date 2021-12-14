@@ -10,7 +10,7 @@ const { _ } = require('@genx/july');
 
 module.exports = {
     [Rules.RULE_BEFORE_FIND]: (feature, entityModel, context) => {
-        let findOptions = context.options;
+        const findOptions = context.options;
         if (!findOptions.$includeDeleted) {
             findOptions.$query = mergeCondition(findOptions.$query, {
                 [feature.field]: { $ne: feature.value },
@@ -20,10 +20,10 @@ module.exports = {
         return true;
     },
     [Rules.RULE_BEFORE_DELETE]: async (feature, entityModel, context) => {
-        let options = context.options;
+        const options = context.options;
         if (!options.$physicalDeletion) {
-            let { field, value, timestampField } = feature;
-            let updateTo = {
+            const { field, value, timestampField } = feature;
+            const updateTo = {
                 [field]: value,
             };
 

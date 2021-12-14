@@ -1,4 +1,3 @@
-const { _ } = require('@genx/july');
 const { DateTime } = require('luxon');
 const any = require('./any');
 const { ValidationError } = require('../utils/Errors');
@@ -13,14 +12,14 @@ module.exports = {
     sanitize: (value, info, i18n) => {
         if (value == null) return null;
 
-        let opts = { zone: i18n?.timezone || 'local' };
+        const opts = { zone: i18n?.timezone || 'local' };
 
-        let raw = value;
+        const raw = value;
 
         if (value instanceof Date) {
             value = DateTime.fromJSDate(value, opts);
         } else {
-            let type = typeof value;
+            const type = typeof value;
 
             if (type === 'string' && !info.dontParse) {
                 if (info.inputFormat) {

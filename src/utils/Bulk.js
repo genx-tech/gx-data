@@ -15,10 +15,10 @@ class Bulk {
 
     flush() {
         if (this._buffer.length > 0) {
-            let bulkItems = this._buffer.concat();
+            const bulkItems = this._buffer.concat();
             this._buffer = [];
 
-            let l = bulkItems.length;
+            const l = bulkItems.length;
             this.itemsPending += l;
 
             Promise.resolve(this.bulkAction(bulkItems, this.batch++))

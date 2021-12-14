@@ -7,7 +7,7 @@ function addCreatedBy_(entityModel, feature, context) {
         return true;
     }
 
-    let uid = entityModel.getValueFromContext(context, feature.uidSource);
+    const uid = entityModel.getValueFromContext(context, feature.uidSource);
     if (uid == null) {
         throw new InvalidArgument(
             `Context "${feature.uidSource}" not found. Entity: ${entityModel.meta.name}`
@@ -20,12 +20,12 @@ function addCreatedBy_(entityModel, feature, context) {
 function addUpdatedBy_(entityModel, feature, context) {
     if (context.options.$skipUpdateTracking) return true;
 
-    let uid = entityModel.getValueFromContext(context, feature.uidSource);
+    const uid = entityModel.getValueFromContext(context, feature.uidSource);
     if (uid == null) {
         throw new InvalidArgument(`Context "${feature.uidSource}" not found.`);
     }
     context.latest[feature.fields.updatedBy] = uid;
-    //revision++
+    // revision++
     return true;
 }
 

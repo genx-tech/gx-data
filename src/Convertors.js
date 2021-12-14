@@ -58,10 +58,10 @@ exports.toSet = (arrayOfObjects, property) => {
 const mapKeysDeep = (object, mapping, keepUnmapped) => {
     if (typeof mapping === 'string') return { [mapping]: object };
 
-    let newObj = {};
+    const newObj = {};
     _.forOwn(object, (v, k) => {
         if (k in mapping) {
-            let nk = mapping[k];
+            const nk = mapping[k];
             if (Array.isArray(nk)) {
                 newObj[nk[0]] = {
                     ...newObj[nk[0]],

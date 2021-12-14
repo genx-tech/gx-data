@@ -20,7 +20,7 @@ class MySQLEntityModel extends EntityModel {
      * [specific] Check if this entity has auto increment feature.
      */
     static get hasAutoIncrement() {
-        let autoId = this.meta.features.autoId;
+        const autoId = this.meta.features.autoId;
         return autoId && this.meta.fields[autoId.field].autoIncrementId;
     }
 
@@ -84,7 +84,7 @@ class MySQLEntityModel extends EntityModel {
         try {
             return await super.create_(...args);
         } catch (error) {
-            let errorCode = error.code;
+            const errorCode = error.code;
 
             if (errorCode === 'ER_NO_REFERENCED_ROW_2') {
                 throw new ReferencedNotExistError(
@@ -108,7 +108,7 @@ class MySQLEntityModel extends EntityModel {
         try {
             return await super.updateOne_(...args);
         } catch (error) {
-            let errorCode = error.code;
+            const errorCode = error.code;
 
             if (errorCode === 'ER_NO_REFERENCED_ROW_2') {
                 throw new ReferencedNotExistError(
@@ -131,7 +131,7 @@ class MySQLEntityModel extends EntityModel {
     static async _doReplaceOne_(context) {
         await this.ensureTransaction_(context);
 
-        let entity = await this.findOne_(
+        const entity = await this.findOne_(
             { $query: context.options.$query },
             context.connOptions
         );
@@ -183,7 +183,7 @@ class MySQLEntityModel extends EntityModel {
 
     static _fillResult(context) {
         if (this.hasAutoIncrement && context.result.affectedRows > 0) {
-            let { insertId } = context.result;
+            const { insertId } = context.result;
             if (insertId > 0) {
                 context.latest = {
                     ...context.latest,
@@ -209,7 +209,7 @@ class MySQLEntityModel extends EntityModel {
         if (context.options.$retrieveCreated) {
             if (this.hasAutoIncrement) {
                 if (context.result.affectedRows === 0) {
-                    //insert ignored
+                    // insert ignored
                     context.queryKey = this.getUniqueKeyValuePairsFrom(
                         context.latest
                     );
@@ -223,7 +223,7 @@ class MySQLEntityModel extends EntityModel {
                         );
                     }
                 } else {
-                    let { insertId } = context.result;
+                    const { insertId } = context.result;
                     context.queryKey = {
                         [this.meta.features.autoId.field]: insertId,
                     };
@@ -243,7 +243,7 @@ class MySQLEntityModel extends EntityModel {
                 }
             }
 
-            let retrieveOptions = _.isPlainObject(
+            const retrieveOptions = _.isPlainObject(
                 context.options.$retrieveCreated
             )
                 ? context.options.$retrieveCreated
@@ -259,7 +259,7 @@ class MySQLEntityModel extends EntityModel {
                         context.latest
                     );
                 } else {
-                    let { insertId } = context.result;
+                    const { insertId } = context.result;
                     context.queryKey = {
                         [this.meta.features.autoId.field]: insertId,
                     };
@@ -309,7 +309,7 @@ class MySQLEntityModel extends EntityModel {
         }
 
         if (retrieveUpdated) {
-            let condition = {
+            const condition = {
                 $query: this.getUniqueKeyValuePairsFrom(options.$query),
             };
             if (options.$bypassEnsureUnique) {
@@ -402,7 +402,7 @@ class MySQLEntityModel extends EntityModel {
         if (context.options.$retrieveDeleted) {
             await this.ensureTransaction_(context);
 
-            let retrieveOptions = _.isPlainObject(
+            const retrieveOptions = _.isPlainObject(
                 context.options.$retrieveDeleted
             )
                 ? {
@@ -428,7 +428,7 @@ class MySQLEntityModel extends EntityModel {
         if (context.options.$retrieveDeleted) {
             await this.ensureTransaction_(context);
 
-            let retrieveOptions = _.isPlainObject(
+            const retrieveOptions = _.isPlainObject(
                 context.options.$retrieveDeleted
             )
                 ? {
@@ -480,10 +480,10 @@ class MySQLEntityModel extends EntityModel {
             (assoc) => typeof assoc === 'string'
         );
 
-        let associations = _.uniq(normalAssocs).sort().concat(customAssocs);
-        let assocTable = {},
-            counter = 0,
-            cache = {};
+        const associations = _.uniq(normalAssocs).sort().concat(customAssocs);
+        const assocTable = {};
+            let counter = 0;
+            const cache = {};
 
         associations.forEach((assoc) => {
             if (_.isPlainObject(assoc)) {
@@ -528,12 +528,12 @@ class MySQLEntityModel extends EntityModel {
     static _loadAssocIntoTable(assocTable, cache, assoc) {
         if (cache[assoc]) return cache[assoc];
 
-        let lastPos = assoc.lastIndexOf('.');
+        const lastPos = assoc.lastIndexOf('.');
         let result;
 
         if (lastPos === -1) {
-            //direct association
-            let assocInfo = { ...this.meta.associations[assoc] };
+            // direct association
+            const assocInfo = { ...this.meta.associations[assoc] };
             if (_.isEmpty(assocInfo)) {
                 throw new InvalidArgument(
                     `Entity "${this.meta.name}" does not have the association "${assoc}".`
@@ -545,16 +545,16 @@ class MySQLEntityModel extends EntityModel {
                 assocTable[assoc] =
                     { ...this._translateSchemaNameToDb(assocInfo) };
         } else {
-            let base = assoc.substr(0, lastPos);
-            let last = assoc.substr(lastPos + 1);
+            const base = assoc.substr(0, lastPos);
+            const last = assoc.substr(lastPos + 1);
 
             let baseNode = cache[base];
             if (!baseNode) {
                 baseNode = this._loadAssocIntoTable(assocTable, cache, base);
             }
 
-            let entity = baseNode.model || this.db.model(baseNode.entity);
-            let assocInfo = { ...entity.meta.associations[last] };
+            const entity = baseNode.model || this.db.model(baseNode.entity);
+            const assocInfo = { ...entity.meta.associations[last] };
             if (_.isEmpty(assocInfo)) {
                 throw new InvalidArgument(
                     `Entity "${entity.meta.name}" does not have the association "${assoc}".`
@@ -583,11 +583,11 @@ class MySQLEntityModel extends EntityModel {
 
     static _translateSchemaNameToDb(assoc, currentDb) {
         if (assoc.entity.indexOf('.') > 0) {
-            let [schemaName, entityName] = assoc.entity.split('.', 2);
+            const [schemaName, entityName] = assoc.entity.split('.', 2);
 
-            let app = this.db.app;
+            const app = this.db.app;
 
-            let refDb = app.db(schemaName);
+            const refDb = app.db(schemaName);
             if (!refDb) {
                 throw new ApplicationError(
                     `The referenced schema "${schemaName}" does not have db model in the same application.`
@@ -627,10 +627,10 @@ class MySQLEntityModel extends EntityModel {
             chain.map((anchor) => nestedKeyGetter(anchor))
         );
 
-        let mainIndex = {};
-        let self = this;
+        const mainIndex = {};
+        const self = this;
 
-        //map mysql column result into array of { table <table alias>, name: <column name> }
+        // map mysql column result into array of { table <table alias>, name: <column name> }
         columns = columns.map((col) => {
             if (col.table === '') {
                 const pos = col.name.indexOf('$');
@@ -653,28 +653,28 @@ class MySQLEntityModel extends EntityModel {
             };
         });
 
-        //map flat record into hierachy
+        // map flat record into hierachy
         function mergeRecord(existingRow, rowObject, associations, nodePath) {
             return _.each(
                 associations,
                 ({ sql, key, list, subAssocs }, anchor) => {
                     if (sql) return;
 
-                    let currentPath = nodePath.concat();
+                    const currentPath = nodePath.concat();
                     currentPath.push(anchor);
 
-                    let objKey = nestedKeyGetter(anchor);
-                    let subObj = rowObject[objKey];
+                    const objKey = nestedKeyGetter(anchor);
+                    const subObj = rowObject[objKey];
 
                     if (!subObj) {
-                        //associated entity not in result set, probably when custom projection is used
+                        // associated entity not in result set, probably when custom projection is used
                         return;
                     }
 
-                    let subIndexes = existingRow.subIndexes[objKey];
+                    const subIndexes = existingRow.subIndexes[objKey];
 
                     // joined an empty record
-                    let rowKeyValue = subObj[key];
+                    const rowKeyValue = subObj[key];
                     if (_.isNil(rowKeyValue)) {
                         if (list && rowKeyValue == null) {
                             if (existingRow.rowObject[objKey]) {
@@ -687,7 +687,7 @@ class MySQLEntityModel extends EntityModel {
                         return;
                     }
 
-                    let existingSubRow = subIndexes && subIndexes[rowKeyValue];
+                    const existingSubRow = subIndexes && subIndexes[rowKeyValue];
                     if (existingSubRow) {
                         if (subAssocs) {
                             return mergeRecord(
@@ -715,7 +715,7 @@ class MySQLEntityModel extends EntityModel {
                             existingRow.rowObject[objKey] = [subObj];
                         }
 
-                        let subIndex = {
+                        const subIndex = {
                             rowObject: subObj,
                         };
 
@@ -743,35 +743,33 @@ class MySQLEntityModel extends EntityModel {
             );
         }
 
-        //build sub index for list member
+        // build sub index for list member
         function buildSubIndexes(rowObject, associations) {
-            let indexes = {};
+            const indexes = {};
 
             _.each(associations, ({ sql, key, list, subAssocs }, anchor) => {
                 if (sql) {
                     return;
                 }
 
-                assert: key;
-
-                let objKey = nestedKeyGetter(anchor);
+                const objKey = nestedKeyGetter(anchor);
                 let subObject = rowObject[objKey];
-                let subIndex = {
+                const subIndex = {
                     rowObject: subObject,
                 };
 
                 if (list) {
                     if (!subObject) {
-                        //associated entity not in result set, probably when custom projection is used
+                        // associated entity not in result set, probably when custom projection is used
                         rowObject[objKey] = [];
                         return;
                     }
 
                     rowObject[objKey] = [subObject];
 
-                    //many to *
+                    // many to *
                     if (_.isNil(subObject[key])) {
-                        //when custom projection is used
+                        // when custom projection is used
                         subObject = null;
                     }
                 }
@@ -795,12 +793,12 @@ class MySQLEntityModel extends EntityModel {
             return indexes;
         }
 
-        let arrayOfObjs = [];
+        const arrayOfObjs = [];
 
-        //build the result object skeleton
+        // build the result object skeleton
         const tableTemplate = columns.reduce((result, col) => {
             if (col.table !== 'A') {
-                let bucket = result[col.table];
+                const bucket = result[col.table];
                 if (bucket) {
                     bucket[col.name] = null;
                 } else {
@@ -811,21 +809,21 @@ class MySQLEntityModel extends EntityModel {
             return result;
         }, {});
 
-        //process each row
+        // process each row
         rows.forEach((row) => {
-            let tableCache = {}; // from alias to child prop of rowObject
+            const tableCache = {}; // from alias to child prop of rowObject
 
             // hash-style data row
-            let rowObject = row.reduce((result, value, colIdx) => {
-                let col = columns[colIdx];
+            const rowObject = row.reduce((result, value, colIdx) => {
+                const col = columns[colIdx];
 
                 if (col.table === 'A') {
                     result[col.name] = value;
                 } else if (value != null) {
                     // avoid a object with all null value exists
-                    let bucket = tableCache[col.table];
+                    const bucket = tableCache[col.table];
                     if (bucket) {
-                        //already nested inside
+                        // already nested inside
                         bucket[col.name] = value;
                     } else {
                         tableCache[col.table] = {
@@ -839,12 +837,12 @@ class MySQLEntityModel extends EntityModel {
             }, {});
 
             _.forOwn(tableCache, (obj, table) => {
-                let nodePath = aliasMap[table];
+                const nodePath = aliasMap[table];
                 _.set(rowObject, nodePath, obj);
             });
 
-            let rowKey = rowObject[self.meta.keyField];
-            let existingRow = mainIndex[rowKey];
+            const rowKey = rowObject[self.meta.keyField];
+            const existingRow = mainIndex[rowKey];
             if (existingRow) {
                 return mergeRecord(existingRow, rowObject, hierarchy, []);
             }
@@ -866,14 +864,14 @@ class MySQLEntityModel extends EntityModel {
      * @returns {Array} [raw, assocs, refs];
      */
     static _extractAssociations(data, isNew) {
-        const raw = {},
-            assocs = {},
-            refs = {};
+        const raw = {};
+            const assocs = {};
+            const refs = {};
         const meta = this.meta.associations;
 
         _.forOwn(data, (v, k) => {
             if (k[0] === ':') {
-                //cascade update
+                // cascade update
                 const anchor = k.substr(1);
                 const assocMeta = meta[anchor];
                 if (!assocMeta) {
@@ -895,7 +893,7 @@ class MySQLEntityModel extends EntityModel {
 
                 assocs[anchor] = v;
             } else if (k[0] === '@') {
-                //update by reference
+                // update by reference
                 const anchor = k.substr(1);
                 const assocMeta = meta[anchor];
                 if (!assocMeta) {
@@ -950,9 +948,7 @@ class MySQLEntityModel extends EntityModel {
             const assocMeta = meta[anchor];
             const ReferencedEntity = this.db.model(assocMeta.entity);
 
-            assert: !assocMeta.list;
-
-            let created = await ReferencedEntity.findOne_(
+            const created = await ReferencedEntity.findOne_(
                 refQuery,
                 context.connOptions
             );
@@ -978,7 +974,7 @@ class MySQLEntityModel extends EntityModel {
 
             if (_.isNil(keyValue)) {
                 if (context.result.affectedRows === 0) {
-                    //insert ignored
+                    // insert ignored
 
                     const query = this.getUniqueKeyValuePairsFrom(
                         context.return
@@ -1017,7 +1013,7 @@ class MySQLEntityModel extends EntityModel {
         const pendingAssocs = {};
         const finished = {};
 
-        //todo: double check to ensure including all required options
+        // todo: double check to ensure including all required options
         const passOnOptions = _.pick(context.options, [
             '$skipModifiers',
             '$migration',
@@ -1026,7 +1022,7 @@ class MySQLEntityModel extends EntityModel {
         ]);
 
         await eachAsync_(assocs, async (data, anchor) => {
-            let assocMeta = meta[anchor];
+            const assocMeta = meta[anchor];
 
             if (
                 beforeEntityCreate &&
@@ -1037,7 +1033,7 @@ class MySQLEntityModel extends EntityModel {
                 return;
             }
 
-            let assocModel = this.db.model(assocMeta.entity);
+            const assocModel = this.db.model(assocMeta.entity);
 
             if (assocMeta.list) {
                 data = _.castArray(data);
@@ -1072,7 +1068,7 @@ class MySQLEntityModel extends EntityModel {
             }
 
             if (!beforeEntityCreate && assocMeta.field) {
-                //hasMany or hasOne
+                // hasMany or hasOne
                 data = { ...data, [assocMeta.field]: keyValue };
             }
 
@@ -1088,7 +1084,7 @@ class MySQLEntityModel extends EntityModel {
                 (assocModel.hasAutoIncrement &&
                     passOnOptions.$result.insertId === 0)
             ) {
-                //insert ignored or upserted
+                // insert ignored or upserted
 
                 const assocQuery = assocModel.getUniqueKeyValuePairsFrom(data);
 
@@ -1147,7 +1143,7 @@ class MySQLEntityModel extends EntityModel {
 
         const pendingAssocs = {};
 
-        //todo: double check to ensure including all required options
+        // todo: double check to ensure including all required options
         const passOnOptions = _.pick(context.options, [
             '$skipModifiers',
             '$migration',
@@ -1156,7 +1152,7 @@ class MySQLEntityModel extends EntityModel {
         ]);
 
         await eachAsync_(assocs, async (data, anchor) => {
-            let assocMeta = meta[anchor];
+            const assocMeta = meta[anchor];
 
             if (
                 beforeEntityUpdate &&
@@ -1167,7 +1163,7 @@ class MySQLEntityModel extends EntityModel {
                 return;
             }
 
-            let assocModel = this.db.model(assocMeta.entity);
+            const assocModel = this.db.model(assocMeta.entity);
 
             if (assocMeta.list) {
                 data = _.castArray(data);
@@ -1229,14 +1225,14 @@ class MySQLEntityModel extends EntityModel {
                     );
                 }
 
-                //connected by
+                // connected by
                 data = { [assocMeta.assoc]: data };
             }
 
             if (beforeEntityUpdate) {
                 if (_.isEmpty(data)) return;
 
-                //refersTo or belongsTo
+                // refersTo or belongsTo
                 let destEntityId = getValueFrom(
                     [context.existing, context.options.$query, context.raw],
                     anchor
@@ -1273,7 +1269,7 @@ class MySQLEntityModel extends EntityModel {
                             );
                         }
 
-                        //to create the associated, existing is null
+                        // to create the associated, existing is null
 
                         passOnOptions.$retrieveDbResult = true;
                         let created = await assocModel.create_(
@@ -1283,7 +1279,7 @@ class MySQLEntityModel extends EntityModel {
                         );
 
                         if (passOnOptions.$result.affectedRows === 0) {
-                            //insert ignored
+                            // insert ignored
 
                             const assocQuery =
                                 assocModel.getUniqueKeyValuePairsFrom(data);
@@ -1315,7 +1311,7 @@ class MySQLEntityModel extends EntityModel {
                     );
                 }
 
-                //nothing to do for null dest entity id
+                // nothing to do for null dest entity id
                 return;
             }
 
@@ -1336,7 +1332,7 @@ class MySQLEntityModel extends EntityModel {
                 'update associated data for multiple records not implemented'
             );
 
-            //return assocModel.replaceOne_({ ...data, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, null, context.connOptions);
+            // return assocModel.replaceOne_({ ...data, ...(assocMeta.field ? { [assocMeta.field]: keyValue } : {}) }, null, context.connOptions);
         });
 
         return pendingAssocs;

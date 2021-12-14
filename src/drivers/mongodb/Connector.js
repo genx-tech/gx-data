@@ -26,6 +26,11 @@ const UpdateOps = UpdateOpsField.concat(UpdateOpsArray);
  * @extends Connector
  */
 class MongodbConnector extends Connector {
+    updatedCount = (context) => context.result.modifiedCount;
+    deletedCount = (context) => context.result.deletedCount;
+
+    findAll_ = this.find_;
+
     /**
      * @param {string} name
      * @param {object} options
@@ -36,11 +41,6 @@ class MongodbConnector extends Connector {
 
         this.lockerField = this.options.lockerField || '__lock__';
     }
-
-    updatedCount = (context) => context.result.modifiedCount;
-    deletedCount = (context) => context.result.deletedCount;
-
-    findAll_ = this.find_;
 
     /**
      * Throw db error if no record inserted
@@ -91,7 +91,7 @@ class MongodbConnector extends Connector {
      */
     async connect_(options) {
         if (!this.client || !this.client.isConnected()) {
-            let client = new MongoClient(this.connectionString, {
+            const client = new MongoClient(this.connectionString, {
                 useNewUrlParser: true,
             });
             this.client = await client.connect();
@@ -123,8 +123,6 @@ class MongodbConnector extends Connector {
             db = await this.connect_();
 
             return await dbExecutor(db);
-        } catch (err) {
-            throw err;
         } finally {
             db && (await this.disconnect_(db));
         }
@@ -138,7 +136,7 @@ class MongodbConnector extends Connector {
      * @property {object} [options.readPreference]
      */
     async createGridFSBucket_(options) {
-        let db = await this.connect_();
+        const db = await this.connect_();
 
         return new GridFSBucket(db, options);
     }
@@ -229,7 +227,7 @@ class MongodbConnector extends Connector {
      * @param {*} options
      */
     async updateOneAndReturn_(model, data, condition, options) {
-        let ret = await this.findOneAndUpdate_(model, data, condition, {
+        const ret = await this.findOneAndUpdate_(model, data, condition, {
             ...options,
             upsert: false,
             returnOriginal: false,
@@ -246,8 +244,8 @@ class MongodbConnector extends Connector {
      * @param {object} dataOnInsert - Shared data on insert
      */
     async upsertOne_(model, data, condition, options, dataOnInsert) {
-        let trans = this._translateUpdate(data);
-        let { _id, ...others } = trans.$set || {};
+        const trans = this._translateUpdate(data);
+        const { _id, ...others } = trans.$set || {};
         if (!_.isNil(_id)) {
             trans.$set = others;
             trans.$setOnInsert = { _id };
@@ -281,8 +279,8 @@ class MongodbConnector extends Connector {
      * @param {object} dataOnInsert - Shared data on insert
      */
     async upsertOneAndReturn_(model, data, condition, options, dataOnInsert) {
-        let trans = this._translateUpdate(data);
-        let { _id, ...others } = trans.$set || {};
+        const trans = this._translateUpdate(data);
+        const { _id, ...others } = trans.$set || {};
         if (!_.isNil(_id)) {
             trans.$set = others;
             trans.$setOnInsert = { _id };
@@ -302,7 +300,7 @@ class MongodbConnector extends Connector {
             );
         }
 
-        let ret = await this.onCollection_(model, (coll) =>
+        const ret = await this.onCollection_(model, (coll) =>
             coll.findOneAndUpdate(condition, trans, options)
         );
         return ret && ret.value;
@@ -317,10 +315,10 @@ class MongodbConnector extends Connector {
      * @param {object} dataOnInsert - Shared data on insert
      */
     async upsertMany_(model, data, uniqueKeys, options, dataOnInsert) {
-        let ops = data.map((record) => {
-            let { _id, ...updateData } = record;
+        const ops = data.map((record) => {
+            const { _id, ...updateData } = record;
 
-            let updateOp = this._translateUpdate(updateData);
+            const updateOp = this._translateUpdate(updateData);
 
             if (_id) {
                 updateOp.$setOnInsert = { _id, ...dataOnInsert };
@@ -360,7 +358,7 @@ class MongodbConnector extends Connector {
      * @param {*} options
      */
     async updateManyAndReturn_(model, data, condition, options) {
-        let lockerId = Generators.shortid();
+        const lockerId = Generators.shortid();
 
         if (this.options.logStatement) {
             this.log(
@@ -376,15 +374,15 @@ class MongodbConnector extends Connector {
         }
 
         return this.onCollection_(model, async (coll) => {
-            //1.update and set locker
-            let ret = await coll.updateMany(
+            // 1.update and set locker
+            const ret = await coll.updateMany(
                 { ...condition, [this.lockerField]: { $exists: false } }, // for all non-locked
                 { $set: { ...data, [this.lockerField]: lockerId } }, // lock it
                 { ...options, upsert: false }
             );
 
             try {
-                //2.return all locked records
+                // 2.return all locked records
                 return await coll
                     .find(
                         { [this.lockerField]: lockerId },
@@ -392,7 +390,7 @@ class MongodbConnector extends Connector {
                     )
                     .toArray(); // return all locked
             } finally {
-                //3.remove lockers
+                // 3.remove lockers
                 if (ret.result.nModified > 0) {
                     // unlock
                     await coll.updateMany(
@@ -414,7 +412,7 @@ class MongodbConnector extends Connector {
      */
     async insertManyIfNotExist_(model, data, uniqueKeys, options) {
         console.log('buggy: tofix');
-        let ops = data.map((record) => ({
+        const ops = data.map((record) => ({
             updateOne: {
                 filter: { ..._.pick(record, uniqueKeys) },
                 update: { $setOnInsert: record },
@@ -563,11 +561,11 @@ class MongodbConnector extends Connector {
     }
 
     async findOne_(model, condition, options) {
-        let queryOptions = { ...options };
+        const queryOptions = { ...options };
         let query;
 
         if (!_.isEmpty(condition)) {
-            let { $projection, $query, ...others } = condition;
+            const { $projection, $query, ...others } = condition;
 
             if ($projection) {
                 queryOptions.projection = $projection;
@@ -604,11 +602,11 @@ class MongodbConnector extends Connector {
      * @param {*} options
      */
     async find_(model, condition, options) {
-        let queryOptions = { ...options };
+        const queryOptions = { ...options };
         let query, requireTotalCount;
 
         if (!_.isEmpty(condition)) {
-            let {
+            const {
                 $projection,
                 $totalCount,
                 $orderBy,
@@ -654,10 +652,10 @@ class MongodbConnector extends Connector {
         }
 
         return this.onCollection_(model, async (coll) => {
-            let result = await coll.find(query, queryOptions).toArray();
+            const result = await coll.find(query, queryOptions).toArray();
 
             if (requireTotalCount) {
-                let totalCount = await coll.find(query).count();
+                const totalCount = await coll.find(query).count();
                 return [result, totalCount];
             }
 
@@ -706,8 +704,8 @@ class MongodbConnector extends Connector {
     }
 
     _translateUpdate(update) {
-        let ops = _.pick(update, UpdateOps);
-        let others = _.omit(update, UpdateOps);
+        const ops = _.pick(update, UpdateOps);
+        const others = _.omit(update, UpdateOps);
 
         if (ops.$set) {
             ops.$set = { ...ops.$set, ...others };

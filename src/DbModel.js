@@ -25,12 +25,12 @@ class DbModel {
     model(entityName) {
         if (this._modelCache[entityName]) return this._modelCache[entityName];
 
-        let modelClassName = naming.pascalCase(entityName);
+        const modelClassName = naming.pascalCase(entityName);
         if (this._modelCache[modelClassName])
             return this._modelCache[modelClassName];
 
-        let entityCustomClassFactory = this.loadCustomModel(modelClassName);
-        let entityClassFactory = this.loadModel(modelClassName);
+        const entityCustomClassFactory = this.loadCustomModel(modelClassName);
+        const entityClassFactory = this.loadModel(modelClassName);
 
         let BaseEntityModel = require(`./drivers/${this.driver}/EntityModel`);
         if (entityCustomClassFactory) {
@@ -54,7 +54,7 @@ class DbModel {
 
     entitiesOfType(baseEntityName) {
         return _.filter(this.entities, (entityName) => {
-            let Model = this.model(entityName);
+            const Model = this.model(entityName);
             return (
                 Model.baseClasses &&
                 Model.baseClasses.indexOf(baseEntityName) > -1
@@ -79,7 +79,7 @@ class DbModel {
         interval,
         onRetry_
     ) {
-        //retry will be ignored, if the transaction is a part of another transaction
+        // retry will be ignored, if the transaction is a part of another transaction
         if (connOptions && connOptions.connection) {
             return action_(directReturn, directReturn);
         }

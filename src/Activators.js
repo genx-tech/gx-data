@@ -31,30 +31,29 @@ module.exports = {
         multiplier * multiplicand,
 
     populate: async (model, context, assoc, options) => {
-        let parts = assoc.split('.');
-        assert: parts.length > 1;
+        const parts = assoc.split('.');
 
-        let selectedField = parts.pop();
-        let remoteAssoc = parts.join('.');
-        let localAssoc = parts.shift();
+        const selectedField = parts.pop();
+        const remoteAssoc = parts.join('.');
+        const localAssoc = parts.shift();
         let interAssoc;
 
         if (parts.length > 0) {
             interAssoc = parts.join('.');
         }
 
-        if (!context.latest.hasOwnProperty(localAssoc)) {
+        if (!(localAssoc in context.latest)) {
             return undefined;
         }
 
-        let assocValue = context.latest[localAssoc];
+        const assocValue = context.latest[localAssoc];
         if (_.isNil(assocValue)) {
             throw new ApplicationError(
                 `The value of referenced association "${localAssoc}" of entity "${model.meta.name}" should not be null.`
             );
         }
 
-        let assocMeta = model.meta.associations[localAssoc];
+        const assocMeta = model.meta.associations[localAssoc];
         if (!assocMeta) {
             throw new ApplicationError(
                 `"${localAssoc}" is not an association field of entity "${model.meta.name}".`
@@ -67,7 +66,7 @@ module.exports = {
             );
         }
 
-        //local cache in context, shared by other fields if any
+        // local cache in context, shared by other fields if any
         let remoteEntity = context.populated && context.populated[remoteAssoc];
         if (!remoteEntity) {
             if (options && options.useCache) {
@@ -81,7 +80,7 @@ module.exports = {
                         )
                 )[assocValue];
             } else {
-                let findOptions = { $query: { [assocMeta.key]: assocValue } };
+                const findOptions = { $query: { [assocMeta.key]: assocValue } };
 
                 if (interAssoc) {
                     findOptions.$associations = [interAssoc];
@@ -105,16 +104,18 @@ module.exports = {
 
             let currentAssoc = localAssoc;
             while (parts.length > 0) {
-                let nextAssoc = parts.shift();
+                const nextAssoc = parts.shift();
                 remoteEntity = remoteEntity[':' + nextAssoc];
-                assert: !Array.isArray(remoteEntity);
+                if (Array.isArray(remoteEntity)) {
+                    throw new Error('Remote entity should not be an array.');
+                }
 
                 currentAssoc = currentAssoc + '.' + nextAssoc;
                 context.populated[currentAssoc] = remoteEntity;
             }
         }
 
-        if (!remoteEntity.hasOwnProperty(selectedField)) {
+        if (!(selectedField in remoteEntity)) {
             throw new ApplicationError(
                 `"${selectedField}" is not a field of remote association "${remoteAssoc}" of entity "${model.meta.name}".`
             );

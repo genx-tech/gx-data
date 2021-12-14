@@ -32,7 +32,7 @@ module.exports = {
         _.each(feature, (item) => {
             if (
                 _.every(item, (fieldName) =>
-                    context.latest.hasOwnProperty(fieldName)
+                    fieldName in context.latest
                         ? _.isNil(context.latest[fieldName])
                         : context.existing &&
                           _.isNil(context.existing[fieldName])

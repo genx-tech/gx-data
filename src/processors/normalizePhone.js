@@ -6,9 +6,9 @@ function normalizePhone(phone, defaultArea) {
         phone = phone.trim();
 
         if (phone.length > 0) {
-            let s = phone[0];
+            const s = phone[0];
             if (s === '+') {
-                //nothing
+                // nothing
             } else if (s === '0') {
                 if (phone[1] === '0') {
                     phone = '+' + phone.substr(2);
@@ -35,8 +35,8 @@ function normalizePhone(phone, defaultArea) {
                 phone = defaultArea + phone;
             }
 
-            let leftB = phone.indexOf('(');
-            let rightB = phone.indexOf(')');
+            const leftB = phone.indexOf('(');
+            const rightB = phone.indexOf(')');
 
             if (leftB > 0 && rightB > leftB) {
                 phone =
@@ -45,7 +45,7 @@ function normalizePhone(phone, defaultArea) {
                     phone.substr(rightB + 1);
             }
 
-            phone = phone.replace(/\ |\-/g, '');
+            phone = phone.replace(/ |-/g, '');
         }
     }
 

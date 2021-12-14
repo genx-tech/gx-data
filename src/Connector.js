@@ -22,7 +22,7 @@ class Connector {
             throw new Error(`Missing required connection string`);
         }
 
-        let ConnectorClass = require(`./drivers/${driver}/Connector`);
+        const ConnectorClass = require(`./drivers/${driver}/Connector`);
 
         return new ConnectorClass(connectionString, options);
     }
@@ -74,22 +74,22 @@ class Connector {
      * @property {object} [components.options]
      */
     makeNewConnectionString(components) {
-        let url = new URL(this.connectionString);
+        const url = new URL(this.connectionString);
 
-        if (components.hasOwnProperty('username')) {
-            url.username = components['username'];
+        if ('username' in components) {
+            url.username = components.username;
         }
 
-        if (components.hasOwnProperty('password')) {
-            url.password = components['password'];
+        if ('password' in components) {
+            url.password = components.password;
         }
 
-        if (components.hasOwnProperty('database')) {
-            url.pathname = '/' + components['database'];
+        if ('database' in components) {
+            url.pathname = '/' + components.database;
         }
 
-        if (components.hasOwnProperty('options')) {
-            let options = components.options;
+        if ('options' in components) {
+            const options = components.options;
 
             _.forOwn(options, (value, key) => {
                 url.searchParams.set(
@@ -107,7 +107,7 @@ class Connector {
      * @returns {string}
      */
     getConnectionStringWithoutCredential() {
-        let url = new URL(this.connectionString);
+        const url = new URL(this.connectionString);
 
         url.username = '';
         url.password = '';

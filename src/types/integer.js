@@ -10,7 +10,7 @@ module.exports = {
     sanitize: (value, info, i18n) => {
         if (value == null) return null;
 
-        let raw = value;
+        const raw = value;
         value = Convertors.toInt(value);
         if (isNaN(value)) {
             throw new ValidationError('Invalid integer value', {

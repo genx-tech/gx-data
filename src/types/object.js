@@ -39,7 +39,7 @@ module.exports = {
             case 'boolean':
             case 'number':
             case 'bigint':
-                //skip, keep original value
+                // skip, keep original value
                 break;
 
             case 'object':
