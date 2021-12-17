@@ -1153,7 +1153,7 @@ class EntityModel {
                     }
 
                     // require generator to refresh auto generated value
-                    if (fieldInfo.auto) {
+                    if (fieldInfo.auto) {                        
                         latest[fieldName] = await Generators.default(
                             fieldInfo,
                             i18n
