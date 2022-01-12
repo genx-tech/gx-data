@@ -71,7 +71,7 @@ class MongodbConnector extends Connector {
      * Close all connection initiated by this connector.
      */
     async end_() {
-        if (this.client && this.client.isConnected()) {
+        if (this.client) {
             await this.client.close();
             this.log(
                 'verbose',
@@ -90,7 +90,7 @@ class MongodbConnector extends Connector {
      * @returns {Promise.<Db>}
      */
     async connect_(options) {
-        if (!this.client || !this.client.isConnected()) {
+        if (!this.client) {
             const client = new MongoClient(this.connectionString, {
                 useNewUrlParser: true,
             });

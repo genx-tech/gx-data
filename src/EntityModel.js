@@ -73,7 +73,12 @@ class EntityModel {
 
         const schema = _.omit(meta, ['default']);
         if (extra) {
-            Object.assign(schema, extra);
+            const { $addEnumValues, ...others } = extra;
+            if (meta.type === Types.ENUM.name && $addEnumValues) {
+                schema.values = schema.values.concat($addEnumValues);
+            } 
+
+            Object.assign(schema, others);
         }
 
         return schema;

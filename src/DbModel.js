@@ -1,5 +1,6 @@
 const { _, naming, sleep_ } = require('@genx/july');
 const { fs } = require('@genx/sys');
+const { InvalidArgument } = require('@genx/error');
 
 const retryFailed = (error) => [false, error];
 const retryOK = (result) => [true, result];
@@ -24,6 +25,10 @@ class DbModel {
      * @param {*} entityName
      */
     model(entityName) {
+        if (!entityName) {
+            throw new InvalidArgument('Entity name is required.')
+        }
+
         if (this._modelCache[entityName]) return this._modelCache[entityName];
 
         const modelClassName = naming.pascalCase(entityName);

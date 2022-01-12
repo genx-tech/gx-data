@@ -102,6 +102,11 @@ module.exports = Base => class extends Base {
 -   async deleteMany\_(deleteOptions, connOptions)
 -   async cached\_(key, associations, connOptions)
 
+## Helper methods
+
+-   fieldSchema(fieldName, options), returns the field schema for input validation, options can be used to override the default auto generated schema
+    - $addEnumValues, for enum values to add some fake value which not accepted by db but can be consumed by business logic, e.g. all, none
+
 ## Operation options
 
 -   $projection
