@@ -32,5 +32,10 @@ module.exports = function (info, i18n, options) {
         instances[index] = generator;
     }
 
-    return generator();
+    let uid = generator();
+    if (options?.prefix) {
+        uid = options.prefix + uid;
+    }
+
+    return uid;
 };
