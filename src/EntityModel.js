@@ -1282,13 +1282,17 @@ class EntityModel {
     }
 
     static _dependencyChanged(fieldName, context) {
-        const deps = this.meta.fieldDependencies[fieldName];
+        if (this.meta.fieldDependencies) {
+            const deps = this.meta.fieldDependencies[fieldName];
 
-        return _.find(deps, (d) =>
-            _.isPlainObject(d)
-                ? _.hasIn(context, d.reference)
-                : _.hasIn(context, d)
-        );
+            return _.find(deps, (d) =>
+                _.isPlainObject(d)
+                    ? (d.reference !== fieldName && _.hasIn(context, d.reference))
+                    : _.hasIn(context, d)
+            );
+        }
+        
+        return false;
     }
 
     static _referenceExist(input, ref) {
@@ -1320,12 +1324,14 @@ class EntityModel {
                             return false;
                         }
 
+                        if (d.reference === fieldName) return false;
+
                         d = d.reference;
                     }
 
                     return (
                         fieldName in input && !this._referenceExist(input, d)
-                    );
+                    ) || (this._referenceExist(input, d) && !(fieldName in input));
                 })
             );
 

@@ -259,6 +259,30 @@ There are predefined context properties which can be accessed in an entity opera
 -   schemas - Access other schema models in the same application
 -   state - Current request state
 
+## cascade creation / update
+
+```
+await EntityA.create_({
+    key: 'value',
+    ":children": [
+        { childKey: 'keyValue1', ... },
+        { childKey: 'keyValue2', ... }
+    ],
+    ":entityB": {
+        key1: 'value1',
+        key2: 'value2'
+    },
+    "@entityC:" {
+        unikey: "a entity C id"
+    }
+});
+
+//1. the above call will create a record of entity B
+//2. then get the the id of entity C with a group of unique keys (1 or more field pairs) of entity C
+//3. then create a record of entity A with a reference to the id of newly created entity B and the id of entity C fetched at step 2
+//4. then create a list of children of entity A with a reference to entity A stored in each child records
+```
+
 ## operation helper [for @genx/data dev only]
 
 -   queryFunction
