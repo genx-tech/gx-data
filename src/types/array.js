@@ -27,7 +27,7 @@ function sanitize(value, info, i18n, prefix) {
                     : info.elementSchema;
             const Types = require('.');
             return value.map((a, i) =>
-                Types.sanitize(a, { schema }, i18n, prefix + `[${i}]`)
+                Types.sanitize(a, schema, i18n, prefix + `[${i}]`)
             );
         }
 
