@@ -6,7 +6,20 @@ function normalizePhone(phone, defaultArea) {
         phone = phone.trim();
 
         if (phone.length > 0) {
+            const leftB = phone.indexOf('(');
+            const rightB = phone.indexOf(')');
+
+            if (leftB >= 0 && rightB > leftB) {
+                phone =
+                    phone.substr(0, leftB) +
+                    _.trimStart(phone.substring(leftB + 1, rightB), '0') +
+                    phone.substr(rightB + 1);
+            }
+
+            phone = phone.replace(/ |-/g, '');
+
             const s = phone[0];
+
             if (s === '+') {
                 // nothing
             } else if (s === '0') {
@@ -34,18 +47,6 @@ function normalizePhone(phone, defaultArea) {
                 }
                 phone = defaultArea + phone;
             }
-
-            const leftB = phone.indexOf('(');
-            const rightB = phone.indexOf(')');
-
-            if (leftB > 0 && rightB > leftB) {
-                phone =
-                    phone.substr(0, leftB) +
-                    _.trimStart(phone.substring(leftB + 1, rightB), '0') +
-                    phone.substr(rightB + 1);
-            }
-
-            phone = phone.replace(/ |-/g, '');
         }
     }
 

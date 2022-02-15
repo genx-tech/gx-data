@@ -225,7 +225,7 @@ const numDeals = await this.findAll_({
 -   $migration - {boolean}, set by migration program, will be passed on to associated operation
 -   $upsert - {boolean|object}, for create\_ only, insert or update on duplicate, pass object if insert extra data
 -   $nestedKeyGetter - a getter function to transform the key of nested object, default as ':'+anchor for mysql
--   $skipUpdateTracking - Skip update tracking, to be replaced by $skipFeatures
+-   $skipFeatures - an array of features to skip
 -   $skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before
 -   $transformer - Transform results before returning
 
