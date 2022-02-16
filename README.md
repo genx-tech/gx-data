@@ -1,6 +1,6 @@
 # Entity Model
 
-Updated on 27/08/2020
+Updated on 16/02/2022
 
 ## Static members
 
