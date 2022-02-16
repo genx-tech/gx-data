@@ -5,7 +5,7 @@ const uniqid = require('../uniqid');
 const uuid = require('../uuid');
 
 describe('unit:generators:auto', function () {        
-    describe.only('hyperid', function () {
+    describe('hyperid', function () {
         it('var length', async function () {
             let id = hyperid({ type: 'text' });
             
