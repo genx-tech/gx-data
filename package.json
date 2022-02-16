@@ -10,7 +10,7 @@
         "prettier": "prettier --write . --ignore-unknown",
         "lint": "eslint \"src/**/*.js\"",
         "lint:fix": "eslint --fix \"src/**/*.js\"",
-        "doc": "jsdoc -c jsdoc.json -t ./node_modules/ink-docstrap/template -R README.md -d './docs/api' -r --verbose ./src",
+        "doc": "jsdoc -c jsdoc.json -t ./node_modules/ink-docstrap/template -R README.md -d './docs' -r --verbose ./src",
         "jison": "jison ./src/lang/grammar/oolong.jison -o ./src/lang/grammar/oolong.js && npm run build",
         "test": "mocha --recursive src/**/*.spec.js",
         "test:spec": "npm run clean && mocha --reporter mocha-multi --reporter-options mocha-multi=test/mocha-multi-reporters.json test/*.spec.js",
