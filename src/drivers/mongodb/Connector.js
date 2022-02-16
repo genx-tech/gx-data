@@ -1,7 +1,7 @@
 const { _ } = require('@genx/july');
 const { tryRequire } = require('@genx/sys');
 const mongodb = tryRequire('mongodb');
-const { MongoClient, GridFSBucket } = mongodb;
+const { MongoClient, GridFSBucket, ObjectID } = mongodb;
 const Connector = require('../../Connector');
 const Generators = require('../../Generators');
 const { InvalidArgument, DatabaseError } = require('../../utils/Errors');
@@ -26,10 +26,25 @@ const UpdateOps = UpdateOpsField.concat(UpdateOpsArray);
  * @extends Connector
  */
 class MongodbConnector extends Connector {
+    /**
+     * Get updated record count
+     * @param {*} context 
+     * @returns {integer}
+     */
     updatedCount = (context) => context.result.modifiedCount;
+    /**
+     * Get deleted record count
+     * @param {*} context 
+     * @returns {integer}
+     */
     deletedCount = (context) => context.result.deletedCount;
 
-    findAll_ = this.find_;
+    /**
+     * Get ObjectID instance from string
+     * @param {*} str 
+     * @returns {ObjectID}
+     */
+    toObjectID = (str) => ObjectID(str);
 
     /**
      * @param {string} name
@@ -40,6 +55,7 @@ class MongodbConnector extends Connector {
         super('mongodb', connectionString, options);
 
         this.lockerField = this.options.lockerField || '__lock__';
+        this.findAll_ = this.find_;
     }
 
     /**
@@ -110,12 +126,21 @@ class MongodbConnector extends Connector {
      */
     async disconnect_(conn) {}
 
+    /**
+     * Check mongodb server health status
+     * @returns {*}
+     */
     async ping_() {
         return this.execute_((db) => {
             return db.listCollections(null, { nameOnly: true }).toArray();
         });
     }
 
+    /**
+     * Execute with an executor
+     * @param {Function} dbExecutor 
+     * @returns {*}
+     */
     async execute_(dbExecutor) {
         let db;
 
@@ -663,6 +688,13 @@ class MongodbConnector extends Connector {
         });
     }
 
+    /**
+     * Run aggregate pipeline
+     * @param {string} model 
+     * @param {array} pipeline 
+     * @param {object} options 
+     * @returns {*}
+     */
     async aggregate_(model, pipeline, options) {
         if (this.options.logStatement) {
             this.log(
@@ -675,6 +707,14 @@ class MongodbConnector extends Connector {
         );
     }
 
+    /**
+     * Get distinct records
+     * @param {*} model 
+     * @param {*} field 
+     * @param {*} query 
+     * @param {*} options 
+     * @returns {*}
+     */
     async distinct_(model, field, query, options) {
         if (this.options.logStatement) {
             this.log(
@@ -687,6 +727,13 @@ class MongodbConnector extends Connector {
         );
     }
 
+    /**
+     * Get number of records
+     * @param {string} model 
+     * @param {object} query 
+     * @param {object} options 
+     * @returns {integer}
+     */
     async count_(model, query, options) {
         if (this.options.logStatement) {
             this.log(
@@ -699,6 +746,12 @@ class MongodbConnector extends Connector {
         );
     }
 
+    /**
+     * Wrap a batch of query into an executor for a collection
+     * @param {string} model 
+     * @param {object} executor 
+     * @returns {*}
+     */
     async onCollection_(model, executor) {
         return this.execute_((db) => executor(db.collection(model)));
     }

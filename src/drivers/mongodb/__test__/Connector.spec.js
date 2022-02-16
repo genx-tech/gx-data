@@ -195,5 +195,24 @@ describe('unit:connector:mongodb', function () {
             result.length.should.be.exactly(2);
             totalCount.should.be.exactly(4);
         });
+
+        it('object id', async function () {
+
+            let retInsert = await connector.insertOne_('test_objid', {                
+                tag: 'insertOne'
+            });
+
+            retInsert.result.ok.should.be.exactly(1);
+            const objId = retInsert.insertedId;
+            should.exist(objId);
+            let strId = objId.toString();
+
+            const ret1 = await connector.findOne_('test_objid', { _id: strId });
+            should.not.exist(ret1);
+
+            const ret2 = await connector.findOne_('test_objid', { _id: connector.toObjectID(strId) });
+            should.exist(ret2);
+            ret2.tag.should.be.exactly('insertOne');
+        });
     });
 });
