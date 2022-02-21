@@ -29,6 +29,9 @@ describe('unit:connector:mysql', function () {
         await connector.execute_('CREATE TABLE IF NOT EXISTS ?? (a INT NOT NULL PRIMARY KEY, b INT) ENGINE = InnoDB', 
             [ 't2' ]);    
 
+        await connector.execute_('CREATE TABLE IF NOT EXISTS ?? (a INT NOT NULL PRIMARY KEY, b INT, c INT, UNIQUE KEY (`b`)) ENGINE = InnoDB', 
+            [ 't3' ]);        
+
         await connector.execute_('TRUNCATE TABLE ??',  [ 't' ]);    
     });
 
@@ -104,6 +107,24 @@ describe('unit:connector:mysql', function () {
             result = await connector.find_('t', { $projection: { type: 'function', name: 'count', args: [ 'a' ], alias: 'count' }, $query: { a: 1 } });
             result.length.should.be.exactly(1);            
             result[0].count.should.be.exactly(0);
+        });
+
+        it('upsertMany', async function() {
+            let result = await connector.insertOne_('t3', { a: 1, b: 10, c: 100 });
+            connector.getNumOfAffectedRows(result).should.be.exactly(1);
+
+            result = await connector.insertOne_('t3', { a: 2, b: 20, c: 200 });
+            connector.getNumOfAffectedRows(result).should.be.exactly(1);
+
+            await connector.upsertMany_('t3', ['a', 'b', 'c'], [[2, 30, 300], [3, 10, 300]], { c: 400 });
+
+            const rows = await connector.find_('t3', {});
+            rows.should.be.eql([ { a: 1, b: 10, c: 400 }, { a: 2, b: 20, c: 400 } ]);
+
+            await connector.upsertMany_('t3', ['a', 'b', 'c'], [[4, 40, 300], [5, 50, 300]], { c: 400 });
+            const rows2 = await connector.find_('t3', { $query: { a: { $gt: 3 } } });
+            rows2[0].c.should.be.exactly(300);
+            rows2[1].c.should.be.exactly(300);
         });
     });
 

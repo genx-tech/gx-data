@@ -305,10 +305,13 @@ class MySQLConnector extends Connector {
     }
 
     /**
-     * Create a new entity or update the old one if duplicate key found.
-     * @param {string} model
-     * @param {object} data
-     * @param {*} options
+     * Create a new entity or update the old one if duplicate key found.    
+     * @param {*} model 
+     * @param {*} data 
+     * @param {*} uniqueKeys 
+     * @param {*} options 
+     * @param {object} dataOnInsert - When no duplicate record exists, extra data for inserting
+     * @returns 
      */
     async upsertOne_(model, data, uniqueKeys, options, dataOnInsert) {
         if (!data || _.isEmpty(data)) {
@@ -334,6 +337,54 @@ class MySQLConnector extends Connector {
         return this.execute_(sql, params, options);
     }
 
+    /**
+     * Insert many records or update existings if duplicate key found.     
+     * @param {*} model 
+     * @param {array} dataArrayOnInsert 
+     * @param {*} uniqueKeys 
+     * @param {*} options 
+     * @param {object} dataExprOnUpdate - When duplicate record exists, the actual data used for updating
+     * @returns 
+     */
+    async upsertMany_(model, fieldsOnInsert, dataArrayOnInsert, dataExprOnUpdate, options) {
+        if (!dataArrayOnInsert || _.isEmpty(dataArrayOnInsert)) {
+            throw new ApplicationError(`Upserting with empty "${model}" insert data.`);
+        }
+
+        if (!Array.isArray(dataArrayOnInsert)) {
+            throw new ApplicationError(
+                '"data" to bulk upsert should be an array of records.'
+            );
+        }
+
+        if (!dataExprOnUpdate || _.isEmpty(dataExprOnUpdate)) {
+            throw new ApplicationError(`Upserting with empty "${model}" update data.`);
+        }
+
+        if (!Array.isArray(fieldsOnInsert)) {
+            throw new ApplicationError(
+                '"fields" to bulk upsert should be an array of field names.'
+            );
+        }
+
+        const sql = `INSERT INTO ?? (${fieldsOnInsert
+            .map((f) => this.escapeId(f))
+            .join(', ')}) VALUES ? ON DUPLICATE KEY UPDATE ?`;
+        const params = [model];
+        params.push(dataArrayOnInsert);
+        params.push(dataExprOnUpdate);
+
+        return this.execute_(sql, params, options);
+    }
+
+    /**
+     * Insert many records in one SQL
+     * @param {*} model 
+     * @param {*} fields 
+     * @param {*} data 
+     * @param {*} options 
+     * @returns 
+     */
     async insertMany_(model, fields, data, options) {
         if (!data || _.isEmpty(data)) {
             throw new ApplicationError(`Creating with empty "${model}" data.`);
