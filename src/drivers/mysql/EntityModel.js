@@ -1019,6 +1019,7 @@ class MySQLEntityModel extends EntityModel {
             '$migration',
             '$variables',
             '$upsert',
+            '$dryRun'
         ]);
 
         await eachAsync_(assocs, async (data, anchor) => {

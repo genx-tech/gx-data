@@ -42,6 +42,11 @@ async function createLogEntry_(entityModel, feature, context, operation) {
         logEntry.changedBy = user;
     }
 
+    // dry-run mode only checks validaty of data
+    if (context.options.$dryRun) {
+        return;
+    }
+
     const clConnector = getConnector(entityModel, feature);
     await clConnector.insertOne_(
         feature.storeEntity,

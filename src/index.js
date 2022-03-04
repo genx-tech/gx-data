@@ -5,6 +5,7 @@ const Convertors = require('./Convertors');
 const Generators = require('./Generators');
 const Processors = require('./Processors');
 const Validators = require('./Validators');
+const Loaders = require('./loaders');
 const Errors = require('./utils/Errors');
 const DbModel = require('./DbModel');
 
@@ -19,6 +20,7 @@ module.exports = {
     Generators,
     Processors,
     Validators,
+    Loaders,
     DbModel,
     Utils: {
         Lang: require('./utils/lang'),

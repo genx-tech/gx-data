@@ -228,6 +228,7 @@ const numDeals = await this.findAll_({
 -   $skipFeatures - an array of features to skip
 -   $skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before
 -   $transformer - Transform results before returning
+-   $dryRun - for create only, just do the preparation check and skip the actual db creation call
 
 ```
 $transformer: {

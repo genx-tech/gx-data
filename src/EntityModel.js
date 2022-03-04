@@ -518,23 +518,27 @@ class EntityModel {
                 return false;
             }
 
-            if (context.options.$upsert) {
-                context.result = await this.db.connector.upsertOne_(
-                    this.meta.name,
-                    context.latest,
-                    this.getUniqueKeyFieldsFrom(context.latest),
-                    context.connOptions,
-                    context.options.$upsert
-                );
-            } else {
-                context.result = await this.db.connector.create_(
-                    this.meta.name,
-                    context.latest,
-                    context.connOptions
-                );
-            }
+            if (!context.options.$dryRun) {
+                if (context.options.$upsert) {
+                    context.result = await this.db.connector.upsertOne_(
+                        this.meta.name,
+                        context.latest,
+                        this.getUniqueKeyFieldsFrom(context.latest),
+                        context.connOptions,
+                        context.options.$upsert
+                    );
+                } else {
+                    context.result = await this.db.connector.create_(
+                        this.meta.name,
+                        context.latest,
+                        context.connOptions
+                    );
+                }
 
-            this._fillResult(context);
+                this._fillResult(context);
+            } else {
+                context.return = context.latest;
+            }
 
             if (needCreateAssocs) {
                 await this._createAssocs_(context, associations);
@@ -1007,6 +1011,7 @@ class EntityModel {
 
         const { raw } = context;
         let latest = {};
+        // returned by $retrieveExisting
         let existing = context.options.$existing;
         context.latest = latest;
 
