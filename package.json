@@ -74,7 +74,7 @@
     "dependencies": {
         "@genx/error": "^1.1.2",
         "@genx/jes": "^1.2.2",
-        "@genx/july": "^1.0.1",
+        "@genx/july": "^1.0.2",
         "@genx/sys": "^0.1.5",
         "luxon": "^1.28.0",
         "number-to-letter": "^1.0.1",
