@@ -82,13 +82,14 @@ module.exports = {
         });
 
         const errors = [];
+        const confirmations = [];
         const rowsResult = [];
 
         const Entity = db.model(mainEntity);
         const processed = [];
         await eachAsync_(data, async ({ rowNumber, record }) => {
             try {
-                record = await payloadFunctor(Entity, record);
+                record = await payloadFunctor(Entity, record, confirmations);
                 processed.push({ rowNumber, record });
                 await Entity.create_(record, { $dryRun: true });
             } catch (error) {
@@ -99,8 +100,8 @@ module.exports = {
             }
         });
 
-        if (errors.length > 0) {
-            return { errors };
+        if (errors.length > 0 || confirmations.length > 0) {
+            return { errors, confirmations };
         }
 
         await eachAsync_(processed, async ({ rowNumber, record }) => {
