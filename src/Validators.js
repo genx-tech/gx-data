@@ -112,9 +112,6 @@ function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
             return fieldInfo.default ?? null;
         }
         if (fieldInfo.type) {
-            if (fieldInfo.type === 'object' && fieldInfo.elementSchema) {
-                fieldInfo = fieldInfo.elementSchema;
-            }
             return Types.sanitize(
                 value,
                 fieldInfo,

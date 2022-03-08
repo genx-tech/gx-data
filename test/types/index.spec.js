@@ -62,12 +62,9 @@ describe("Types", function () {
                 schema: {
                     a: { type: 'text' },
                     b: {
-                        type: 'object', elementSchema: {
-                            type: 'object',
-                            schema: {
-                                c: { type: 'text', optional: true },
-                                d: { type: 'text', optional: true }
-                            }
+                        type: 'object', schema: {
+                            c: { type: 'text', optional: true },
+                            d: { type: 'text', optional: true }
                         }
                     }
                 }
@@ -90,12 +87,9 @@ describe("Types", function () {
                 schema: {
                     a: { type: 'text' },
                     b: {
-                        type: 'array', elementSchema: {
-                            type: 'object',
-                            schema: {
-                                c: { type: 'text', optional: true },
-                                d: { type: 'text', optional: true }
-                            }
+                        type: 'array', schema: {
+                            c: { type: 'text', optional: true },
+                            d: { type: 'text', optional: true }
                         }
                     }
                 }
@@ -120,14 +114,12 @@ describe("Types", function () {
                 schema: {
                     a: { type: 'text' },
                     b: {
-                        type: 'object', elementSchema: {
-                            type: 'object',
+                        type: 'object', 
                             schema: {
                                 c: { type: 'text', optional: true },
                                 d: { type: 'text', optional: true },
                                 e: { validator: (value) => Validators.isInt(value), convertor: (value) => Convertors.toInt(value) }
                             }
-                        }
                     }
                 }
             }
@@ -219,11 +211,8 @@ describe("Types", function () {
                 schema: {
                     a: { type: 'text' },
                     b: {
-                        type: 'object', elementSchema: {
-                            type: 'object',
-                            schema: {
-                                c: { type: 'text' }
-                            }
+                        type: 'object',  schema: {
+                            c: { type: 'text' }
                         }
                     }
                 }
@@ -267,12 +256,9 @@ describe("Types", function () {
                 schema: {
                     a: { type: 'text' },
                     b: {
-                        type: 'object', elementSchema: {
-                            type: 'object',
-                            schema: {
-                                c: { type: 'text' },
-                                d: { validator: (value) => Validators.isInt(value), convertor: (value) => Convertors.toInt(value) }
-                            }
+                        type: 'object', schema: {
+                            c: { type: 'text' },
+                            d: { validator: (value) => Validators.isInt(value), convertor: (value) => Convertors.toInt(value) }
                         }
                     }
                 }
