@@ -39,13 +39,13 @@ const Types = {
         'freezeAfterNonDefault',
     ]),
 
-    sanitize: function (value, info, ...others) {
+    sanitize: function (value, info, i18n, field) {
         if (!Types.Builtin.has(info.type)) {
             throw new InvalidArgument(`Unknown primitive type: "${info.type}"."`);
         }
 
         const typeObject = Types[info.type];
-        return typeObject.sanitize(value, info, ...others);
+        return typeObject.sanitize(value, info, i18n, field);
     },
 };
 

@@ -7,7 +7,7 @@ module.exports = {
 
     alias: ['int'],
 
-    sanitize: (value, info, i18n) => {
+    sanitize: (value, info, i18n, field) => {
         if (value == null) return null;
 
         const raw = value;
@@ -17,6 +17,20 @@ module.exports = {
                 value: raw,
                 field: info,
             });
+        }
+
+        if (info && ('max' in info) && (value > info.max)) {
+            throw new ValidationError(
+                `The field "${field || ''}" value should smaller than ${info.max}`,
+                { value, feild: info }
+            );
+        }
+
+        if (info && ('min' in info) && (value < info.min)) {
+            throw new ValidationError(
+                `The field "${field || ''}" value should bigger than ${info.min}`,
+                { value, feild: info }
+            );
         }
 
         return value;
