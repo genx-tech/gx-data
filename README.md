@@ -305,6 +305,27 @@ await EntityA.create_({
 11. end transaction-safe closure
 12. sub-class after hooks
 
+# Types
+## Sanitize Object
+#### Example
+```
+const schema = {
+    schema: {
+        a: { type: 'text' },
+        b: {
+            type: 'object', elementSchema: {
+            type: 'object',
+            schema: {
+                c: { type: 'text', optional: true },
+                d: { type: 'text', optional: true },
+                e: { validator:()=>{},convertor:()=>{}}
+               }
+            }
+        }
+    }
+}
+```
+
 ## known issues
 
 -   retrieveUpdated - The previous query maybe affected by parrallel updating
@@ -313,3 +334,4 @@ await EntityA.create_({
 ## change logs since Apr 2020
 
 1. Add -1 for descent sorting for mysql connector, and now both false and -1 for ORDER BY DESC.
+2. Support custom validator and convertor to object sanitize.

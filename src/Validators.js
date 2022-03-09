@@ -97,23 +97,20 @@ const NIL = Symbol('nil');
 
 function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
     if (fieldName in raw) {
-        const value = raw[fieldName];
+        let value = raw[fieldName];
 
         // sanitize first
         if (isNothing(value)) {
             if (!fieldInfo.optional && isNothing(fieldInfo.default)) {
                 throw new ValidationError(
-                    `Value of property "${
-                        prefix ? prefix + '.' : ''
-                    }${fieldName}${
-                        fieldInfo.comment ? ' - ' + fieldInfo.comment : ''
+                    `Value of property "${prefix ? prefix + '.' : ''
+                    }${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''
                     }" cannot be null`
                 );
             }
 
             return fieldInfo.default ?? null;
         }
-
         if (fieldInfo.type) {
             return Types.sanitize(
                 value,
@@ -121,6 +118,20 @@ function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
                 i18n,
                 (prefix ? prefix + '.' : '') + fieldName
             );
+        } else {
+            if (fieldInfo.validator && typeof fieldInfo.validator === 'function') {
+                const res = fieldInfo.validator(value);
+                if (res === false) {
+                    throw new ValidationError(`Invalid "${fieldName}" value`, {
+                        value: value,
+                        field: fieldInfo,
+                    });
+                }
+            }
+
+            if (fieldInfo.convertor && typeof fieldInfo.convertor === 'function') {
+                value = fieldInfo.convertor(value);
+            }
         }
 
         return value;
@@ -128,8 +139,7 @@ function validateObjectMember(raw, fieldName, fieldInfo, i18n, prefix) {
 
     if (!fieldInfo.optional) {
         throw new ValidationError(
-            `Missing required property "${
-                prefix ? prefix + '.' : ''
+            `Missing required property "${prefix ? prefix + '.' : ''
             }${fieldName}${fieldInfo.comment ? ' - ' + fieldInfo.comment : ''}"`
         );
     }
@@ -156,7 +166,7 @@ function validateObjectBySchema(raw, schema, i18n, prefix) {
         schema = schema();
     }
 
-    _.forOwn(schema, (fieldInfo, fieldName) => {  
+    _.forOwn(schema, (fieldInfo, fieldName) => {
         if (Array.isArray(fieldInfo)) {
             if (
                 !fieldInfo.find((fieldInfoOption) => {
