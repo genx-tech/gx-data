@@ -33,8 +33,8 @@ module.exports = {
                         };
                     } else if (metadata.type === 'currency') {
                         cell.alignment = { horizontal: 'right' };
-                        if (config.currencyFormat) {
-                            cell.numFmt = config.currencyFormat;
+                        if (metadata.format && config[metadata.format]) {
+                            cell.numFmt = config[metadata.format];
                         }
                     }
                 }
@@ -51,7 +51,7 @@ module.exports = {
         await workbook.xlsx.writeFile(templateFile);
     },
 
-    load_: async (db, mainEntity, dataFile, reverseMapping, payloadFunctor) => {
+    load_: async (db, mainEntity, dataFile, reverseMapping, payloadFunctor, needConfirm) => {
         const Excel = require('exceljs');
         let workbook = new Excel.Workbook();
         await workbook.xlsx.readFile(dataFile);
@@ -67,14 +67,23 @@ module.exports = {
                         (key) => reverseMapping[key]
                     );
                 } else {
+                    const rowValues = _.drop(row.values);
+                    const isNonEmpty = _.find(rowValues, val => val != null && val.toString().trim() !== "");
+
+                    if (!isNonEmpty) {
+                        return;
+                    }
+
                     const record = _.fromPairs(
-                        _.zip(colKeys, _.drop(row.values))
+                        _.zip(colKeys, rowValues)
                     );
 
                     if (!_.isEmpty(record)) {
+                        const _record = unflattenObject(record);
+
                         data.push({
                             rowNumber,
-                            record: unflattenObject(record),
+                            record: _record,
                         });
                     }
                 }
@@ -89,19 +98,32 @@ module.exports = {
         const processed = [];
         await eachAsync_(data, async ({ rowNumber, record }) => {
             try {
-                record = await payloadFunctor(Entity, record, confirmations);
+                const _confirm = [];
+                record = await payloadFunctor(Entity, record, _confirm);
+                //console.dir(record, { depth: 10 });
+
+                if (_confirm.length > 0) {
+                    _confirm.forEach(c => confirmations.push({ rowNumber, ...c }));
+                }
+
                 processed.push({ rowNumber, record });
                 await Entity.create_(record, { $dryRun: true });
             } catch (error) {
+                //throw error;
                 errors.push({
                     rowNumber,
                     error: error.message,
+                    ...(error.info ? { info: error.info } : null)
                 });
             }
         });
 
-        if (errors.length > 0 || confirmations.length > 0) {
-            return { errors, confirmations };
+        if (errors.length > 0) {
+            return { errors };
+        }
+
+        if (needConfirm && confirmations.length > 0) {
+            return { confirmations };
         }
 
         await eachAsync_(processed, async ({ rowNumber, record }) => {
@@ -109,7 +131,7 @@ module.exports = {
                 const result = await Entity.create_(record);
                 rowsResult.push({
                     rowNumber,
-                    [Entity.meta.key]: result[Entity.meta.key],
+                    [Entity.meta.keyField]: result[Entity.meta.keyField],
                 });
             } catch (error) {
                 errors.push({

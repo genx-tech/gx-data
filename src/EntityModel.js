@@ -538,6 +538,7 @@ class EntityModel {
                 this._fillResult(context);
             } else {
                 context.return = context.latest;
+                context.result = { insertId: context.latest[this.meta.keyField], affectedRows: 1 };
             }
 
             if (needCreateAssocs) {
