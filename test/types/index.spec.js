@@ -114,12 +114,12 @@ describe("Types", function () {
                 schema: {
                     a: { type: 'text' },
                     b: {
-                        type: 'object', 
-                            schema: {
-                                c: { type: 'text', optional: true },
-                                d: { type: 'text', optional: true },
-                                e: { validator: (value) => Validators.isInt(value), convertor: (value) => Convertors.toInt(value) }
-                            }
+                        type: 'object',
+                        schema: {
+                            c: { type: 'text', optional: true },
+                            d: { type: 'text', optional: true },
+                            e: { validator: (value) => Validators.isInt(value), convertor: (value) => Convertors.toInt(value) }
+                        }
                     }
                 }
             }
@@ -211,7 +211,7 @@ describe("Types", function () {
                 schema: {
                     a: { type: 'text' },
                     b: {
-                        type: 'object',  schema: {
+                        type: 'object', schema: {
                             c: { type: 'text' }
                         }
                     }
@@ -274,4 +274,128 @@ describe("Types", function () {
         })
     });
 
+
+    describe('integer type add property max,min', () => {
+        it('should be ok', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer' }
+                }
+            }
+
+            const obj = { a: 1 }
+
+            Types.OBJECT.sanitize(obj, schema).should.be.eql(obj);
+        })
+
+        it('should be ok when use max', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer', max: 200 }
+                }
+            }
+
+            const obj = { a: 100 }
+
+            Types.OBJECT.sanitize(obj, schema).should.be.eql(obj);
+        })
+
+        it('should be ok when use min', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer', min: 10 }
+                }
+            }
+
+            const obj = { a: 100 }
+
+            Types.OBJECT.sanitize(obj, schema).should.be.eql(obj);
+        })
+
+        it('should be ok when use min and max', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer', min: 10, max: 200 }
+                }
+            }
+
+            const obj = { a: 100 }
+
+            Types.OBJECT.sanitize(obj, schema).should.be.eql(obj);
+        })
+
+        it('should be ok when value bigger than max', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer', max: 10 }
+                }
+            }
+
+            const obj = { a: 100 }
+
+            try {
+                Types.OBJECT.sanitize(obj, schema);
+            } catch (error) {
+                error.message.should.be.eql(`The field "a" value should smaller than 10`);
+            }
+        })
+
+        it('should be ok when value smaller than min', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer', min: 10 }
+                }
+            }
+
+            const obj = { a: 2 }
+
+            try {
+                Types.OBJECT.sanitize(obj, schema);
+            } catch (error) {
+                error.message.should.be.eql(`The field "a" value should bigger than 10`);
+            }
+        })
+
+        it('should be ok when value not in max and min', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer', min: 10, max: 100 }
+                }
+            }
+
+            const obj = { a: 200 }
+
+            try {
+                Types.OBJECT.sanitize(obj, schema);
+            } catch (error) {
+                error.message.should.be.eql(`The field "a" value should smaller than 100`);
+            }
+        })
+
+        it('should be ok when value not in max and min', () => {
+            const schema = {
+                schema: {
+                    a: { type: 'integer', min: 10, max: 100 }
+                }
+            }
+
+            const obj = { a: 1 }
+
+            try {
+                Types.OBJECT.sanitize(obj, schema);
+            } catch (error) {
+                error.message.should.be.eql(`The field "a" value should bigger than 10`);
+            }
+        })
+
+        it('should be ok when use Type.INTEGER', () => {
+            const a = 100;
+            Types.INTEGER.sanitize(a).should.be.eql(a);
+
+            const c = '100';
+            Types.INTEGER.sanitize(c).should.be.eql(100);
+        })
+
+
+    })
 });
