@@ -99,7 +99,7 @@ module.exports = {
         await eachAsync_(data, async ({ rowNumber, record }) => {
             try {
                 const _confirm = [];
-                record = await payloadFunctor(Entity, record, _confirm);
+                record = await payloadFunctor(Entity, record, rowNumber, _confirm);
                 //console.dir(record, { depth: 10 });
 
                 if (_confirm.length > 0) {
