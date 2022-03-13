@@ -56,7 +56,7 @@ module.exports = {
         let workbook = new Excel.Workbook();
         await workbook.xlsx.readFile(dataFile);
 
-        let data = [];
+        const data = [];
 
         workbook.eachSheet((worksheet) => {
             let colKeys;
@@ -84,6 +84,7 @@ module.exports = {
                         data.push({
                             rowNumber,
                             record: _record,
+                            primaryValue: rowValues[0]
                         });
                     }
                 }
@@ -96,7 +97,7 @@ module.exports = {
 
         const Entity = db.model(mainEntity);
         const processed = [];
-        await eachAsync_(data, async ({ rowNumber, record }) => {
+        await eachAsync_(data, async ({ rowNumber, record, primaryValue }) => {
             try {
                 const _confirm = [];
                 record = await payloadFunctor(Entity, record, rowNumber, _confirm);
@@ -106,10 +107,9 @@ module.exports = {
                     _confirm.forEach(c => confirmations.push({ rowNumber, ...c }));
                 }
 
-                processed.push({ rowNumber, record });
+                processed.push({ rowNumber, record, primaryValue });
                 await Entity.create_(record, { $dryRun: true });
             } catch (error) {
-                //throw error;
                 errors.push({
                     rowNumber,
                     error: error.message,
@@ -126,12 +126,13 @@ module.exports = {
             return { confirmations };
         }
 
-        await eachAsync_(processed, async ({ rowNumber, record }) => {
+        await eachAsync_(processed, async ({ rowNumber, record, primaryValue }) => {
             try {
                 const result = await Entity.create_(record);
                 rowsResult.push({
                     rowNumber,
                     [Entity.meta.keyField]: result[Entity.meta.keyField],
+                    primaryValue
                 });
             } catch (error) {
                 errors.push({
