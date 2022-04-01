@@ -2,7 +2,8 @@
 
 module.exports = {
     only: [        
-        "benchmark-uid"
+        "entity-model",
+        //"benchmark-uid"
     ],
     skip: [
 

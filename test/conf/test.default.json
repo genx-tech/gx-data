@@ -1,0 +1,16 @@
+{
+    "timezone": "Australia/Sydney",
+    "dataSource": {
+        "mysql": {
+            "test": {
+                "connection": "mysql://root:root@localhost/gx-data-test",
+                "logStatement": true
+            }
+        }
+    },
+    "useDb": {        
+        "test": {
+            "dataSource": "mysql.test"
+        }
+    }
+}

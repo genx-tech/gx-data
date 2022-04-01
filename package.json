@@ -1,6 +1,6 @@
 {
     "name": "@genx/data",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "description": "Gen-X Suite data abstract layer.",
     "main": "lib/index.js",
     "publishConfig": {
@@ -15,7 +15,7 @@
         "test": "mocha --recursive src/**/*.spec.js",
         "test:spec": "npm run clean && mocha --reporter mocha-multi --reporter-options mocha-multi=test/mocha-multi-reporters.json test/*.spec.js",
         "cover": "nyc --reporter=html --reporter=text mocha test/*.mocha.js --recursive src/**/*.spec.js",
-        "clean": "del-cli lib .nyc_output coverage allure-results",
+        "clean": "del-cli .nyc_output coverage allure-results",
         "build": "npm run clean && NODE_ENV=production babel src -d lib --ignore \"**/__test__/*.js\" --source-maps --copy-files --no-copy-ignored"
     },
     "repository": "https://github.com/genx-tech/gx-data",

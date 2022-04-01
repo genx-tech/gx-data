@@ -72,6 +72,7 @@ class MySQLConnector extends Connector {
 
         this.relational = true;
         this.acitveConnections = new Set();
+        this.executedCount = 0;
     }
 
     /**
@@ -253,6 +254,7 @@ class MySQLConnector extends Connector {
                 }
 
                 const [rows1] = await conn.execute(sql, params);
+                this.executedCount++;
 
                 return rows1;
             }
@@ -261,11 +263,14 @@ class MySQLConnector extends Connector {
                 this.log('verbose', conn.format(sql, params));
             }
 
-            if (options && options.rowsAsArray) {
-                return await conn.query({ sql, rowsAsArray: true }, params);
+            if (options && options.rowsAsArray) {                
+                const result = await conn.query({ sql, rowsAsArray: true }, params);
+                this.executedCount++;
+                return result;
             }
 
             const [rows2] = await conn.query(sql, params);
+            this.executedCount++;
 
             return rows2;
         } catch (err) {

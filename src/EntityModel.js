@@ -111,6 +111,28 @@ class EntityModel {
     }
 
     /**
+     * Helper to combine explicit required associations and associations required by query fields or projection fields.
+     * @param {*} extraArray 
+     * @param {*} fields 
+     * @returns {Array}
+     */
+    static assocFrom(extraArray, fields) {
+        const result = new Set(extraArray);       
+
+        if (fields) {
+            fields.forEach(keyPath => {
+                const keyNodes = keyPath.split('.');
+                if (keyNodes.length > 1) {
+                    const assoc = keyNodes.slice(0, -1).join('.');
+                    result.add(assoc);
+                }
+            })
+        }
+
+        return Array.from(result);
+    }
+
+    /**
      * Get field names array of a unique key from input data.
      * @param {object} data - Input data.
      */
@@ -139,6 +161,29 @@ class EntityModel {
             Array.isArray(keyPath) ? keyPath : keyPath.split('.')
         ).map((key) => (key[0] === ':' ? key : ':' + key));
         return _.get(entityObj, nodes, defaultValue);
+    }
+
+    /**
+     * Ensure the entity object containing required fields, if not, it will automatically fetched from db and return.
+     * @param {*} entityObj 
+     * @param {Array} fields 
+     * @param {*} connOpts 
+     * @returns {Object}
+     */
+    static async ensureFields_(entityObj, fields, connOpts) {
+        if (_.find(fields, field => !_.has(entityObj, field))) {
+            const uk = this.getUniqueKeyValuePairsFrom(entityObj);
+
+            if (_.isEmpty(uk)) {
+                throw new UnexpectedState('None of the unique keys found from the data set.');
+            }
+
+            const findOptions = { $query: uk, /* $projection: fields,*/ $association: this.assocFrom(null, fields) };
+
+            return this.findOne_(findOptions, connOpts)
+        }
+
+        return entityObj;
     }
 
     /**
