@@ -571,7 +571,7 @@ class EntityModel {
                         this.getUniqueKeyFieldsFrom(context.latest),
                         context.connOptions,
                         context.options.$upsert
-                    );
+                    );                    
                 } else {
                     context.result = await this.db.connector.create_(
                         this.meta.name,

@@ -189,7 +189,13 @@ class MySQLEntityModel extends EntityModel {
                     ...context.latest,
                     [this.meta.features.autoId.field]: insertId,
                 };
+            } else if (context.result.upsert) {
+                // the key is not correct 
+                delete context.latest[this.meta.features.autoId.field];
             }
+        } else if (context.result.upsert) {
+            // the key is not used 
+            delete context.latest[this.meta.keyField];
         }
 
         context.return = context.latest;

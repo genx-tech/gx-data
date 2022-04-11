@@ -339,7 +339,12 @@ class MySQLConnector extends Connector {
         params.push(insertData);
         params.push(dataWithoutUK);
 
-        return this.execute_(sql, params, options);
+        const result = await this.execute_(sql, params, options);
+
+        return {
+            upsert: true,
+            ...result            
+        };
     }
 
     /**
