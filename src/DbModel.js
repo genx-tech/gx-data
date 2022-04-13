@@ -9,6 +9,7 @@ const directReturn = (a) => a;
 
 class DbModel {
     constructor(app, connector, i18n) {
+        this.ownerApp = app;
         this.app = app;
         this.connector = connector;
         this.i18n = i18n;
@@ -67,7 +68,7 @@ class DbModel {
     }
 
     loadPackageModel(packagePath, modelClassName) { 
-        const customModelPath = this.app.toAbsolutePath(packagePath,  (process.env.NODE_RT && process.env.NODE_RT === 'babel') ? 'src' : 'lib', 'models', `${modelClassName}.js`);           
+        const customModelPath = this.ownerApp.toAbsolutePath(packagePath,  (process.env.NODE_RT && process.env.NODE_RT === 'babel') ? 'src' : 'lib', 'models', `${modelClassName}.js`);           
         return fs.existsSync(customModelPath) && require(customModelPath);
     }
 
@@ -171,6 +172,7 @@ class DbModel {
         delete this._modelCache;
         delete this.connector;
         delete this.app;
+        delete this.ownerApp;
     }
 }
 
