@@ -68,7 +68,7 @@ class EntityModel {
      * @param {object} [extra] - Extra schema options
      * @return {object|array} Schema object
      */
-    static fieldSchema(name, extra, orAsArray) {
+    static fieldSchema(name, extra) {
         const meta = this.meta.fields[name];
         if (!meta) {
             throw new InvalidArgument(
@@ -76,12 +76,13 @@ class EntityModel {
             );
         }
 
-        const schema = _.omit(meta, ['default']);
-        let arrayElem = schema;
+        const schema = _.omit(meta, ['default', 'optional']);        
 
         if (extra) {
-            const { $addEnumValues, ...others } = extra;
-            if (orAsArray) {
+            const { $addEnumValues, $orAsArray, ...others } = extra;
+            let arrayElem = schema;
+
+            if ($orAsArray) {
                 arrayElem = { ...schema, ...others };
             }
 
@@ -90,17 +91,17 @@ class EntityModel {
             } 
 
             Object.assign(schema, others);                  
-        }
 
-        if (orAsArray) {
-            return [
-                schema,
-                {
-                    type: 'array',
-                    elementSchema: arrayElem,
-                },
-            ];
-        }      
+            if ($orAsArray) {
+                return [
+                    schema,
+                    {
+                        type: 'array',
+                        elementSchema: arrayElem,
+                    },
+                ];
+            }    
+        }          
 
         return schema;
     }
@@ -624,7 +625,7 @@ class EntityModel {
             return true;
         }, context);
 
-        if (success) {
+        if (success && !context.options.$dryRun) {
             await this.afterCreate_(context);
         }
 
@@ -821,7 +822,7 @@ class EntityModel {
             return true;
         }, context);
 
-        if (success) {
+        if (success && !context.options.$dryRun) {
             if (forSingleRecord) {
                 await this.afterUpdate_(context);
             } else {
@@ -1006,7 +1007,7 @@ class EntityModel {
             return this.db.connector.deletedCount(context);
         }, context);
 
-        if (deletedCount) {
+        if (deletedCount && !context.options.$dryRun) {
             if (forSingleRecord) {
                 await this.afterDelete_(context);
             } else {
