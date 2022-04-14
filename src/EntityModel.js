@@ -57,13 +57,18 @@ class EntityModel {
         return data[this.meta.keyField];
     }
 
+    // alias of fieldSchema, backward compatible with v1
+    static feildMeta(...args) {
+        return this.fieldSchema(...args);
+    }
+
     /**
      * Get a field schema based on the metadata of the field.
      * @param {string} name - Field name
      * @param {object} [extra] - Extra schema options
-     * @return {object} Schema object
+     * @return {object|array} Schema object
      */
-    static fieldSchema(name, extra) {
+    static fieldSchema(name, extra, orAsArray) {
         const meta = this.meta.fields[name];
         if (!meta) {
             throw new InvalidArgument(
@@ -72,14 +77,30 @@ class EntityModel {
         }
 
         const schema = _.omit(meta, ['default']);
+        let arrayElem = schema;
+
         if (extra) {
             const { $addEnumValues, ...others } = extra;
+            if (orAsArray) {
+                arrayElem = { ...schema, ...others };
+            }
+
             if (meta.type === Types.ENUM.name && $addEnumValues) {
                 schema.values = schema.values.concat($addEnumValues);
             } 
 
-            Object.assign(schema, others);
+            Object.assign(schema, others);                  
         }
+
+        if (orAsArray) {
+            return [
+                schema,
+                {
+                    type: 'array',
+                    elementSchema: arrayElem,
+                },
+            ];
+        }      
 
         return schema;
     }
