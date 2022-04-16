@@ -263,8 +263,11 @@ class MySQLConnector extends Connector {
                 this.log('verbose', conn.format(sql, params));
             }
 
-            if (options && options.rowsAsArray) {                
-                const result = await conn.query({ sql, rowsAsArray: true }, params);
+            if (options && options.rowsAsArray) {
+                const result = await conn.query(
+                    { sql, rowsAsArray: true },
+                    params
+                );
                 this.executedCount++;
                 return result;
             }
@@ -310,13 +313,13 @@ class MySQLConnector extends Connector {
     }
 
     /**
-     * Create a new entity or update the old one if duplicate key found.    
-     * @param {*} model 
-     * @param {*} data 
-     * @param {*} uniqueKeys 
-     * @param {*} options 
+     * Create a new entity or update the old one if duplicate key found.
+     * @param {*} model
+     * @param {*} data
+     * @param {*} uniqueKeys
+     * @param {*} options
      * @param {object} dataOnInsert - When no duplicate record exists, extra data for inserting
-     * @returns 
+     * @returns
      */
     async upsertOne_(model, data, uniqueKeys, options, dataOnInsert) {
         if (!data || _.isEmpty(data)) {
@@ -343,22 +346,30 @@ class MySQLConnector extends Connector {
 
         return {
             upsert: true,
-            ...result            
+            ...result,
         };
     }
 
     /**
-     * Insert many records or update existings if duplicate key found.     
-     * @param {*} model 
-     * @param {array} dataArrayOnInsert 
-     * @param {*} uniqueKeys 
-     * @param {*} options 
+     * Insert many records or update existings if duplicate key found.
+     * @param {*} model
+     * @param {array} dataArrayOnInsert
+     * @param {*} uniqueKeys
+     * @param {*} options
      * @param {object} dataExprOnUpdate - When duplicate record exists, the actual data used for updating
-     * @returns 
+     * @returns
      */
-    async upsertMany_(model, fieldsOnInsert, dataArrayOnInsert, dataExprOnUpdate, options) {
+    async upsertMany_(
+        model,
+        fieldsOnInsert,
+        dataArrayOnInsert,
+        dataExprOnUpdate,
+        options
+    ) {
         if (!dataArrayOnInsert || _.isEmpty(dataArrayOnInsert)) {
-            throw new ApplicationError(`Upserting with empty "${model}" insert data.`);
+            throw new ApplicationError(
+                `Upserting with empty "${model}" insert data.`
+            );
         }
 
         if (!Array.isArray(dataArrayOnInsert)) {
@@ -368,7 +379,9 @@ class MySQLConnector extends Connector {
         }
 
         if (!dataExprOnUpdate || _.isEmpty(dataExprOnUpdate)) {
-            throw new ApplicationError(`Upserting with empty "${model}" update data.`);
+            throw new ApplicationError(
+                `Upserting with empty "${model}" update data.`
+            );
         }
 
         if (!Array.isArray(fieldsOnInsert)) {
@@ -389,11 +402,11 @@ class MySQLConnector extends Connector {
 
     /**
      * Insert many records in one SQL
-     * @param {*} model 
-     * @param {*} fields 
-     * @param {*} data 
-     * @param {*} options 
-     * @returns 
+     * @param {*} model
+     * @param {*} fields
+     * @param {*} data
+     * @param {*} options
+     * @returns
      */
     async insertMany_(model, fields, data, options) {
         if (!data || _.isEmpty(data)) {
@@ -905,7 +918,9 @@ class MySQLConnector extends Connector {
                 ) {
                     // for avoiding dupliate, $or_1, $or_2 is valid
                     if (!Array.isArray(value) && !_.isPlainObject(value)) {
-                        throw new Error('"$and" operator value should be an array or plain object.');
+                        throw new Error(
+                            '"$and" operator value should be an array or plain object.'
+                        );
                     }
 
                     return (
@@ -1053,6 +1068,10 @@ class MySQLConnector extends Connector {
                     ? '*'
                     : mysql.escapeId(actualFieldName))
             );
+        }
+
+        if (aliasMap[fieldName] === fieldName) {
+            return mysql.escapeId(fieldName);
         }
 
         return (
@@ -1632,6 +1651,8 @@ class MySQLConnector extends Connector {
 
                     alias = aliasPrefix + '$' + alias;
                 }
+
+                aliasMap[alias] = alias;
 
                 return (
                     this._buildColumn(
