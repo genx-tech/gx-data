@@ -36,6 +36,12 @@ module.exports = {
                         if (metadata.format && config[metadata.format]) {
                             cell.numFmt = config[metadata.format];
                         }
+                    } else if (metadata.type === 'percentage') {
+                        if (metadata.format && config[metadata.format]) {
+                            cell.numFmt = config[metadata.format];
+                        } else {
+                            cell.numFmt = '0.00%';
+                        }
                     }
                 }
             }
