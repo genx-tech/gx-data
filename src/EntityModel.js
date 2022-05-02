@@ -587,12 +587,16 @@ class EntityModel {
 
             if (!context.options.$dryRun) {
                 if (context.options.$upsert) {
+                    // temp fix: over fill for updating
+                const dataForUpdating = _.pick(context.latest, Object.keys(context.raw)); // only update the raw part
+                const dataForInserting = typeof context.options.$upsert === 'object' ? { ...context.latest, ...context.options.$upsert } : context.latest;
+
                     context.result = await this.db.connector.upsertOne_(
                         this.meta.name,
-                        context.latest,
+                        dataForUpdating,
                         this.getUniqueKeyFieldsFrom(context.latest),
                         context.connOptions,
-                        context.options.$upsert
+                        dataForInserting
                     );                    
                 } else {
                     context.result = await this.db.connector.create_(
