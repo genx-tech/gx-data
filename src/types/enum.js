@@ -10,6 +10,8 @@ module.exports = {
         const raw = value;
         value = (typeof value !== 'string' ? value.toString() : value).trim();
 
+        if (value === '') return null;
+
         if (info.values && info.values.indexOf(value) === -1) {
             throw new ValidationError('Invalid enum value', {
                 value: raw,
