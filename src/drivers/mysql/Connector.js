@@ -1778,7 +1778,7 @@ class MySQLConnector extends Connector {
                     orderBy,
                     (asc, col) =>
                         this._escapeIdWithAlias(col, hasJoining, aliasMap) +
-                        (asc === false || asc === '-1' ? ' DESC' : '')
+                        (asc === false || asc === -1 ? ' DESC' : '')
                 ).join(', ')
             );
         }

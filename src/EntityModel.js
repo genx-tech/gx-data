@@ -307,8 +307,7 @@ class EntityModel {
     }
 
     /**
-     * Find one record, returns a model object containing the record or undefined if nothing found.
-     * @param {object|array} condition - Query condition, key-value pair will be joined with 'AND', array element will be joined with 'OR'.
+     * Find one record, returns a model object containing the record or undefined if nothing found.     
      * @param {object} [findOptions] - findOptions
      * @property {object} [findOptions.$association] - Joinings
      * @property {object} [findOptions.$projection] - Selected fields

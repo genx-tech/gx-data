@@ -47,6 +47,9 @@ Updated on 16/02/2022
           return ok(result);
       }, failed);
   });
+
+  // Use SQL expression
+  
 ```
 
 -   meta - Metadata about the enttiy
@@ -253,7 +256,7 @@ $transformer: {
 -   insertIgnore - {boolean}, for create only
 -   connection - for transactions, reused the transactional session
 
----
+--- 
 
 ## operation context [for @genx/data dev only]
 
@@ -324,7 +327,7 @@ const schema = {
     schema: {
         a: { type: 'text' },
         b: {
-            type: 'object', elementSchema: {
+            type: 'array', elementSchema: {
             type: 'object',
             schema: {
                 c: { type: 'text', optional: true },
@@ -339,6 +342,8 @@ const schema = {
 
 ## known issues
 
+-   hierachy projection - The key field of each layer of the hierachy structure is required for deep populating the target object
+-   retrieveCreated - The query for newly created maybe affected by parrallel updating
 -   retrieveUpdated - The previous query maybe affected by parrallel updating
 -   retrieveDeleted - The deleted returned may differ from actual deletion (when data changes between find and delete)
 

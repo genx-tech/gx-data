@@ -101,7 +101,7 @@
 
     <section class="readme-section">
         <article><h1>Entity Model</h1>
-<p>Updated on 27/08/2020</p>
+<p>Updated on 16/02/2022</p>
 <h2>Static members</h2>
 <ul>
 <li>db - instance of the @genx/data/DbModel class
@@ -149,6 +149,9 @@
           return ok(result);
       }, failed);
   });
+
+  // Use SQL expression
+  
 </code></pre>
 <ul>
 <li>
@@ -178,7 +181,7 @@
     }
 };
 </code></pre>
-<h3>Triggers for the mixer</h3>
+<h3>Triggers</h3>
 <ul>
 <li>
 <p>beforeCreate_</p>
@@ -222,13 +225,30 @@
 <li>async deleteOne_(deleteOptions, connOptions)</li>
 <li>async deleteMany_(deleteOptions, connOptions)</li>
 <li>async cached_(key, associations, connOptions)</li>
+<li>async retryCreateOnDuplicate_(dataGenerator_, maxRery, createOptions, connOptions)</li>
 </ul>
 <h2>Helper methods</h2>
 <ul>
-<li>fieldSchema(fieldName, options), returns the field schema for input validation, options can be used to override the default auto generated schema
+<li>
+<p>fieldSchema(fieldName, options), returns the field schema for input validation, options can be used to override the default auto generated schema</p>
 <ul>
 <li>$addEnumValues, for enum values to add some fake value which not accepted by db but can be consumed by business logic, e.g. all, none</li>
 </ul>
+</li>
+<li>
+<p>inputSchema(inputSetName, options), returns an input schema object</p>
+</li>
+<li>
+<p>assocFrom(extraArray, fields), returns a unique array combine the extraArray and the associations inferred from fields</p>
+</li>
+<li>
+<p>getUniqueKeyValuePairsFrom(data)</p>
+</li>
+<li>
+<p>getUniqueKeyFieldsFrom(data)</p>
+</li>
+<li>
+<p>ensureFields_(entityObject, fields)</p>
 </li>
 </ul>
 <h2>Operation options</h2>
@@ -349,6 +369,7 @@ const association = [
 <li>$skipFeatures - an array of features to skip</li>
 <li>$skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before</li>
 <li>$transformer - Transform results before returning</li>
+<li>$dryRun - for create only, just do the preparation check and skip the actual db creation call</li>
 </ul>
 <pre class="prettyprint source"><code>$transformer: {
     user: [ '$$CURRENT.:user', { $pick: [ 'email' ] } ],
@@ -418,14 +439,36 @@ const association = [
 <li>end transaction-safe closure</li>
 <li>sub-class after hooks</li>
 </ol>
+<h1>Types</h1>
+<h2>Sanitize Object</h2>
+<h4>Example</h4>
+<pre class="prettyprint source"><code>const schema = {
+    schema: {
+        a: { type: 'text' },
+        b: {
+            type: 'array', elementSchema: {
+            type: 'object',
+            schema: {
+                c: { type: 'text', optional: true },
+                d: { type: 'text', optional: true },
+                e: { validator:()=>{},convertor:()=>{}}
+               }
+            }
+        }
+    }
+}
+</code></pre>
 <h2>known issues</h2>
 <ul>
+<li>hierachy projection - The key field of each layer of the hierachy structure is required for deep populating the target object</li>
+<li>retrieveCreated - The query for newly created maybe affected by parrallel updating</li>
 <li>retrieveUpdated - The previous query maybe affected by parrallel updating</li>
 <li>retrieveDeleted - The deleted returned may differ from actual deletion (when data changes between find and delete)</li>
 </ul>
 <h2>change logs since Apr 2020</h2>
 <ol>
 <li>Add -1 for descent sorting for mysql connector, and now both false and -1 for ORDER BY DESC.</li>
+<li>Support custom validator and convertor to object sanitize.</li>
 </ol></article>
     </section>
 
