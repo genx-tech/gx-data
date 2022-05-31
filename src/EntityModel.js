@@ -586,16 +586,14 @@ class EntityModel {
 
             if (!context.options.$dryRun) {
                 if (context.options.$upsert) {
-                    // temp fix: over fill for updating
-                const dataForUpdating = _.pick(context.latest, Object.keys(context.raw)); // only update the raw part
-                const dataForInserting = typeof context.options.$upsert === 'object' ? { ...context.latest, ...context.options.$upsert } : context.latest;
+                    const dataForUpdating = _.pick(context.latest, Object.keys(context.raw)); // only update the raw part    
 
                     context.result = await this.db.connector.upsertOne_(
                         this.meta.name,
                         dataForUpdating,
                         this.getUniqueKeyFieldsFrom(context.latest),
                         context.connOptions,
-                        dataForInserting
+                        context.latest
                     );                    
                 } else {
                     context.result = await this.db.connector.create_(
@@ -1080,7 +1078,7 @@ class EntityModel {
         const i18n = this.i18n;
         const { name, fields } = meta;
 
-        const { raw } = context;
+        let { raw } = context;
         let latest = {};
         // returned by $retrieveExisting
         let existing = context.options.$existing;
@@ -1091,6 +1089,10 @@ class EntityModel {
         }
 
         const opOptions = context.options;
+
+        if (opOptions.$upsert && typeof opOptions.$upsert === 'object') {
+            raw = { ...raw, ...opOptions.$upsert };
+        }
 
         if (
             isUpdating &&
