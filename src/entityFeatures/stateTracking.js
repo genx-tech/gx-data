@@ -1,5 +1,6 @@
 const Rules = require('../enum/Rules');
 const Generators = require('../Generators');
+const { isPlainObject } = require('@genx/july');
 
 /**
  * A rule specifies the change of state will be tracked automatically.
@@ -12,7 +13,7 @@ module.exports = {
             if (featureItem.field in context.latest) {
                 const targetState = context.latest[featureItem.field];
 
-                if (_.isPlainObject(targetState) && targetState.oorType) {
+                if (isPlainObject(targetState) && targetState.oorType) {
                     return;
                 }
 
