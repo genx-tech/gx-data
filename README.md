@@ -49,7 +49,7 @@ Updated on 16/02/2022
   });
 
   // Use SQL expression
-  
+
 ```
 
 -   meta - Metadata about the enttiy
@@ -351,3 +351,5 @@ const schema = {
 
 1. Add -1 for descent sorting for mysql connector, and now both false and -1 for ORDER BY DESC.
 2. Support custom validator and convertor to object sanitize.
+3. Add more runtime operator for database
+4. Fix bugs

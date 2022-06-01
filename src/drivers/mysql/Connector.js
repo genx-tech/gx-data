@@ -1137,6 +1137,18 @@ class MySQLConnector extends Connector {
                             ')'
                         );
 
+                    case 'Raw':
+                        return value.statement;
+
+                    case 'Query':
+                        return this._joinCondition(
+                            value.query,
+                            params,
+                            null,
+                            hasJoining,
+                            aliasMap
+                        );
+
                     case 'BinaryExpression': {
                         const left = this._packValue(
                             value.left,
