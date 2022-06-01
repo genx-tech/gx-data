@@ -906,9 +906,18 @@ class MySQLConnector extends Connector {
         }
 
         if (_.isPlainObject(condition)) {
+            if (condition.oorType) {
+                return this._packValue(
+                    condition,
+                    params,
+                    hasJoining,
+                    aliasMap
+                );
+            }
+
             if (!joinOperator) {
                 joinOperator = 'AND';
-            }
+            }           
 
             return _.map(condition, (value, key) => {
                 if (
@@ -916,7 +925,7 @@ class MySQLConnector extends Connector {
                     key === '$and' ||
                     key.startsWith('$and_')
                 ) {
-                    // for avoiding dupliate, $or_1, $or_2 is valid
+                    // for avoiding duplicate, $or_1, $or_2 is valid
                     if (!Array.isArray(value) && !_.isPlainObject(value)) {
                         throw new Error(
                             '"$and" operator value should be an array or plain object.'

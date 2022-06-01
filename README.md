@@ -197,6 +197,13 @@ const association = [
 
 -   $relationships - Transformed from raw $association, used by the EntityModel internally
 -   $query - Query condition
+
+    * Non-KV-Pair query
+```
+// See Lang helper for more details
+$query = Lang.$func('FIND_IN_SET', category, Lang.$col('categories'));
+```
+
 -   $variables - Variables to interpolate into query condition, will be passed on to associated operation
 -   $features - Custom feature options override
 -   $orderBy - Order by condition, map of column to ascend?
@@ -211,8 +218,6 @@ const numDeals = await this.findAll_({
     },
     $groupBy: "status",
 });
-
-
 
 ```
 
@@ -352,4 +357,5 @@ const schema = {
 1. Add -1 for descent sorting for mysql connector, and now both false and -1 for ORDER BY DESC.
 2. Support custom validator and convertor to object sanitize.
 3. Add more runtime operator for database
-4. Fix bugs
+4. Add non-kv-pair query support
+5. Fix bugs
