@@ -1,9 +1,11 @@
 # .npmignore 
 
 .babelrc
+.mocharc.js
 .gitignore
 .gitattributes
 .travis.yml
+.prettierignore 
 jsdoc.json
 babel.config.js
 *.log
