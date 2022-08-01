@@ -4,7 +4,6 @@ const testSuite = require("@genx/test");
 const Generators = require("../src/Generators");
 
 testSuite(
-    __filename,
     function (suite) {      
         suite.testCase("uid generators", async function () {
             const testees = {

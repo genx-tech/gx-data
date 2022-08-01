@@ -2,7 +2,8 @@
 
 module.exports = {
     only: [        
-        "entity-model",
+        //"entity-model",
+        "mysql-connector",
         //"benchmark-uid"
     ],
     skip: [

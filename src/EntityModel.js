@@ -788,6 +788,10 @@ class EntityModel {
                     otherOptions.$retrieveUpdated = true;
                 }
 
+                if (forSingleRecord && !otherOptions.$limit) {
+                    otherOptions.$limit = 1;
+                }
+
                 context.result = await this.db.connector.update_(
                     this.meta.name,
                     context.latest,
@@ -1450,11 +1454,17 @@ class EntityModel {
         return _.find(obj, (v, k) => k[0] === '$');
     }
 
+    /**
+     * Normalize options including moving entries with key not starting with '$' into $query, interpolating variables and building relationship structure.
+     * @param {object} options 
+     * @param {boolean} [forSingleRecord=false]
+     * @returns 
+     */
     static _prepareQueries(options, forSingleRecord = false) {
         if (!_.isPlainObject(options)) {
             if (forSingleRecord && Array.isArray(this.meta.keyField)) {
                 throw new InvalidArgument(
-                    'Cannot use a singular value as condition to query against a entity with combined primary key.',
+                    'Cannot use a singular value as condition to query against an entity with combined primary key.',
                     {
                         entity: this.meta.name,
                         keyFields: this.meta.keyField,

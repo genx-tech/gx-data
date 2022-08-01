@@ -6,7 +6,6 @@ const path = require('path');
 const SCRIPT_DIR = path.resolve(__dirname);
 
 testSuite(
-    __filename,
     function (suite) {
         suite.testCase('test', async function () {
             await suite.startWorker_(

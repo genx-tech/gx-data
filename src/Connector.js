@@ -57,12 +57,6 @@ class Connector {
          * @member {boolean}
          */
         this.relational = false;
-
-        /**
-         * Map of connection object to unique id, for tracing purpose
-         * @private
-         */
-        this._mapOfConnectionToId = new WeakMap();
     }
 
     /**
@@ -106,8 +100,8 @@ class Connector {
      * Get the connection without credential information, usually used for displaying.
      * @returns {string}
      */
-    getConnectionStringWithoutCredential() {
-        const url = new URL(this.connectionString);
+    getConnectionStringWithoutCredential(connStr) {
+        const url = new URL(connStr || this.connectionString);
 
         url.username = '';
         url.password = '';

@@ -42,6 +42,12 @@ module.exports = {
                         } else {
                             cell.numFmt = '0.00%';
                         }
+                    } else if (metadata.type === 'datetime') {
+                        if (metadata.format && config[metadata.format]) {
+                          cell.numFmt = config[metadata.format];
+                        } else {
+                          cell.numFmt = 'yyyy/mm/dd';
+                        }
                     }
                 }
             }

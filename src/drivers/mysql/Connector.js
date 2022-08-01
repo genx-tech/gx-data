@@ -6,6 +6,8 @@ const { ApplicationError, InvalidArgument } = require('../../utils/Errors');
 const { isQuoted } = require('../../utils/lang');
 const ntol = require('number-to-letter');
 
+const connSym = Symbol.for('conn');
+
 /**
  * MySQL data storage connector.
  * @class
@@ -23,6 +25,40 @@ class MySQLConnector extends Connector {
         ReadUncommitted: 'READ UNCOMMITTED',
         Rerializable: 'SERIALIZABLE',
     });
+
+    static windowFunctions = new Set([
+        'CUME_DIST',
+        'DENSE_RANK',
+        'FIRST_VALUE',
+        'LAG',
+        'LAST_VALUE',
+        'LEAD',
+        'NTH_VALUE',
+        'NTILE',
+        'PERCENT_RANK',
+        'RANK',
+        'ROW_NUMBER',
+    ]);
+
+    static windowableFunctions = new Set([
+        'AVG',
+        'BIT_AND',
+        'BIT_OR',
+        'BIT_XOR',
+        'COUNT',
+        'JSON_ARRAYAGG',
+        'JSON_OBJECTAGG',
+        'MAX',
+        'MIN',
+        'STDDEV_POP',
+        'STDDEV',
+        'STD',
+        'STDDEV_SAMP',
+        'SUM',
+        'VAR_POP',
+        'VARIANCE',
+        'VAR_SAMP',
+    ]);
 
     escape = mysql.escape;
     escapeId = mysql.escapeId;
@@ -86,11 +122,11 @@ class MySQLConnector extends Connector {
         }
 
         if (this.pool) {
-            this.log(
-                'debug',
-                `Close connection pool to ${this.currentConnectionString}`
-            );
             await this.pool.end();
+            this.log(
+                'verbose',
+                `Close connection pool "${this.pool[connSym]}".`
+            );
             delete this.pool;
         }
     }
@@ -103,11 +139,6 @@ class MySQLConnector extends Connector {
      * @returns {Promise.<MySQLConnection>}
      */
     async connect_(options) {
-        let csKey = this.connectionString;
-        if (!this.currentConnectionString) {
-            this.currentConnectionString = csKey;
-        }
-
         if (options) {
             const connProps = {};
 
@@ -116,25 +147,41 @@ class MySQLConnector extends Connector {
                 connProps.database = '';
             }
 
-            connProps.options = _.pick(options, ['multipleStatements']);
+            if (options.multipleStatements) {
+                connProps.options = { multipleStatements: true };
+            }
 
-            csKey = this.makeNewConnectionString(connProps);
-        }
+            const csKey = _.isEmpty(connProps)
+                ? null
+                : this.makeNewConnectionString(connProps);
 
-        if (csKey !== this.currentConnectionString) {
-            await this.end_();
-            this.currentConnectionString = csKey;
+            if (csKey && csKey !== this.connectionString) {
+                // create standalone connection
+                const conn = await mysql.createConnection(csKey);
+                conn[connSym] =
+                    this.getConnectionStringWithoutCredential(csKey);
+                this.log(
+                    'verbose',
+                    `Create non-pool connection to "${conn[connSym]}".`
+                );
+
+                return conn;
+            }
         }
 
         if (!this.pool) {
-            this.log('debug', `Create connection pool to ${csKey}`);
-            this.pool = mysql.createPool(csKey);
+            this.pool = mysql.createPool(this.connectionString);
+            this.pool[connSym] = this.getConnectionStringWithoutCredential();
+            this.log(
+                'verbose',
+                `Create connection pool to "${this.pool[connSym]}".`
+            );
         }
 
         const conn = await this.pool.getConnection();
         this.acitveConnections.add(conn);
 
-        this.log('debug', `Connect to ${csKey}`);
+        this.log('debug', `Get connection from pool "${this.pool[connSym]}".`);
 
         return conn;
     }
@@ -144,9 +191,21 @@ class MySQLConnector extends Connector {
      * @param {MySQLConnection} conn - MySQL connection.
      */
     async disconnect_(conn) {
-        this.log('debug', `Disconnect from ${this.currentConnectionString}`);
-        this.acitveConnections.delete(conn);
-        return conn.release();
+        if (this.acitveConnections.has(conn)) {
+            this.log(
+                'debug',
+                `Release connection to pool "${this.pool[connSym]}".`
+            );
+            this.acitveConnections.delete(conn);
+            return conn.release();
+        } else {
+            this.log(
+                'verbose',
+                `Disconnect non-pool connection from "${conn[connSym]}".`
+            );
+            // not created by pool
+            return conn.end();
+        }
     }
 
     /**
@@ -444,6 +503,9 @@ class MySQLConnector extends Connector {
      * @param {object} data
      * @param {*} query
      * @param {*} queryOptions
+     * @property {object} [queryOptions.$relationships] - Parsed relatinships
+     * @property {boolean} [queryOptions.$requireSplitColumn] - Whether to use set field=value
+     * @property {integer} [queryOptions.$limit]
      * @param {*} connOptions
      */
     async update_(model, data, query, queryOptions, connOptions) {
@@ -464,7 +526,6 @@ class MySQLConnector extends Connector {
             joinings = this._joinAssociations(
                 queryOptions.$relationships,
                 model,
-                'A',
                 aliasMap,
                 1,
                 joiningParams
@@ -493,6 +554,8 @@ class MySQLConnector extends Connector {
             sql += ' SET ?';
         }
 
+        let hasWhere = false;
+
         if (query) {
             const whereClause = this._joinCondition(
                 query,
@@ -503,7 +566,64 @@ class MySQLConnector extends Connector {
             );
             if (whereClause) {
                 sql += ' WHERE ' + whereClause;
+                hasWhere = true;
             }
+        }
+
+        if (!hasWhere) {
+            throw new ApplicationError(
+                'Update without where clause is not allowed.'
+            );
+        }
+
+        if (connOptions && connOptions.returnUpdated) {
+            if (connOptions.connection) {
+                throw new ApplicationError(
+                    'Since "returnUpdated" will create a new connection with "multipleStatements" enabled, it cannot be used within a transaction.'
+                );
+            }
+
+            connOptions = { ...connOptions, multipleStatements: 1 };
+
+            let { keyField } = connOptions.returnUpdated;
+            keyField = this.escapeId(keyField);
+
+            if (queryOptions && _.isInteger(queryOptions.$limit)) {
+                sql += ` AND (SELECT @key := ${keyField})`;
+                sql += ` LIMIT ${queryOptions.$limit}`;
+                sql = `SET @key := null; ${sql}; SELECT @key;`;
+
+                const [_1, _result, [_changedKeys]] = await this.execute_(
+                    sql,
+                    params,
+                    connOptions
+                );
+
+                return [_result, _changedKeys['@key']];
+            }
+
+            const { separator = ',' } = connOptions.returnUpdated;
+            const quotedSeparator = this.escape(separator);
+
+            sql += ` AND (SELECT find_in_set(${keyField}, @keys := CONCAT_WS(${quotedSeparator}, ${keyField}, @keys)))`;
+            sql = `SET @keys := null; ${sql}; SELECT @keys;`;
+
+            const [_1, _result, [_changedKeys]] = await this.execute_(
+                sql,
+                params,
+                connOptions
+            );
+
+            return [
+                _result,
+                _changedKeys['@keys']
+                    ? _changedKeys['@keys'].toString().split(separator)
+                    : [],
+            ];
+        }
+
+        if (queryOptions && _.isInteger(queryOptions.$limit)) {
+            sql += ` LIMIT ${queryOptions.$limit}`;
         }
 
         return this.execute_(sql, params, connOptions);
@@ -543,7 +663,6 @@ class MySQLConnector extends Connector {
             joinings = this._joinAssociations(
                 deleteOptions.$relationships,
                 model,
-                'A',
                 aliasMap,
                 1,
                 joiningParams
@@ -651,6 +770,17 @@ class MySQLConnector extends Connector {
             $totalCount,
         }
     ) {
+        let fromTable = mysql.escapeId(model);
+        let withTables = '';
+
+        if (typeof model === 'object') {
+            const { sql: subSql, alias } = model;
+
+            model = alias;
+            fromTable = alias;
+            withTables = `WITH ${alias} AS (${subSql}) `;
+        }
+
         const params = [];
         const aliasMap = { [model]: 'A' };
         let joinings;
@@ -663,7 +793,6 @@ class MySQLConnector extends Connector {
             joinings = this._joinAssociations(
                 $relationships,
                 model,
-                'A',
                 aliasMap,
                 1,
                 joiningParams
@@ -675,7 +804,7 @@ class MySQLConnector extends Connector {
             ? this._buildColumns($projection, params, hasJoining, aliasMap)
             : '*';
 
-        let sql = ' FROM ' + mysql.escapeId(model);
+        let sql = ' FROM ' + fromTable;
 
         // move cached joining params into params
         // should according to the place of clause in a sql
@@ -722,10 +851,11 @@ class MySQLConnector extends Connector {
                 countSubject = '*';
             }
 
-            result.countSql = `SELECT COUNT(${countSubject}) AS count` + sql;
+            result.countSql =
+                withTables + `SELECT COUNT(${countSubject}) AS count` + sql;
         }
 
-        sql = 'SELECT ' + selectColomns + sql;
+        sql = withTables + 'SELECT ' + selectColomns + sql;
 
         if (_.isInteger($limit) && $limit > 0) {
             if (_.isInteger($offset) && $offset > 0) {
@@ -781,18 +911,13 @@ class MySQLConnector extends Connector {
      *
      * @param {*} associations
      * @param {*} parentAliasKey
-     * @param {*} parentAlias
      * @param {*} aliasMap
      * @param {*} params
+     * @param {*} startId
+     * @param {*} params
+     * @returns
      */
-    _joinAssociations(
-        associations,
-        parentAliasKey,
-        parentAlias,
-        aliasMap,
-        startId,
-        params
-    ) {
+    _joinAssociations(associations, parentAliasKey, aliasMap, startId, params) {
         let joinings = [];
 
         _.each(associations, (assocInfo, anchor) => {
@@ -831,7 +956,6 @@ class MySQLConnector extends Connector {
                 const subJoinings = this._joinAssociations(
                     subAssocs,
                     aliasKey,
-                    alias,
                     aliasMap,
                     startId,
                     params
@@ -907,17 +1031,12 @@ class MySQLConnector extends Connector {
 
         if (_.isPlainObject(condition)) {
             if (condition.oorType) {
-                return this._packValue(
-                    condition,
-                    params,
-                    hasJoining,
-                    aliasMap
-                );
+                return this._packValue(condition, params, hasJoining, aliasMap);
             }
 
             if (!joinOperator) {
                 joinOperator = 'AND';
-            }           
+            }
 
             return _.map(condition, (value, key) => {
                 if (
@@ -1697,7 +1816,15 @@ class MySQLConnector extends Connector {
                     return 'COUNT(*)';
                 }
 
-                return (
+                if (MySQLConnector.windowFunctions.has(name)) {
+                    if (!col.over) {
+                        throw new InvalidArgument(`"${name}" function requires over clause.`);
+                    }
+                } else if (!MySQLConnector.windowableFunctions.has(name) && col.over) {
+                    throw new InvalidArgument(`"${name}" function does not support over clause.`);
+                }
+
+                let funcClause = (
                     name +
                     '(' +
                     (col.prefix ? `${col.prefix.toUpperCase()} ` : '') +
@@ -1711,6 +1838,20 @@ class MySQLConnector extends Connector {
                         : '') +
                     ')'
                 );
+
+                if (col.over) {
+                    funcClause += ' OVER(';
+                    if (col.over.$partitionBy) {
+                        funcClause += this._buildPartitionBy(col.over.$partitionBy, hasJoining, aliasMap);
+                    }
+
+                    if (col.over.$orderBy) {
+                        funcClause += this._buildOrderBy(col.over.$orderBy, hasJoining, aliasMap);
+                    }
+                    funcClause += ")";
+                }
+
+                return funcClause;
             }
 
             if (col.type === 'expression') {
@@ -1771,7 +1912,31 @@ class MySQLConnector extends Connector {
         }
 
         throw new ApplicationError(
-            `Unknown group by syntax: ${JSON.stringify(groupBy)}`
+            `Unknown GROUP BY syntax: ${JSON.stringify(groupBy)}`
+        );
+    }
+
+    _buildPartitionBy(partitionBy, hasJoining, aliasMap) {
+        if (typeof partitionBy === 'string') {
+            return (
+                'PARTITION BY ' +
+                this._escapeIdWithAlias(partitionBy, hasJoining, aliasMap)
+            );
+        }
+
+        if (Array.isArray(partitionBy)) {
+            return (
+                'PARTITION BY ' +
+                partitionBy
+                    .map((by) =>
+                        this._escapeIdWithAlias(by, hasJoining, aliasMap)
+                    )
+                    .join(', ')
+            );
+        }
+
+        throw new ApplicationError(
+            `Unknown PARTITION BY syntax: ${JSON.stringify(partitionBy)}`
         );
     }
 
@@ -1805,7 +1970,7 @@ class MySQLConnector extends Connector {
         }
 
         throw new ApplicationError(
-            `Unknown order by syntax: ${JSON.stringify(orderBy)}`
+            `Unknown ORDER BY syntax: ${JSON.stringify(orderBy)}`
         );
     }
 
