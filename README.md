@@ -260,6 +260,45 @@ $transformer: {
 
 -   insertIgnore - {boolean}, for create only
 -   connection - for transactions, reused the transactional session
+-   returnUpdated - return the exact updated rows id [supplement for retrieveUpdated]
+
+### Connector
+
+-   aggregate_ - [new feature] aggregation by pipeline of stages
+
+MySQLConnector
+
+```
+const result = await connector.aggregate_('t3' /* table name of starting query */, [
+    { // stage 0, select from t3
+        $projection: [
+            'c',
+            {
+                type: 'function',
+                name: 'COUNT',
+                alias: 'count',
+                args: ['c'],
+            },
+        ],
+        $groupBy: 'c',
+    },
+    { // stage 1, select from stage 0
+        $projection: [
+            'c',
+            'count',
+            {
+                type: 'function',
+                name: 'SUM',
+                alias: 'cumulative',
+                args: ['count'],
+                over: {
+                    $orderBy: 'c',
+                },
+            },
+        ],
+    },
+]);
+```
 
 --- 
 

@@ -71,7 +71,7 @@ class MySQLConnector extends Connector {
         alias: alias || 'count',
     });
 
-    $call = (name, alias, args) => ({ type: 'function', name, alias, args });
+    $call = (name, alias, args, extra) => ({ ...extra, type: 'function', name, alias, args });
     $as = (name, alias) => ({ type: 'column', name, alias });
 
     // in mysql, null value comparison will never return true, even null != 1
@@ -378,7 +378,7 @@ class MySQLConnector extends Connector {
      * @param {*} uniqueKeys
      * @param {*} options
      * @param {object} dataOnInsert - When no duplicate record exists, extra data for inserting
-     * @returns
+     * @returns {object}
      */
     async upsertOne_(model, data, uniqueKeys, options, dataOnInsert) {
         if (!data || _.isEmpty(data)) {
@@ -416,7 +416,7 @@ class MySQLConnector extends Connector {
      * @param {*} uniqueKeys
      * @param {*} options
      * @param {object} dataExprOnUpdate - When duplicate record exists, the actual data used for updating
-     * @returns
+     * @returns {object}
      */
     async upsertMany_(
         model,
@@ -465,7 +465,7 @@ class MySQLConnector extends Connector {
      * @param {*} fields
      * @param {*} data
      * @param {*} options
-     * @returns
+     * @returns {object}
      */
     async insertMany_(model, fields, data, options) {
         if (!data || _.isEmpty(data)) {
@@ -507,6 +507,7 @@ class MySQLConnector extends Connector {
      * @property {boolean} [queryOptions.$requireSplitColumn] - Whether to use set field=value
      * @property {integer} [queryOptions.$limit]
      * @param {*} connOptions
+     * @return {object}
      */
     async update_(model, data, query, queryOptions, connOptions) {
         if (_.isEmpty(data)) {
@@ -701,55 +702,36 @@ class MySQLConnector extends Connector {
      */
     async find_(model, condition, connOptions) {
         const sqlInfo = this.buildQuery(model, condition);
+        return this._executeQuery_(sqlInfo, condition, connOptions);
+    }
 
-        let result, totalCount;
-
-        if (sqlInfo.countSql) {
-            const [countResult] = await this.execute_(
-                sqlInfo.countSql,
-                sqlInfo.params,
-                connOptions
-            );
-            totalCount = countResult.count;
+    /**
+     * Run aggregate pipeline
+     * @param {string} model 
+     * @param {array} pipeline 
+     * @param {object} [connOptions]
+     * @returns {*}
+     */
+    async aggregate_(model, pipeline, connOptions) {
+        if (!Array.isArray(pipeline) || pipeline.length === 0) {
+            throw new InvalidArgument('"pipeline" should be an unempty array.');
         }
 
-        if (sqlInfo.hasJoining) {
-            connOptions = { ...connOptions, rowsAsArray: true };
-            result = await this.execute_(
-                sqlInfo.sql,
-                sqlInfo.params,
-                connOptions
-            );
+        const [ startingQuery, ..._pipeline ] = pipeline;
 
-            const reverseAliasMap = _.reduce(
-                sqlInfo.aliasMap,
-                (result, alias, nodePath) => {
-                    result[alias] = nodePath
-                        .split('.')
-                        .slice(
-                            1
-                        ) /* .map(n => ':' + n) changed to be padding by orm and can be customized with other key getter */;
-                    return result;
+        let query = this.buildQuery(model, startingQuery);
+
+        _pipeline.forEach((stage, i) => {
+            query = this.buildQuery(
+                {
+                    sql: query.sql,
+                    alias: `_STAGE_${i}`,
                 },
-                {}
+                stage
             );
+        });
 
-            if (sqlInfo.countSql) {
-                return result.concat(reverseAliasMap, totalCount);
-            }
-
-            return result.concat(reverseAliasMap);
-        } else if (condition.$skipOrm) {
-            connOptions = { ...connOptions, rowsAsArray: true };
-        }
-
-        result = await this.execute_(sqlInfo.sql, sqlInfo.params, connOptions);
-
-        if (sqlInfo.countSql) {
-            return [result, totalCount];
-        }
-
-        return result;
+        return this._executeQuery_(query, null, connOptions);
     }
 
     /**
@@ -888,6 +870,57 @@ class MySQLConnector extends Connector {
             : undefined;
     }
 
+    async _executeQuery_(query, queryOptions, connOptions) {
+        let result, totalCount;
+
+        if (query.countSql) {
+            const [countResult] = await this.execute_(
+                query.countSql,
+                query.params,
+                connOptions
+            );
+            totalCount = countResult.count;
+        }
+
+        if (query.hasJoining) {
+            connOptions = { ...connOptions, rowsAsArray: true };
+            result = await this.execute_(
+                query.sql,
+                query.params,
+                connOptions
+            );
+
+            const reverseAliasMap = _.reduce(
+                query.aliasMap,
+                (result, alias, nodePath) => {
+                    result[alias] = nodePath
+                        .split('.')
+                        .slice(
+                            1
+                        ) /* .map(n => ':' + n) changed to be padding by orm and can be customized with other key getter */;
+                    return result;
+                },
+                {}
+            );
+
+            if (query.countSql) {
+                return result.concat(reverseAliasMap, totalCount);
+            }
+
+            return result.concat(reverseAliasMap);
+        } else if (queryOptions?.$skipOrm) {
+            connOptions = { ...connOptions, rowsAsArray: true };
+        }
+
+        result = await this.execute_(query.sql, query.params, connOptions);
+
+        if (query.countSql) {
+            return [result, totalCount];
+        }
+
+        return result;
+    }
+
     _generateAlias(index, anchor) {
         const alias = ntol(index);
 
@@ -915,7 +948,7 @@ class MySQLConnector extends Connector {
      * @param {*} params
      * @param {*} startId
      * @param {*} params
-     * @returns
+     * @returns {object}
      */
     _joinAssociations(associations, parentAliasKey, aliasMap, startId, params) {
         let joinings = [];

@@ -1458,7 +1458,7 @@ class EntityModel {
      * Normalize options including moving entries with key not starting with '$' into $query, interpolating variables and building relationship structure.
      * @param {object} options 
      * @param {boolean} [forSingleRecord=false]
-     * @returns 
+     * @returns {object}
      */
     static _prepareQueries(options, forSingleRecord = false) {
         if (!_.isPlainObject(options)) {

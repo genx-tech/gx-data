@@ -435,6 +435,56 @@ describe('unit:connector:mysql', function () {
         });
     });
 
+    describe('aggregate', function () {
+        it('bvt', async function () {
+            await connector.execute_('TRUNCATE TABLE ??', ['t3']);
+            await connector.create_('t3', { a: 1, b: 10, c: 0 });
+            await connector.create_('t3', { a: 2, b: 20, c: 1 });
+            await connector.create_('t3', { a: 3, b: 30, c: 2 });
+            await connector.create_('t3', { a: 4, b: 40, c: 2 });
+            await connector.create_('t3', { a: 5, b: 50, c: 3 });
+            await connector.create_('t3', { a: 6, b: 60, c: 3 });
+            await connector.create_('t3', { a: 7, b: 70, c: 3 });
+
+            const result = await connector.aggregate_('t3', [
+                {
+                    $projection: [
+                        'c',
+                        {
+                            type: 'function',
+                            name: 'COUNT',
+                            alias: 'count',
+                            args: ['c'],
+                        },
+                    ],
+                    $groupBy: 'c',
+                },
+                {
+                    $projection: [
+                        'c',
+                        'count',
+                        {
+                            type: 'function',
+                            name: 'SUM',
+                            alias: 'cumulative',
+                            args: ['count'],
+                            over: {
+                                $orderBy: 'c',
+                            },
+                        },
+                    ],
+                },
+            ]);
+
+            result.should.be.eql([
+                { c: 0, count: 1, cumulative: '1' },
+                { c: 1, count: 1, cumulative: '2' },
+                { c: 2, count: 2, cumulative: '4' },
+                { c: 3, count: 3, cumulative: '7' },
+            ]);
+        });
+    });
+
     describe('transaction', function () {
         it('commit', async function () {
             let conn = await connector.beginTransaction_();
