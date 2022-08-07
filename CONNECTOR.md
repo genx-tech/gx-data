@@ -35,9 +35,11 @@
 ### Logical Operator
 
 -   $and, $all: AND
+
     PS: can also be a key starting with $and_, e.g. $and_1, $and_for_special_user
 
 -   $or, $any: OR
+
     PS: can also be a key starting with $or_, e.g. $or_1, $or_for_special_user
 
 -   $not: NOT

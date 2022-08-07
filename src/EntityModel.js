@@ -307,6 +307,22 @@ class EntityModel {
     }
 
     /**
+     * Run aggregate pipeline
+     * @param {array} pipeline
+     * @param {object} [connOptions]
+     * @returns {*}
+     */
+     static async aggregate_(pipeline, connOptions) {
+        const _pipeline = pipeline.map(q => this._prepareQueries(q));
+
+        return this.db.connector.aggregate_(
+            this.meta.name,
+            _pipeline,
+            connOptions
+        );
+    }
+
+    /**
      * Find one record, returns a model object containing the record or undefined if nothing found.     
      * @param {object} [findOptions] - findOptions
      * @property {object} [findOptions.$association] - Joinings

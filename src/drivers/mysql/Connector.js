@@ -71,7 +71,13 @@ class MySQLConnector extends Connector {
         alias: alias || 'count',
     });
 
-    $call = (name, alias, args, extra) => ({ ...extra, type: 'function', name, alias, args });
+    $call = (name, alias, args, extra) => ({
+        ...extra,
+        type: 'function',
+        name,
+        alias,
+        args,
+    });
     $as = (name, alias) => ({ type: 'column', name, alias });
 
     // in mysql, null value comparison will never return true, even null != 1
@@ -707,8 +713,8 @@ class MySQLConnector extends Connector {
 
     /**
      * Run aggregate pipeline
-     * @param {string} model 
-     * @param {array} pipeline 
+     * @param {string} model
+     * @param {array} pipeline
      * @param {object} [connOptions]
      * @returns {*}
      */
@@ -717,11 +723,13 @@ class MySQLConnector extends Connector {
             throw new InvalidArgument('"pipeline" should be an unempty array.');
         }
 
-        const [ startingQuery, ..._pipeline ] = pipeline;
+        const [startingQuery, ..._pipeline] = pipeline;
 
         let query = this.buildQuery(model, startingQuery);
 
         _pipeline.forEach((stage, i) => {
+            let _params = query.params;
+
             query = this.buildQuery(
                 {
                     sql: query.sql,
@@ -729,6 +737,8 @@ class MySQLConnector extends Connector {
                 },
                 stage
             );
+
+            query.params = _params.concat(query.params);
         });
 
         return this._executeQuery_(query, null, connOptions);
@@ -884,11 +894,7 @@ class MySQLConnector extends Connector {
 
         if (query.hasJoining) {
             connOptions = { ...connOptions, rowsAsArray: true };
-            result = await this.execute_(
-                query.sql,
-                query.params,
-                connOptions
-            );
+            result = await this.execute_(query.sql, query.params, connOptions);
 
             const reverseAliasMap = _.reduce(
                 query.aliasMap,
@@ -1851,13 +1857,20 @@ class MySQLConnector extends Connector {
 
                 if (MySQLConnector.windowFunctions.has(name)) {
                     if (!col.over) {
-                        throw new InvalidArgument(`"${name}" function requires over clause.`);
+                        throw new InvalidArgument(
+                            `"${name}" function requires over clause.`
+                        );
                     }
-                } else if (!MySQLConnector.windowableFunctions.has(name) && col.over) {
-                    throw new InvalidArgument(`"${name}" function does not support over clause.`);
+                } else if (
+                    !MySQLConnector.windowableFunctions.has(name) &&
+                    col.over
+                ) {
+                    throw new InvalidArgument(
+                        `"${name}" function does not support over clause.`
+                    );
                 }
 
-                let funcClause = (
+                let funcClause =
                     name +
                     '(' +
                     (col.prefix ? `${col.prefix.toUpperCase()} ` : '') +
@@ -1869,19 +1882,26 @@ class MySQLConnector extends Connector {
                               aliasMap
                           )
                         : '') +
-                    ')'
-                );
+                    ')';
 
                 if (col.over) {
                     funcClause += ' OVER(';
                     if (col.over.$partitionBy) {
-                        funcClause += this._buildPartitionBy(col.over.$partitionBy, hasJoining, aliasMap);
+                        funcClause += this._buildPartitionBy(
+                            col.over.$partitionBy,
+                            hasJoining,
+                            aliasMap
+                        );
                     }
 
                     if (col.over.$orderBy) {
-                        funcClause += this._buildOrderBy(col.over.$orderBy, hasJoining, aliasMap);
+                        funcClause += this._buildOrderBy(
+                            col.over.$orderBy,
+                            hasJoining,
+                            aliasMap
+                        );
                     }
-                    funcClause += ")";
+                    funcClause += ')';
                 }
 
                 return funcClause;
@@ -1907,23 +1927,47 @@ class MySQLConnector extends Connector {
         );
     }
 
-    _buildGroupBy(groupBy, params, hasJoining, aliasMap) {
-        if (typeof groupBy === 'string')
-            return (
-                'GROUP BY ' +
-                this._escapeIdWithAlias(groupBy, hasJoining, aliasMap)
-            );
+    _buildGroupByColumn(groupBy, hasJoining, aliasMap) {
+        if (typeof groupBy === 'string') {
+            return isQuoted(groupBy)
+                ? groupBy
+                : this._escapeIdWithAlias(groupBy, hasJoining, aliasMap);
+        }
 
-        if (Array.isArray(groupBy))
+        if (typeof groupBy === 'object') {
+            if (groupBy.alias) {
+                return this._escapeIdWithAlias(
+                    groupBy.alias,
+                    hasJoining,
+                    aliasMap
+                );
+            }
+        }
+
+        throw new ApplicationError(
+            `Unknown GROUP BY syntax: ${JSON.stringify(groupBy)}`
+        );
+    }
+
+    _buildGroupByList(groupBy, hasJoining, aliasMap) {
+        if (Array.isArray(groupBy)) {
             return (
                 'GROUP BY ' +
                 groupBy
                     .map((by) =>
-                        this._escapeIdWithAlias(by, hasJoining, aliasMap)
+                        this._buildGroupByColumn(by, hasJoining, aliasMap)
                     )
                     .join(', ')
             );
+        }
 
+        return (
+            'GROUP BY ' +
+            this._buildGroupByColumn(groupBy, hasJoining, aliasMap)
+        );
+    }
+
+    _buildGroupBy(groupBy, params, hasJoining, aliasMap) {
         if (_.isPlainObject(groupBy)) {
             const { columns, having } = groupBy;
 
@@ -1933,7 +1977,11 @@ class MySQLConnector extends Connector {
                 );
             }
 
-            let groupByClause = this._buildGroupBy(columns);
+            let groupByClause = this._buildGroupByList(
+                columns,
+                hasJoining,
+                aliasMap
+            );
             const havingCluse =
                 having &&
                 this._joinCondition(having, params, null, hasJoining, aliasMap);
@@ -1944,9 +1992,7 @@ class MySQLConnector extends Connector {
             return groupByClause;
         }
 
-        throw new ApplicationError(
-            `Unknown GROUP BY syntax: ${JSON.stringify(groupBy)}`
-        );
+        return this._buildGroupByList(groupBy, hasJoining, aliasMap);
     }
 
     _buildPartitionBy(partitionBy, hasJoining, aliasMap) {
