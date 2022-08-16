@@ -312,10 +312,13 @@ class MySQLConnector extends Connector {
                 }
 
                 if (options && options.rowsAsArray) {
-                    return await conn.execute(
+                    const rows = await conn.execute(
                         { sql, rowsAsArray: true },
                         params
                     );
+
+                    this.executedCount++;
+                    return rows;
                 }
 
                 const [rows1] = await conn.execute(sql, params);
