@@ -44,9 +44,15 @@ module.exports = {
                         }
                     } else if (metadata.type === 'datetime') {
                         if (metadata.format && config[metadata.format]) {
-                          cell.numFmt = config[metadata.format];
+                            cell.numFmt = config[metadata.format];
                         } else {
-                          cell.numFmt = 'yyyy/mm/dd';
+                            cell.numFmt = 'yyyy/mm/dd';
+                        }
+                    } else if (metadata.type === 'text') {
+                        if (metadata.format && config[metadata.format]) {
+                            cell.numFmt = config[metadata.format];
+                        } else {
+                            cell.numFmt = '@';
                         }
                     }
                 }
@@ -63,7 +69,14 @@ module.exports = {
         await workbook.xlsx.writeFile(templateFile);
     },
 
-    load_: async (db, mainEntity, dataFile, reverseMapping, payloadFunctor, needConfirm) => {
+    load_: async (
+        db,
+        mainEntity,
+        dataFile,
+        reverseMapping,
+        payloadFunctor,
+        needConfirm
+    ) => {
         const Excel = require('exceljs');
         let workbook = new Excel.Workbook();
         await workbook.xlsx.readFile(dataFile);
@@ -80,15 +93,16 @@ module.exports = {
                     );
                 } else {
                     const rowValues = _.drop(row.values);
-                    const isNonEmpty = _.find(rowValues, val => val != null && val.toString().trim() !== "");
+                    const isNonEmpty = _.find(
+                        rowValues,
+                        (val) => val != null && val.toString().trim() !== ''
+                    );
 
                     if (!isNonEmpty) {
                         return;
                     }
 
-                    const record = _.fromPairs(
-                        _.zip(colKeys, rowValues)
-                    );
+                    const record = _.fromPairs(_.zip(colKeys, rowValues));
 
                     if (!_.isEmpty(record)) {
                         const _record = unflattenObject(record);
@@ -96,7 +110,7 @@ module.exports = {
                         data.push({
                             rowNumber,
                             record: _record,
-                            primaryValue: rowValues[0]
+                            primaryValue: rowValues[0],
                         });
                     }
                 }
@@ -112,11 +126,18 @@ module.exports = {
         await eachAsync_(data, async ({ rowNumber, record, primaryValue }) => {
             try {
                 const _confirm = [];
-                record = await payloadFunctor(Entity, record, rowNumber, _confirm);
+                record = await payloadFunctor(
+                    Entity,
+                    record,
+                    rowNumber,
+                    _confirm
+                );
                 //console.dir(record, { depth: 10 });
 
                 if (_confirm.length > 0) {
-                    _confirm.forEach(c => confirmations.push({ rowNumber, ...c }));
+                    _confirm.forEach((c) =>
+                        confirmations.push({ rowNumber, ...c })
+                    );
                 }
 
                 processed.push({ rowNumber, record, primaryValue });
@@ -125,7 +146,7 @@ module.exports = {
                 errors.push({
                     rowNumber,
                     error: error.message,
-                    ...(error.info ? { info: error.info } : null)
+                    ...(error.info ? { info: error.info } : null),
                 });
             }
         });
@@ -138,21 +159,24 @@ module.exports = {
             return { confirmations };
         }
 
-        await eachAsync_(processed, async ({ rowNumber, record, primaryValue }) => {
-            try {
-                const result = await Entity.create_(record);
-                rowsResult.push({
-                    rowNumber,
-                    [Entity.meta.keyField]: result[Entity.meta.keyField],
-                    primaryValue
-                });
-            } catch (error) {
-                errors.push({
-                    rowNumber,
-                    error: error.message,
-                });
+        await eachAsync_(
+            processed,
+            async ({ rowNumber, record, primaryValue }) => {
+                try {
+                    const result = await Entity.create_(record);
+                    rowsResult.push({
+                        rowNumber,
+                        [Entity.meta.keyField]: result[Entity.meta.keyField],
+                        primaryValue,
+                    });
+                } catch (error) {
+                    errors.push({
+                        rowNumber,
+                        error: error.message,
+                    });
+                }
             }
-        });
+        );
 
         return { result: rowsResult, errors };
     },
