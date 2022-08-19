@@ -43,11 +43,17 @@ module.exports = {
                             cell.numFmt = '0.00%';
                         }
                     } else if (metadata.type === 'datetime') {
+                        cell.dataValidation = {
+                            type: 'date',
+                            showErrorMessage: true,
+                            formulae: [new Date()]
+                        };
+
                         if (metadata.format && config[metadata.format]) {
                             cell.numFmt = config[metadata.format];
                         } else {
                             cell.numFmt = 'yyyy/mm/dd';
-                        }
+                        }                        
                     } else if (metadata.type === 'text') {
                         if (metadata.format && config[metadata.format]) {
                             cell.numFmt = config[metadata.format];
