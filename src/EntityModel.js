@@ -660,14 +660,6 @@ class EntityModel {
      * @returns {object}
      */
     static async updateOne_(data, updateOptions, connOptions) {
-        if (updateOptions && updateOptions.$bypassReadOnly) {
-            throw new InvalidArgument('Unexpected usage.', {
-                entity: this.meta.name,
-                reason: '$bypassReadOnly option is not allow to be set from public update_ method.',
-                updateOptions,
-            });
-        }
-
         return this._update_(data, updateOptions, connOptions, true);
     }
 
@@ -678,14 +670,6 @@ class EntityModel {
      * @param {*} connOptions
      */
     static async updateMany_(data, updateOptions, connOptions) {
-        if (updateOptions && updateOptions.$bypassReadOnly) {
-            throw new InvalidArgument('Unexpected usage.', {
-                entity: this.meta.name,
-                reason: '$bypassReadOnly option is not allow to be set from public update_ method.',
-                updateOptions,
-            });
-        }
-
         return this._update_(data, updateOptions, connOptions, false);
     }
 
