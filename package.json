@@ -1,6 +1,6 @@
 {
     "name": "@genx/data",
-    "version": "2.1.4",
+    "version": "2.1.5",
     "description": "Gen-X Suite data abstract layer.",
     "main": "lib/index.js",
     "publishConfig": {

@@ -1141,9 +1141,8 @@ class EntityModel {
                 if (fieldInfo.readOnly && useRaw) {
                     if (
                         !opOptions.$migration &&
-                        (!isUpdating ||
-                            !opOptions.$bypassReadOnly ||
-                            !opOptions.$bypassReadOnly.has(fieldName))
+                        (!opOptions.$bypassReadOnly ||
+                        !opOptions.$bypassReadOnly.has(fieldName))
                     ) {
                         // read only, not allow to set by input value
                         throw new ValidationError(
