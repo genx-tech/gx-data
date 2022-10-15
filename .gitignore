@@ -24,6 +24,7 @@ Thumbs.db
 # test files #
 ######################
 test/temp
+test/test*/
 .nyc_output
 coverage
 allure-results

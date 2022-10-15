@@ -1,0 +1,29 @@
+import types
+
+//----------------------------------------------------------------------------------------------------     
+
+entity partyType is dictionaryByCode   
+  -- "Party type"
+  has
+    usage: shortName optional
+
+//----------------------------------------------------------------------------------------------------     
+
+entity party 
+  -- "Party"
+  with
+    autoId
+    createTimestamp
+    updateTimestamp
+    logicalDeletion
+  has
+    preferredName : name |=populate('company.name')        
+    website : url optional
+    logo : url optional -- "Rectange logo"
+    avatar : url optional -- "Square logo"
+    about : desc   
+  associations
+    refersTo partyType as type
+    refersTo company optional
+    refersTo person optional
+  

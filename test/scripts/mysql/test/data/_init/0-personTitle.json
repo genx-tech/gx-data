@@ -1,0 +1,39 @@
+{
+    "personTitle": [
+        {
+            "code": "MR",
+            "name": "Mr.",
+            "male": true,
+            "female": false,
+            "isSystem": true
+        },
+        {
+            "code": "MRS",
+            "name": "Mrs.",
+            "male": false,
+            "female": true,
+            "isSystem": true
+        },
+        {
+            "code": "MS",
+            "name": "Ms.",
+            "male": false,
+            "female": true,
+            "isSystem": true
+        },
+        {
+            "code": "MISS",
+            "name": "Miss",
+            "male": false,
+            "female": true,
+            "isSystem": true
+        },
+        {
+            "code": "DR",
+            "name": "Dr.",
+            "male": true,
+            "female": true,
+            "isSystem": true
+        }
+    ]
+}

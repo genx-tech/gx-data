@@ -1,10 +1,8 @@
-const { HttpCode } = require('@genx/error');
+const { HttpCode, UnexpectedState, ValidationError, DatabaseError, InvalidArgument } = require('@genx/error');
 const { _, eachAsync_ } = require('@genx/july');
-const Errors = require('./utils/Errors');
 const Generators = require('./Generators');
 const Convertors = require('./Convertors');
 const Types = require('./types');
-const { ValidationError, DatabaseError, InvalidArgument } = Errors;
 const Features = require('./entityFeatures');
 const Rules = require('./enum/Rules');
 
@@ -145,7 +143,7 @@ class EntityModel {
             fields.forEach(keyPath => {
                 const keyNodes = keyPath.split('.');
                 if (keyNodes.length > 1) {
-                    const assoc = keyNodes.slice(0, -1).join('.');
+                    const assoc = keyNodes.slice(0, -1).map(p => p.startsWith(":") ? p.substring(1) : p).join('.');
                     result.add(assoc);
                 }
             })
@@ -1530,7 +1528,7 @@ class EntityModel {
                 this._prepareAssociations(normalizedOptions);
         }
 
-        return normalizedOptions;
+        return this._normalizeDbSpecificOpitons(normalizedOptions);
     }
 
     /**

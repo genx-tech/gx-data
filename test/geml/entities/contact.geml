@@ -1,0 +1,14 @@
+import types
+import person
+
+//----------------------------------------------------------------------------------------------------     
+
+entity contact 
+  with
+    autoId
+  has
+    mobile optional
+    phone optional 
+    email optional
+  
+

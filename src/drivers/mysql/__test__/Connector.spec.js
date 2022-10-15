@@ -485,7 +485,7 @@ describe('unit:connector:mysql', function () {
         });
     });
 
-    describe('transaction', function () {
+    describe.only('transaction', function () {
         it('commit', async function () {
             let conn = await connector.beginTransaction_();
 
@@ -498,6 +498,8 @@ describe('unit:connector:mysql', function () {
                 { connection: conn }
             );
 
+            console.log(result1);
+
             result1.affectedRows.should.be.exactly(1);
 
             let result2 = await connector.create_(
@@ -508,6 +510,8 @@ describe('unit:connector:mysql', function () {
                 },
                 { connection: conn }
             );
+
+            console.log(result2);
 
             result2.affectedRows.should.be.exactly(1);
 
@@ -520,6 +524,8 @@ describe('unit:connector:mysql', function () {
                 null,
                 { connection: conn }
             );
+
+            console.log('result3', result3);
 
             result3.affectedRows.should.be.exactly(1);
 

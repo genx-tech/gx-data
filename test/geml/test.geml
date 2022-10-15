@@ -1,0 +1,10 @@
+import 'entities/*'
+
+schema 'test'
+  entities 
+    party 
+    partyType
+    company  
+    person
+    contact
+    

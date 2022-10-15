@@ -11,7 +11,6 @@ testSuite(
             await suite.startWorker_(
                 async (app) => {
                     const db = app.db('test');
-                    await db.createDbIfNotExist_(true);
                     
                     const connStr = db.connector.getConnectionStringWithoutCredential();
                     connStr.should.be.exactly('mysql://localhost/gx-data-test');

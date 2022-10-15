@@ -12,5 +12,17 @@
         "test": {
             "dataSource": "mysql.test"
         }
+    },
+    "settings": {
+        "geml": {
+            "gemlPath": "./test/geml",
+            "modelPath": "./test/models",
+            "scriptPath": "./test/scripts",
+            "schemas": {
+                "test": {
+                    "dataSource": "mysql.test"
+                }
+            }
+        }        
     }
 }

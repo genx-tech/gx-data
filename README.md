@@ -95,21 +95,40 @@ module.exports = Base => class extends Base {
 
 ## CRUD operations (static method members)
 
--   async findOne\_(findOptions, connOptions)
--   async findAll\_(findOptions, connOptions)
--   async create\_(data, createOptions, connOptions)
--   async updateOne\_(data, updateOptions, connOptions)
--   async updateMany\_(data, updateOptions, connOptions)
--   async replaceOne\_(data, updateOptions, connOptions)
--   async deleteOne\_(deleteOptions, connOptions)
--   async deleteMany\_(deleteOptions, connOptions)
--   async cached\_(key, associations, connOptions)
--   async retryCreateOnDuplicate\_(dataGenerator_, maxRery, createOptions, connOptions)
+-   async findOne_(findOptions, connOptions)
+
+-   async findAll_(findOptions, connOptions)
+
+-   async create_(data, createOptions, connOptions)
+
+-   async updateOne_(data, updateOptions, connOptions)
+
+-   async updateMany_(data, updateOptions, connOptions)
+
+-   async replaceOne_(data, updateOptions, connOptions)
+
+-   async deleteOne_(deleteOptions, connOptions)
+
+-   async deleteMany_(deleteOptions, connOptions)
+
+-   async cached_(key, associations, connOptions)
+
+-   async retryCreateOnDuplicate_(dataGenerator_, maxRery, createOptions, connOptions)
+    - Regenerate creation data and try again if duplicate record exists
+
+-   async ensureFields_(entityObject, fields)
+    - Ensure the entity object containing required fields, if not, it will automatically fetched from db and return.
 
 ## Helper methods
 
 -   fieldSchema(fieldName, options), returns the field schema for input validation, options can be used to override the default auto generated schema
     - $addEnumValues, for enum values to add some fake value which not accepted by db but can be consumed by business logic, e.g. all, none
+    - $orAsArray, accept an array of the specified type
+
+```
+    // returns a schema object which can be used by @genx/data Types sanitizer
+    Message.fieldSchema('type', { optional: true, default: 'info' });
+```    
 
 -   inputSchema(inputSetName, options), returns an input schema object 
 
@@ -118,8 +137,6 @@ module.exports = Base => class extends Base {
 -   getUniqueKeyValuePairsFrom(data)
 
 -   getUniqueKeyFieldsFrom(data)
-
--   ensureFields\_(entityObject, fields)
 
 ## Operation options
 
@@ -224,6 +241,31 @@ const numDeals = await this.findAll_({
 -   $offset
 -   $limit
 -   $totalCount - Returns total record count when used with $limit, should provide the distinct field name
+
+    - Used without association or with reference association which only joins record, just use $totalCount: true
+    ```
+        const { totalItems /* integer */, items /* array */ } = await findAll_({
+            '$query': { template: 1 },
+            '$association': [ 'template' ],
+            '$orderBy': { createdAt: false },
+            '$totalCount': true,
+            '$limit': 5,
+            '$offset': 0    
+        });
+    ```
+
+    - Used without association which may joins multiple records, should specify a unqiue field for preventing from counting duplicate records brought by joining, **otherwise the returned totalItems may include duplicate records**
+    ```
+        const { totalItems /* integer */, items /* array */ } = await findAll_({
+            '$query': { template: 1 },
+            '$association': [ 'tags.tag', 'template' ],
+            '$orderBy': { createdAt: false },
+            '$totalCount': 'id',
+            '$limit': 5,
+            '$offset': 0    
+        });
+    ```
+
 -   $includeDeleted - {boolean}, for find only, include logical deleted records
 -   $skipOrm - {boolean}
 -   $objectMapper - {string} Object mapper , flat or hiarachy (not used yet)

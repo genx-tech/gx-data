@@ -9,6 +9,16 @@ const ntol = require('number-to-letter');
 const connSym = Symbol.for('conn');
 
 /**
+ * SQL execution sequence
+ * FROM clause
+ * WHERE clause
+ * GROUP BY clause
+ * HAVING clause
+ * SELECT clause
+ * ORDER BY clause
+ */
+
+/**
  * MySQL data storage connector.
  * @class
  * @extends Connector
@@ -164,6 +174,7 @@ class MySQLConnector extends Connector {
             if (csKey && csKey !== this.connectionString) {
                 // create standalone connection
                 const conn = await mysql.createConnection(csKey);
+
                 conn[connSym] =
                     this.getConnectionStringWithoutCredential(csKey);
                 this.log(
@@ -239,6 +250,8 @@ class MySQLConnector extends Connector {
             await conn.query(
                 'SET SESSION TRANSACTION ISOLATION LEVEL ' + isolationLevel
             );
+
+            this.log('verbose', `Change isolation level to: ${isolationLevel}`);
         }
 
         const [ret] = await conn.query('SELECT @@autocommit;');
@@ -752,7 +765,41 @@ class MySQLConnector extends Connector {
      * @param {*} model
      * @param {*} condition
      */
-    buildQuery(
+    buildQuery(model, queryOptions) {
+        if (queryOptions.$totalCount) {
+            return this._buildQueryWithTotalCount(model, queryOptions);
+        }
+
+        return this._buildQuery(model, queryOptions);
+    }
+
+    /**
+     * Build CTE header and return the select from target and CTE header
+     * @param {*} model
+     * @returns {object} { fromTable, withTables }
+     */
+    _buildCTEHeader(model) {
+        let fromTable = mysql.escapeId(model);
+        let withTables = '';
+
+        // CTE, used by aggregation
+        if (typeof model === 'object') {
+            const { sql: subSql, alias } = model;
+
+            model = alias;
+            fromTable = alias;
+            withTables = `WITH ${alias} AS (${subSql}) `;
+        }
+
+        return { fromTable, withTables, model };
+    }
+
+    /**
+     * Build sql statement without total count
+     * @param {*} model
+     * @param {*} condition
+     */
+    _buildQuery(
         model,
         {
             $relationships,
@@ -762,22 +809,18 @@ class MySQLConnector extends Connector {
             $orderBy,
             $offset,
             $limit,
-            $totalCount,
         }
     ) {
-        let fromTable = mysql.escapeId(model);
-        let withTables = '';
-
-        if (typeof model === 'object') {
-            const { sql: subSql, alias } = model;
-
-            model = alias;
-            fromTable = alias;
-            withTables = `WITH ${alias} AS (${subSql}) `;
-        }
+        const {
+            fromTable,
+            withTables,
+            model: _model,
+        } = this._buildCTEHeader(model);
+        model = _model;
 
         const params = [];
         const aliasMap = { [model]: 'A' };
+
         let joinings;
         let hasJoining = false;
         const joiningParams = [];
@@ -795,80 +838,280 @@ class MySQLConnector extends Connector {
             hasJoining = model;
         }
 
+        // Build select columns
         const selectColomns = $projection
             ? this._buildColumns($projection, params, hasJoining, aliasMap)
             : '*';
 
-        let sql = ' FROM ' + fromTable;
+        let fromAndJoin = ' FROM ' + fromTable;
 
-        // move cached joining params into params
+        // Move cached joining params into params
         // should according to the place of clause in a sql
-
         if (hasJoining) {
-            joiningParams.forEach((p) => params.push(p));
-            sql += ' A ' + joinings.join(' ');
+            joiningParams.forEach((p) => {
+                params.push(p);
+            });
+            fromAndJoin += ' A ' + joinings.join(' ');
         }
 
+        let whereClause = '';
+
         if ($query) {
-            const whereClause = this._joinCondition(
+            whereClause = this._joinCondition(
                 $query,
                 params,
                 null,
                 hasJoining,
                 aliasMap
             );
+
             if (whereClause) {
-                sql += ' WHERE ' + whereClause;
+                whereClause = ' WHERE ' + whereClause;
             }
         }
 
+        let groupByClause = '';
+
         if ($groupBy) {
-            sql +=
+            groupByClause +=
                 ' ' +
                 this._buildGroupBy($groupBy, params, hasJoining, aliasMap);
         }
 
+        let orderByClause = '';
+
         if ($orderBy) {
-            sql += ' ' + this._buildOrderBy($orderBy, hasJoining, aliasMap);
+            orderByClause +=
+                ' ' + this._buildOrderBy($orderBy, hasJoining, aliasMap);
         }
+
+        let limitOffset = this._buildLimitOffset($limit, $offset, params);
 
         const result = { params, hasJoining, aliasMap };
+        result.sql =
+            withTables +
+            'SELECT ' +
+            selectColomns +
+            fromAndJoin +
+            whereClause +
+            groupByClause +
+            orderByClause +
+            limitOffset;
 
-        if ($totalCount) {
-            let countSubject;
+        return result;
+    }
 
-            if (typeof $totalCount === 'string') {
-                countSubject =
-                    'DISTINCT(' +
-                    this._escapeIdWithAlias($totalCount, hasJoining, aliasMap) +
-                    ')';
-            } else {
-                countSubject = '*';
-            }
-
-            result.countSql =
-                withTables + `SELECT COUNT(${countSubject}) AS count` + sql;
+    /**
+     * Build sql statement with total count option
+     * @param {*} model
+     * @param {*} condition
+     */
+    _buildQueryWithTotalCount(
+        model,
+        {
+            $relationships,
+            $projection,
+            $query,
+            $groupBy,
+            $orderBy,
+            $offset,
+            $limit,
+            $totalCount,
+        }
+    ) {
+        if (typeof $totalCount !== 'string') {
+            throw new InvalidArgument(
+                '"$totalCount" should be a field name used to count the record.'
+            );
         }
 
-        sql = withTables + 'SELECT ' + selectColomns + sql;
+        const {
+            fromTable,
+            withTables,
+            model: _model,
+        } = this._buildCTEHeader(model);
+        model = _model;
+
+        const aliasMap = { [model]: 'A' };
+
+        let joinings;
+        let hasJoining = model;
+        const joiningParams = [];
+
+        // build alias map first
+        // cache params
+        if ($relationships) {
+            joinings = this._joinAssociations(
+                $relationships,
+                model,
+                aliasMap,
+                1,
+                joiningParams
+            );
+        }
+
+        // count does not require selectParams
+        const countParams = joiningParams.concat();
+
+        // Save columns used by grouping and ranking
+        const requiredColumns = new Set();
+
+        const selectParams = [];
+
+        // Build select columns
+        const selectColomns = $projection
+            ? this._buildColumns(
+                  $projection,
+                  selectParams,
+                  hasJoining,
+                  aliasMap
+              )
+            : '*';
+
+        let fromClause = ' FROM ' + fromTable + ' A ';
+        let fromAndJoin = fromClause + joinings.join(' ');
+
+        let whereClause = '';
+        const whereParams = [];
+
+        if ($query) {
+            whereClause = this._joinCondition(
+                $query,
+                whereParams,
+                null,
+                hasJoining,
+                aliasMap
+            );
+
+            if (whereClause) {
+                whereClause = ' WHERE ' + whereClause;
+                whereParams.forEach((p) => {
+                    countParams.push(p);
+                });
+            }
+        }
+
+        let groupByClause = '';
+        const groupByParams = [];
+
+        if ($groupBy) {
+            groupByClause +=
+                ' ' +
+                this._buildGroupBy(
+                    $groupBy,
+                    groupByParams,
+                    hasJoining,
+                    aliasMap
+                );
+            groupByParams.forEach((p) => {
+                countParams.push(p);
+            });
+        }
+
+        let orderByClause = '';
+
+        if ($orderBy) {
+            orderByClause +=
+                ' ' +
+                this._buildOrderBy(
+                    $orderBy,
+                    hasJoining,
+                    aliasMap,
+                    requiredColumns
+                );
+        }
+
+        const limitOffetParams = [];
+        let limitOffset = this._buildLimitOffset(
+            $limit,
+            $offset,
+            limitOffetParams
+        );
+
+        const result = { hasJoining, aliasMap };
+
+        // The field used as the key of counting
+        const distinctField = this._escapeIdWithAlias(
+            $totalCount,
+            hasJoining,
+            aliasMap
+        );
+
+        const countSubject = 'DISTINCT(' + distinctField + ')';
+
+        result.countSql =
+            withTables +
+            `SELECT COUNT(${countSubject}) AS count` +
+            fromAndJoin +
+            whereClause +
+            groupByClause;
+        result.countParams = countParams;
+
+        const distinctFieldWithAlias = `${distinctField} AS key_`;
+        const keysSql = `WITH records_ AS (SELECT ${distinctFieldWithAlias}${fromAndJoin}${whereClause}${groupByClause}${orderByClause}) SELECT key_ FROM records_ GROUP BY key_${limitOffset}`;
+
+        const keySqlAlias = Object.keys(aliasMap).length;
+        const keySqlAnchor = ntol(keySqlAlias);
+        this._joinAssociation(
+            {
+                sql: keysSql,
+                params: joiningParams.concat(
+                    whereParams,
+                    groupByParams,
+                    limitOffetParams
+                ),
+                joinType: 'INNER JOIN',
+                on: {
+                    [$totalCount]: {
+                        oorType: 'ColumnReference',
+                        name: `${keySqlAnchor}.key_`,
+                    },
+                },
+                output: true
+            },
+            keySqlAnchor,
+            joinings,
+            model,
+            aliasMap,
+            keySqlAlias,
+            joiningParams
+        );
+
+        fromAndJoin = fromClause + joinings.join(' ');
+
+        result.sql =
+            withTables + 'SELECT ' + selectColomns + fromAndJoin + whereClause;
+        result.params = selectParams.concat(joiningParams, whereParams);
+        console.log(result.sql, result.params);
+
+        return result;
+    }
+
+    /**
+     * Build limit and offset clause
+     * @param {*} $limit
+     * @param {*} $offset
+     * @param {*} params
+     * @returns {string} '' or ' LIMIT X, Y'
+     */
+    _buildLimitOffset($limit, $offset, params) {
+        let sql = '';
 
         if (_.isInteger($limit) && $limit > 0) {
             if (_.isInteger($offset) && $offset > 0) {
-                sql += ' LIMIT ?, ?';
+                sql = ' LIMIT ?, ?';
                 params.push($offset);
                 params.push($limit);
             } else {
-                sql += ' LIMIT ?';
+                sql = ' LIMIT ?';
                 params.push($limit);
             }
         } else if (_.isInteger($offset) && $offset > 0) {
-            sql += ' LIMIT ?, 1000';
+            sql = ' LIMIT ?, 1000';
             params.push($offset);
         }
 
-        result.sql = sql;
-
-        return result;
+        return sql;
     }
 
     getInsertedId(result) {
@@ -889,7 +1132,7 @@ class MySQLConnector extends Connector {
         if (query.countSql) {
             const [countResult] = await this.execute_(
                 query.countSql,
-                query.params,
+                query.countParams,
                 connOptions
             );
             totalCount = countResult.count;
@@ -931,13 +1174,11 @@ class MySQLConnector extends Connector {
     }
 
     _generateAlias(index, anchor) {
-        const alias = ntol(index);
-
         if (this.options.verboseAlias) {
-            return _.snakeCase(anchor).toUpperCase() + '_' + alias;
+            return `${_.snakeCase(anchor).toUpperCase()}${index}`;
         }
 
-        return alias;
+        return ntol(index);
     }
 
     /**
@@ -963,75 +1204,96 @@ class MySQLConnector extends Connector {
         let joinings = [];
 
         _.each(associations, (assocInfo, anchor) => {
-            const alias =
-                assocInfo.alias || this._generateAlias(startId++, anchor);
-            let { joinType, on } = assocInfo;
-
-            joinType || (joinType = 'LEFT JOIN');
-
-            if (assocInfo.sql) {
-                if (assocInfo.output) {
-                    aliasMap[parentAliasKey + '.' + alias] = alias;
-                }
-
-                assocInfo.params.forEach((p) => params.push(p));
-                joinings.push(
-                    `${joinType} (${
-                        assocInfo.sql
-                    }) ${alias} ON ${this._joinCondition(
-                        on,
-                        params,
-                        null,
-                        parentAliasKey,
-                        aliasMap
-                    )}`
-                );
-
-                return;
-            }
-
-            const { entity, subAssocs } = assocInfo;
-            const aliasKey = parentAliasKey + '.' + anchor;
-            aliasMap[aliasKey] = alias;
-
-            if (subAssocs) {
-                const subJoinings = this._joinAssociations(
-                    subAssocs,
-                    aliasKey,
-                    aliasMap,
-                    startId,
-                    params
-                );
-                startId += subJoinings.length;
-
-                joinings.push(
-                    `${joinType} ${mysql.escapeId(
-                        entity
-                    )} ${alias} ON ${this._joinCondition(
-                        on,
-                        params,
-                        null,
-                        parentAliasKey,
-                        aliasMap
-                    )}`
-                );
-                joinings = joinings.concat(subJoinings);
-            } else {
-                joinings.push(
-                    `${joinType} ${mysql.escapeId(
-                        entity
-                    )} ${alias} ON ${this._joinCondition(
-                        on,
-                        params,
-                        null,
-                        parentAliasKey,
-                        aliasMap
-                    )}`
-                );
-            }
+            startId = this._joinAssociation(
+                assocInfo,
+                anchor,
+                joinings,
+                parentAliasKey,
+                aliasMap,
+                startId,
+                params
+            );
         });
 
         return joinings;
+    }
+
+    _joinAssociation(
+        assocInfo,
+        anchor,
+        joinings,
+        parentAliasKey,
+        aliasMap,
+        startId,
+        params
+    ) {
+        const alias = assocInfo.alias || this._generateAlias(startId++, anchor);
+        let { joinType, on } = assocInfo;
+
+        joinType || (joinType = 'LEFT JOIN');
+
+        if (assocInfo.sql) {
+            if (assocInfo.output) {
+                aliasMap[parentAliasKey + '.' + alias] = alias;
+            }
+
+            assocInfo.params.forEach((p) => params.push(p));
+            joinings.push(
+                `${joinType} (${
+                    assocInfo.sql
+                }) ${alias} ON ${this._joinCondition(
+                    on,
+                    params,
+                    null,
+                    parentAliasKey,
+                    aliasMap
+                )}`
+            );
+
+            return startId;
+        }
+
+        const { entity, subAssocs } = assocInfo;
+        const aliasKey = parentAliasKey + '.' + anchor;
+        aliasMap[aliasKey] = alias;
+
+        if (subAssocs) {
+            const subJoinings = this._joinAssociations(
+                subAssocs,
+                aliasKey,
+                aliasMap,
+                startId,
+                params
+            );
+            startId += subJoinings.length;
+
+            joinings.push(
+                `${joinType} ${mysql.escapeId(
+                    entity
+                )} ${alias} ON ${this._joinCondition(
+                    on,
+                    params,
+                    null,
+                    parentAliasKey,
+                    aliasMap
+                )}`
+            );
+            joinings = joinings.concat(subJoinings);
+        } else {
+            joinings.push(
+                `${joinType} ${mysql.escapeId(
+                    entity
+                )} ${alias} ON ${this._joinCondition(
+                    on,
+                    params,
+                    null,
+                    parentAliasKey,
+                    aliasMap
+                )}`
+            );
+        }
+
+        return startId;
     }
 
     /**
@@ -2022,19 +2284,38 @@ class MySQLConnector extends Connector {
         );
     }
 
-    _buildOrderBy(orderBy, hasJoining, aliasMap) {
-        if (typeof orderBy === 'string')
+    _buildOrderByColumn(orderBy, hasJoining, aliasMap, requiredColumns) {
+        const wrapped = this._escapeIdWithAlias(orderBy, hasJoining, aliasMap);
+
+        requiredColumns && requiredColumns.add(wrapped);
+
+        return wrapped;
+    }
+
+    _buildOrderBy(orderBy, hasJoining, aliasMap, requiredColumns) {
+        if (typeof orderBy === 'string') {
             return (
                 'ORDER BY ' +
-                this._escapeIdWithAlias(orderBy, hasJoining, aliasMap)
+                this._buildOrderByColumn(
+                    orderBy,
+                    hasJoining,
+                    aliasMap,
+                    requiredColumns
+                )
             );
+        }
 
         if (Array.isArray(orderBy))
             return (
                 'ORDER BY ' +
                 orderBy
                     .map((by) =>
-                        this._escapeIdWithAlias(by, hasJoining, aliasMap)
+                        this._buildOrderByColumn(
+                            by,
+                            hasJoining,
+                            aliasMap,
+                            requiredColumns
+                        )
                     )
                     .join(', ')
             );
@@ -2045,8 +2326,12 @@ class MySQLConnector extends Connector {
                 _.map(
                     orderBy,
                     (asc, col) =>
-                        this._escapeIdWithAlias(col, hasJoining, aliasMap) +
-                        (asc === false || asc === -1 ? ' DESC' : '')
+                        this._buildOrderByColumn(
+                            col,
+                            hasJoining,
+                            aliasMap,
+                            requiredColumns
+                        ) + (asc === false || asc === -1 ? ' DESC' : '')
                 ).join(', ')
             );
         }

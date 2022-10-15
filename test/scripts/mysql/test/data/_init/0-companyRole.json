@@ -1,0 +1,20 @@
+{
+    "companyRole": [
+        {
+            "code": "party",
+            "name": "Party"
+        },
+        {
+            "code": "purchaser",
+            "name": "Purchaser"
+        },
+        {
+            "code": "customer",
+            "name": "Customer"
+        },
+        {
+            "code": "vendor",
+            "name": "Vendor"
+        }
+    ]
+}

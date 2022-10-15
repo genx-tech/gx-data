@@ -13,7 +13,7 @@ specifiers:
   '@genx/jes': ^1.2.2
   '@genx/july': ^1.0.2
   '@genx/sys': ^0.1.5
-  '@genx/test': ^2.1.2
+  '@genx/test': ^2.1.4
   amqplib: ^0.8.0
   babel-plugin-contract: ^1.3.5
   babel-plugin-source-map-support: ^2.1.3
@@ -25,6 +25,7 @@ specifiers:
   eslint-plugin-node: ^11.1.0
   eslint-plugin-prettier: ^4.0.0
   eslint-plugin-promise: ^5.1.0
+  esprima: ^4.0.1
   exceljs: ^4.3.0
   fast-csv: ^4.3.6
   hyperid: ^2.3.1
@@ -66,7 +67,7 @@ devDependencies:
   '@babel/preset-env': 7.18.9_@babel+core@7.18.9
   '@babel/register': 7.18.9_@babel+core@7.18.9
   '@genx/babelnode': 7.14.9_@babel+core@7.18.9
-  '@genx/test': 2.1.2
+  '@genx/test': 2.1.4
   amqplib: 0.8.0
   babel-plugin-contract: 1.3.5
   babel-plugin-source-map-support: 2.2.0
@@ -78,6 +79,7 @@ devDependencies:
   eslint-plugin-node: 11.1.0_eslint@7.32.0
   eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
   eslint-plugin-promise: 5.2.0_eslint@7.32.0
+  esprima: 4.0.1
   exceljs: 4.3.0
   fast-csv: 4.3.6
   hyperid: 2.3.1
@@ -1424,8 +1426,8 @@ packages:
     transitivePeerDependencies:
       - glob
 
-  /@genx/test/2.1.2:
-    resolution: {integrity: sha512-W1HLO0LSg9uhH2J6EmCebFhIFQMyuOAOSkBdQ5JPnsWFnfBmDKKbooFw6Ybkey9qnVgGMj0bi8hvzXF0cjKBhw==}
+  /@genx/test/2.1.4:
+    resolution: {integrity: sha512-KwqAEHjG9tk2oi7eXVBVRmyQ9KkIf/GELRFqdJVg82x+8Xp1P5OJsXLMvnVDYFyvTSIGJVN2ngaVn9u9mZ8MUQ==}
     peerDependencies:
       '@genx/app': '>=2.0.0'
     dependencies:
@@ -3136,7 +3138,7 @@ packages:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.0.4
+      minimatch: 3.1.2
       once: 1.4.0
       path-is-absolute: 1.0.1
     dev: true

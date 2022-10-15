@@ -11,7 +11,7 @@ const {
  
 
 module.exports = (Base) => {    
-    const UomUnitSpec = class extends Base {    
+    const CompanyRoleSpec = class extends Base {    
         /**
          * Applying predefined modifiers to entity fields.
          * @param context
@@ -23,29 +23,11 @@ module.exports = (Base) => {
             existing || (existing = {});
             return context;
         }
-
-        static async createTableIfNotExist_() {
-            await this.db.connector.execute_(
-                'CREATE TABLE IF NOT EXISTS ?? (\
-                `code` VARCHAR(64) NOT NULL DEFAULT "",\
-                `name` VARCHAR(200) NOT NULL DEFAULT "",\
-                `indexOrder` INT NOT NULL DEFAULT 0,\
-                `desc` TEXT NULL,\
-                `isSystem` TINYINT(1) NULL,\
-                `isActive` TINYINT(1) NOT NULL DEFAULT 1,\
-                `isDeleted` TINYINT(1) NOT NULL DEFAULT 0,\
-                `deletedAt` DATETIME NULL,\
-                PRIMARY KEY (`code`),\
-                UNIQUE KEY (`name`)\
-            ) ENGINE = InnoDB',
-                [this.meta.name]
-            );
-        }
     };
     
-    UomUnitSpec.meta = {
-        "schemaName": "ihom",
-        "name": "uomUnit",
+    CompanyRoleSpec.meta = {
+        "schemaName": "test",
+        "name": "companyRole",
         "keyField": "code",
         "fields": {
             "code": {
@@ -138,10 +120,8 @@ module.exports = (Base) => {
                     "writeProtect": true
                 }
             ]
-        },
-        "fromPackage": "commons",
-        "packagePath": "../gem-commons"
+        }
     };
 
-    return Object.assign(UomUnitSpec, {});
+    return Object.assign(CompanyRoleSpec, {});
 };
