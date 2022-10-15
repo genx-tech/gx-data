@@ -17,3 +17,4 @@ docs
 coverage
 .nyc_output
 lib/**/__test__
+allure-results
