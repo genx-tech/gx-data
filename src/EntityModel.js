@@ -380,8 +380,6 @@ class EntityModel {
                 return undefined;
             }
 
-            console.log(records);
-
             if (records.length !== 1) {
                 this.db.connector.log(
                     'error',
