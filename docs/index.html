@@ -216,25 +216,59 @@
 </ul>
 <h2>CRUD operations (static method members)</h2>
 <ul>
-<li>async findOne_(findOptions, connOptions)</li>
-<li>async findAll_(findOptions, connOptions)</li>
-<li>async create_(data, createOptions, connOptions)</li>
-<li>async updateOne_(data, updateOptions, connOptions)</li>
-<li>async updateMany_(data, updateOptions, connOptions)</li>
-<li>async replaceOne_(data, updateOptions, connOptions)</li>
-<li>async deleteOne_(deleteOptions, connOptions)</li>
-<li>async deleteMany_(deleteOptions, connOptions)</li>
-<li>async cached_(key, associations, connOptions)</li>
-<li>async retryCreateOnDuplicate_(dataGenerator_, maxRery, createOptions, connOptions)</li>
+<li>
+<p>async findOne_(findOptions, connOptions)</p>
+</li>
+<li>
+<p>async findAll_(findOptions, connOptions)</p>
+</li>
+<li>
+<p>async create_(data, createOptions, connOptions)</p>
+</li>
+<li>
+<p>async updateOne_(data, updateOptions, connOptions)</p>
+</li>
+<li>
+<p>async updateMany_(data, updateOptions, connOptions)</p>
+</li>
+<li>
+<p>async replaceOne_(data, updateOptions, connOptions)</p>
+</li>
+<li>
+<p>async deleteOne_(deleteOptions, connOptions)</p>
+</li>
+<li>
+<p>async deleteMany_(deleteOptions, connOptions)</p>
+</li>
+<li>
+<p>async cached_(key, associations, connOptions)</p>
+</li>
+<li>
+<p>async retryCreateOnDuplicate_(dataGenerator_, maxRery, createOptions, connOptions)</p>
+<ul>
+<li>Regenerate creation data and try again if duplicate record exists</li>
+</ul>
+</li>
+<li>
+<p>async ensureFields_(entityObject, fields)</p>
+<ul>
+<li>Ensure the entity object containing required fields, if not, it will automatically fetched from db and return.</li>
+</ul>
+</li>
 </ul>
 <h2>Helper methods</h2>
 <ul>
-<li>
-<p>fieldSchema(fieldName, options), returns the field schema for input validation, options can be used to override the default auto generated schema</p>
+<li>fieldSchema(fieldName, options), returns the field schema for input validation, options can be used to override the default auto generated schema
 <ul>
 <li>$addEnumValues, for enum values to add some fake value which not accepted by db but can be consumed by business logic, e.g. all, none</li>
+<li>$orAsArray, accept an array of the specified type</li>
 </ul>
 </li>
+</ul>
+<pre class="prettyprint source"><code>    // returns a schema object which can be used by @genx/data Types sanitizer
+    Message.fieldSchema('type', { optional: true, default: 'info' });
+</code></pre>
+<ul>
 <li>
 <p>inputSchema(inputSetName, options), returns an input schema object</p>
 </li>
@@ -246,9 +280,6 @@
 </li>
 <li>
 <p>getUniqueKeyFieldsFrom(data)</p>
-</li>
-<li>
-<p>ensureFields_(entityObject, fields)</p>
 </li>
 </ul>
 <h2>Operation options</h2>
@@ -353,33 +384,114 @@ $query = Lang.$func('FIND_IN_SET', category, Lang.$col('categories'));
 
 </code></pre>
 <ul>
-<li>$offset</li>
-<li>$limit</li>
-<li>$totalCount - Returns total record count when used with $limit, should provide the distinct field name</li>
-<li>$includeDeleted - {boolean}, for find only, include logical deleted records</li>
-<li>$skipOrm - {boolean}</li>
-<li>$objectMapper - {string} Object mapper , flat or hiarachy (not used yet)</li>
-<li>$custom - User defined operation control data, used by user program only and will be passed on to associated operation</li>
-<li>$retrieveCreated - {findOptions|boolean}</li>
-<li>$retrieveUpdated - {findOptions|boolean}</li>
-<li>$retrieveActualUpdated - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is actually updated</li>
-<li>$retrieveNotUpdate - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is not actually updated</li>
-<li>$retrieveDeleted - {findOptions|boolean}</li>
-<li>$retrieveExisting</li>
-<li>$retrieveDbResult - return the original db result through options.$result</li>
-<li>$bypassReadOnly - Internal option, cannot be set by user</li>
-<li>$physicalDeletion - {boolean}</li>
-<li>$existing</li>
-<li>$requireSplitColumns - {boolean}, for udpate only, will be auto set while input has function or expression</li>
-<li>$bypassEnsureUnique</li>
-<li>$toDictionary</li>
-<li>$migration - {boolean}, set by migration program, will be passed on to associated operation</li>
-<li>$upsert - {boolean|object}, for create_ only, insert or update on duplicate, pass object if insert extra data</li>
-<li>$nestedKeyGetter - a getter function to transform the key of nested object, default as ':'+anchor for mysql</li>
-<li>$skipFeatures - an array of features to skip</li>
-<li>$skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before</li>
-<li>$transformer - Transform results before returning</li>
-<li>$dryRun - for create only, just do the preparation check and skip the actual db creation call</li>
+<li>
+<p>$offset</p>
+</li>
+<li>
+<p>$limit</p>
+</li>
+<li>
+<p>$totalCount - Returns total record count when used with $limit, should provide the distinct field name</p>
+<ul>
+<li>Used without association or with reference association which only joins record, just use $totalCount: true</li>
+</ul>
+<pre class="prettyprint source"><code>    const { totalItems /* integer */, items /* array */ } = await findAll_({
+        '$query': { template: 1 },
+        '$association': [ 'template' ],
+        '$orderBy': { createdAt: false },
+        '$totalCount': true,
+        '$limit': 5,
+        '$offset': 0    
+    });
+</code></pre>
+<ul>
+<li>Used without association which may joins multiple records, should specify a unqiue field for preventing from counting duplicate records brought by joining, <strong>otherwise the returned totalItems may include duplicate records</strong></li>
+</ul>
+<pre class="prettyprint source"><code>    const { totalItems /* integer */, items /* array */ } = await findAll_({
+        '$query': { template: 1 },
+        '$association': [ 'tags.tag', 'template' ],
+        '$orderBy': { createdAt: false },
+        '$totalCount': 'id',
+        '$limit': 5,
+        '$offset': 0    
+    });
+</code></pre>
+</li>
+<li>
+<p>$includeDeleted - {boolean}, for find only, include logical deleted records</p>
+</li>
+<li>
+<p>$skipOrm - {boolean}</p>
+</li>
+<li>
+<p>$objectMapper - {string} Object mapper , flat or hiarachy (not used yet)</p>
+</li>
+<li>
+<p>$custom - User defined operation control data, used by user program only and will be passed on to associated operation</p>
+</li>
+<li>
+<p>$retrieveCreated - {findOptions|boolean}</p>
+</li>
+<li>
+<p>$retrieveUpdated - {findOptions|boolean}</p>
+</li>
+<li>
+<p>$retrieveActualUpdated - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is actually updated</p>
+</li>
+<li>
+<p>$retrieveNotUpdate - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is not actually updated</p>
+</li>
+<li>
+<p>$retrieveDeleted - {findOptions|boolean}</p>
+</li>
+<li>
+<p>$retrieveExisting</p>
+</li>
+<li>
+<p>$retrieveDbResult - return the original db result through options.$result</p>
+</li>
+<li>
+<p>$bypassReadOnly - Internal option, cannot be set by user</p>
+</li>
+<li>
+<p>$physicalDeletion - {boolean}</p>
+</li>
+<li>
+<p>$existing</p>
+</li>
+<li>
+<p>$requireSplitColumns - {boolean}, for udpate only, will be auto set while input has function or expression</p>
+</li>
+<li>
+<p>$bypassEnsureUnique</p>
+</li>
+<li>
+<p>$toDictionary</p>
+</li>
+<li>
+<p>$migration - {boolean}, set by migration program, will be passed on to associated operation</p>
+</li>
+<li>
+<p>$upsert - {boolean|object}, for create_ only, insert or update on duplicate, pass object if insert extra data</p>
+</li>
+<li>
+<p>$nestedKeyGetter - a getter function to transform the key of nested object, default as ':'+anchor for mysql</p>
+</li>
+<li>
+<p>$skipFeatures - an array of features to skip</p>
+</li>
+<li>
+<p>$skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before</p>
+</li>
+<li>
+<p>$transformer - Transform results before returning</p>
+</li>
+<li>
+<p>$dryRun - for create only, just do the preparation check and skip the actual db creation call</p>
+</li>
+<li>
+<p>$key - specify the primary key field of and main query table for complex SQL situation, e.g. pagination</p>
+</li>
 </ul>
 <pre class="prettyprint source"><code>$transformer: {
     user: [ '$$CURRENT.:user', { $pick: [ 'email' ] } ],
@@ -518,6 +630,7 @@ $query = Lang.$func('FIND_IN_SET', category, Lang.$col('categories'));
 <li>Add more runtime operator for database</li>
 <li>Add non-kv-pair query support</li>
 <li>Fix bugs</li>
+<li>[15 Oct 2022] Fix incorrect number of records returned, when using limit, offset and counting on multiple joining</li>
 </ol></article>
     </section>
 

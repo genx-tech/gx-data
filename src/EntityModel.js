@@ -380,6 +380,8 @@ class EntityModel {
                 return undefined;
             }
 
+            console.log(records);
+
             if (records.length !== 1) {
                 this.db.connector.log(
                     'error',
@@ -1478,7 +1480,7 @@ class EntityModel {
                 : {};
         }
 
-        const normalizedOptions = {};
+        const normalizedOptions = { $key: this.meta.keyField };
         const query = {};
 
         _.forOwn(options, (v, k) => {
@@ -1528,7 +1530,7 @@ class EntityModel {
                 this._prepareAssociations(normalizedOptions);
         }
 
-        return this._normalizeDbSpecificOpitons(normalizedOptions);
+        return normalizedOptions;
     }
 
     /**

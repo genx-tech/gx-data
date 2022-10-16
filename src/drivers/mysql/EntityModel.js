@@ -477,19 +477,6 @@ class MySQLEntityModel extends EntityModel {
     }
 
     /**
-     * Normalize db specific options
-     */
-    static _normalizeDbSpecificOpitons(options) {
-        if (options.$totalCount) {
-            if (typeof options.$totalCount !== 'string') {
-                options.$totalCount = this.meta.keyField;
-            }
-        }
-
-        return options;
-    }
-
-    /**
      *
      * @param {*} findOptions
      */

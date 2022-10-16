@@ -157,7 +157,42 @@ testSuite(
                         'company.contacts.person'
                     ], $limit: 5 });
 
+                    console.log(items5);
+
                     items5.length.should.be.exactly(5);
+                },
+                {
+                    workingPath: SCRIPT_DIR,
+                    configPath: "./conf",
+                    logger: {
+                        level: 'verbose',
+                    },
+                    verbose: true
+                }
+            );
+        });
+
+        suite.testCase('query-sub-association', async function () {                
+            await suite.startWorker_(
+                async (app) => {
+                    const db = app.db('test');                    
+                    const Party = db.model('Party');
+
+                    const items11 = await Party.findAll_({ $query: {} });
+
+                    items11.length.should.be.exactly(11);
+
+                    const items10 = await Party.findAll_({ $query: {
+                        'company.role': 'party',
+                        'company.contacts.person.firstName': 'Name2'
+                    }, $association: [
+                        'company',         
+                        'company.role',  
+                        'company.contacts',                      
+                        'company.contacts.person'
+                    ] });
+
+                    items10.length.should.be.exactly(10);
                 },
                 {
                     workingPath: SCRIPT_DIR,

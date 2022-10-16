@@ -131,7 +131,8 @@ describe('unit:connector:mysql', function () {
                 $projection: '*',
                 $limit: 1,
                 $offset: 0,
-            });
+            });         
+
             result.length.should.be.exactly(1);
 
             result = await connector.find_('t', {
@@ -485,7 +486,7 @@ describe('unit:connector:mysql', function () {
         });
     });
 
-    describe.only('transaction', function () {
+    describe('transaction', function () {
         it('commit', async function () {
             let conn = await connector.beginTransaction_();
 

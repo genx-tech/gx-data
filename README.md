@@ -11,8 +11,8 @@ Updated on 16/02/2022
     -   i18n - Internationalization
     -   model(name) - Getter for entity model
     -   entitiesOfType(subClass) - Get an array of entities with one of the subClasses as specified
-    -   async retry\_(closure(ok, failed), [times], [interval]) - Try several times (default: 3) to do a transaction in case rollbacked due to competition
-    -   async doTransaction\_(closure({connection}), errorHandler(error)) - Wrap a transaction block
+    -   async retry_(closure(ok, failed), [times], [interval]) - Try several times (default: 3) to do a transaction in case rollbacked due to competition
+    -   async doTransaction_(closure({connection}), errorHandler(error)) - Wrap a transaction block
 
 ```
   // Model usage
@@ -81,17 +81,17 @@ module.exports = Base => class extends Base {
 
 ### Triggers 
 
--   beforeCreate\_
--   beforeUpdate\_
--   beforeUpdateMany\_
--   beforeDelete\_
--   beforeDeleteMany\_
+-   beforeCreate_
+-   beforeUpdate_
+-   beforeUpdateMany_
+-   beforeDelete_
+-   beforeDeleteMany_
 
--   afterCreate\_
--   afterUpdate\_
--   afterUpdateMany\_
--   afterDelete\_
--   afterDeleteMany\_
+-   afterCreate_
+-   afterUpdate_
+-   afterUpdateMany_
+-   afterDelete_
+-   afterDeleteMany_
 
 ## CRUD operations (static method members)
 
@@ -272,8 +272,8 @@ const numDeals = await this.findAll_({
 -   $custom - User defined operation control data, used by user program only and will be passed on to associated operation
 -   $retrieveCreated - {findOptions|boolean}
 -   $retrieveUpdated - {findOptions|boolean}
--   $retrieveActualUpdated - {findOptions|boolean}, for updateOne\_ only, retrieve only when the row is actually updated
--   $retrieveNotUpdate - {findOptions|boolean}, for updateOne\_ only, retrieve only when the row is not actually updated
+-   $retrieveActualUpdated - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is actually updated
+-   $retrieveNotUpdate - {findOptions|boolean}, for updateOne_ only, retrieve only when the row is not actually updated
 -   $retrieveDeleted - {findOptions|boolean}
 -   $retrieveExisting
 -   $retrieveDbResult - return the original db result through options.$result
@@ -284,12 +284,13 @@ const numDeals = await this.findAll_({
 -   $bypassEnsureUnique
 -   $toDictionary
 -   $migration - {boolean}, set by migration program, will be passed on to associated operation
--   $upsert - {boolean|object}, for create\_ only, insert or update on duplicate, pass object if insert extra data
+-   $upsert - {boolean|object}, for create_ only, insert or update on duplicate, pass object if insert extra data
 -   $nestedKeyGetter - a getter function to transform the key of nested object, default as ':'+anchor for mysql
 -   $skipFeatures - an array of features to skip
 -   $skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before
 -   $transformer - Transform results before returning
 -   $dryRun - for create only, just do the preparation check and skip the actual db creation call
+-   $key - specify the primary key field of and main query table for complex SQL situation, e.g. pagination
 
 ```
 $transformer: {
@@ -440,3 +441,4 @@ const schema = {
 3. Add more runtime operator for database
 4. Add non-kv-pair query support
 5. Fix bugs
+6. [15 Oct 2022] Fix incorrect number of records returned, when using limit, offset and counting on multiple joining

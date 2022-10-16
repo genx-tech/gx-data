@@ -15,7 +15,7 @@
         "unit": "mocha --recursive src/**/*.spec.js",
         "spec": "pnpm run clean && mocha --reporter mocha-multi --reporter-options mocha-multi=test/mocha-multi-reporters.json test/*.spec.js",
         "test": "pnpm run unit && pnpm run spec",
-        "cover": "nyc --reporter=html --reporter=text mocha test/*.mocha.js --recursive src/**/*.spec.js",
+        "cover": "nyc --reporter=html --reporter=text mocha test/*.spec.js --recursive src/**/*.spec.js",
         "clean": "del-cli .nyc_output coverage allure-results",
         "build": "pnpm run clean && NODE_ENV=production babel src -d lib --ignore \"**/__test__/*.js\" --source-maps --copy-files --no-copy-ignored"
     },
