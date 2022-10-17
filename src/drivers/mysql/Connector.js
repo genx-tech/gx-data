@@ -797,7 +797,7 @@ class MySQLConnector extends Connector {
             $offset,
             $limit,
             $totalCount,
-            $key
+            $key,
         }
     ) {
         const hasTotalCount = $totalCount;
@@ -827,7 +827,7 @@ class MySQLConnector extends Connector {
                 1,
                 joiningParams
             );
-            hasJoining = model;            
+            hasJoining = model;
         }
 
         // !!!limit or offset with mutiple joining requires group by distinct field to calculate the correct number of records
@@ -851,7 +851,7 @@ class MySQLConnector extends Connector {
         let fromClause = ' FROM ' + fromTable;
         let fromAndJoin = fromClause;
         if (joinings) {
-            fromAndJoin +=  ' A ' + joinings.join(' ');
+            fromAndJoin += ' A ' + joinings.join(' ');
         }
 
         // Build where clause
@@ -901,12 +901,7 @@ class MySQLConnector extends Connector {
         let orderByClause = '';
         if ($orderBy) {
             orderByClause +=
-                ' ' +
-                this._buildOrderBy(
-                    $orderBy,
-                    hasJoining,
-                    aliasMap
-                );
+                ' ' + this._buildOrderBy($orderBy, hasJoining, aliasMap);
         }
 
         // Build limit & offset clause
@@ -937,13 +932,18 @@ class MySQLConnector extends Connector {
                     whereClause +
                     groupByClause;
                 result.countParams = countParams;
-            } 
+            }
 
             const distinctFieldWithAlias = `${distinctField} AS key_`;
             const keysSql = `WITH records_ AS (SELECT ${distinctFieldWithAlias}${fromAndJoin}${whereClause}${groupByClause}${orderByClause}) SELECT key_ FROM records_ GROUP BY key_${limitOffset}`;
 
             const keySqlAliasIndex = Object.keys(aliasMap).length;
             const keySqlAnchor = ntol(keySqlAliasIndex);
+
+            if (!joinings) {
+                joinings = [];
+            }
+
             this._joinAssociation(
                 {
                     sql: keysSql,
@@ -2201,11 +2201,7 @@ class MySQLConnector extends Connector {
         if (typeof orderBy === 'string') {
             return (
                 'ORDER BY ' +
-                this._escapeIdWithAlias(
-                    orderBy,
-                    hasJoining,
-                    aliasMap
-                )
+                this._escapeIdWithAlias(orderBy, hasJoining, aliasMap)
             );
         }
 
@@ -2214,11 +2210,7 @@ class MySQLConnector extends Connector {
                 'ORDER BY ' +
                 orderBy
                     .map((by) =>
-                        this._escapeIdWithAlias(
-                            by,
-                            hasJoining,
-                            aliasMap
-                        )
+                        this._escapeIdWithAlias(by, hasJoining, aliasMap)
                     )
                     .join(', ')
             );
@@ -2229,11 +2221,8 @@ class MySQLConnector extends Connector {
                 _.map(
                     orderBy,
                     (asc, col) =>
-                        this._escapeIdWithAlias(
-                            col,
-                            hasJoining,
-                            aliasMap
-                        ) + (asc === false || asc === -1 ? ' DESC' : '')
+                        this._escapeIdWithAlias(col, hasJoining, aliasMap) +
+                        (asc === false || asc === -1 ? ' DESC' : '')
                 ).join(', ')
             );
         }
