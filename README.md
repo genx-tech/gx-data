@@ -299,6 +299,28 @@ $transformer: {
 }
 ```
 
+## Complex usage
+
+### Using functions in projection
+
+```javascript
+{
+    $projection: [
+        News.meta.keyField,
+        {
+            type: 'function',
+            name: 'ROW_NUMBER',
+            alias: 'row_num',
+            args: [], // ROW_NUMBER()
+            over: {
+                $partitionBy: 'reference',
+                $orderBy: News.meta.keyField,
+            }, // ROW_NUMBER() OVER(PARTITION BY `reference` ORDER BY id)
+        },
+    ]
+}
+```
+
 ## Connector options
 
 -   insertIgnore - {boolean}, for create only

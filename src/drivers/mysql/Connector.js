@@ -2080,6 +2080,9 @@ class MySQLConnector extends Connector {
                     }
 
                     if (col.over.$orderBy) {
+                        if (!funcClause.endsWith('(')) {
+                            funcClause += ' ';
+                        }
                         funcClause += this._buildOrderBy(
                             col.over.$orderBy,
                             hasJoining,
