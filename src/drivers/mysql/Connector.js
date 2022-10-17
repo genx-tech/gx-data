@@ -914,35 +914,35 @@ class MySQLConnector extends Connector {
 
         const result = { hasJoining, aliasMap };
 
+        // The field used as the key of counting or pagination
+        let distinctField;
+
         if (hasTotalCount || needDistinctForLimit) {
-            // The field used as the key of counting
-            const distinctField = this._escapeIdWithAlias(
+            distinctField = this._escapeIdWithAlias(
                 typeof $totalCount === 'string' ? $totalCount : $key,
                 hasJoining,
                 aliasMap
             );
+        }
 
-            if (hasTotalCount) {
-                const countSubject = 'DISTINCT(' + distinctField + ')';
+        if (hasTotalCount) {
+            const countSubject = 'DISTINCT(' + distinctField + ')';
 
-                result.countSql =
-                    withTables +
-                    `SELECT COUNT(${countSubject}) AS count` +
-                    fromAndJoin +
-                    whereClause +
-                    groupByClause;
-                result.countParams = countParams;
-            }
+            result.countSql =
+                withTables +
+                `SELECT COUNT(${countSubject}) AS count` +
+                fromAndJoin +
+                whereClause +
+                groupByClause;
+            result.countParams = countParams;
+        }
 
+        if (needDistinctForLimit) { 
             const distinctFieldWithAlias = `${distinctField} AS key_`;
             const keysSql = `WITH records_ AS (SELECT ${distinctFieldWithAlias}${fromAndJoin}${whereClause}${groupByClause}${orderByClause}) SELECT key_ FROM records_ GROUP BY key_${limitOffset}`;
 
             const keySqlAliasIndex = Object.keys(aliasMap).length;
             const keySqlAnchor = ntol(keySqlAliasIndex);
-
-            if (!joinings) {
-                joinings = [];
-            }
 
             this._joinAssociation(
                 {
@@ -976,8 +976,10 @@ class MySQLConnector extends Connector {
                 'SELECT ' +
                 selectColomns +
                 fromAndJoin +
-                whereClause;
-            result.params = selectParams.concat(joiningParams, whereParams);
+                whereClause +
+                groupByClause +
+                orderByClause;
+            result.params = selectParams.concat(joiningParams, whereParams, groupByParams);
         } else {
             result.sql =
                 withTables +
@@ -1390,6 +1392,11 @@ class MySQLConnector extends Connector {
     }
 
     _replaceFieldNameWithAlias(fieldName, mainEntity, aliasMap) {
+        if (fieldName.startsWith("::")) {
+            // ::fieldName for skipping alias padding
+            return mysql.escapeId(fieldName.substring(2));
+        }
+
         const parts = fieldName.split('.');
         if (parts.length > 1) {
             const actualFieldName = parts.pop();

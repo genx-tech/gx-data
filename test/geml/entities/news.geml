@@ -1,0 +1,10 @@
+import types
+
+entity news
+  with 
+    autoId
+  has
+    reference: idString
+    title: name
+    content: desc
+    locale: idString

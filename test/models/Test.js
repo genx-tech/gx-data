@@ -8,7 +8,7 @@ class Test extends DbModel {
         super(app, connector, i18n);
         
         this.schemaName = 'test';
-        this.entities = ["party","partyType","company","person","contact","companyRole","companyContact","personTitle"];        
+        this.entities = ["party","partyType","company","person","contact","news","companyRole","companyContact","personTitle"];        
     }
 
     require(moduleRelativePath) {        

@@ -588,6 +588,10 @@ class MySQLEntityModel extends EntityModel {
     }
 
     static _translateSchemaNameToDb(assoc, currentDb) {
+        if (!assoc.entity) {
+            throw new ApplicationError('"entity" is required in the association object.');
+        }
+
         if (assoc.entity.indexOf('.') > 0) {
             const [schemaName, entityName] = assoc.entity.split('.', 2);
 

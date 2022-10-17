@@ -119,6 +119,12 @@ testSuite(
 
                     totalItems.should.be.exactly(10);
                     items.length.should.be.exactly(5);
+
+                    const { totalItems: totalItems2, items: items2 } = await Party.findAll_({ $query: {
+                    }, $totalCount: true, $limit: 5 });
+
+                    totalItems2.should.be.exactly(11);
+                    items2.length.should.be.exactly(5);
                 },
                 {
                     workingPath: SCRIPT_DIR,
@@ -156,8 +162,6 @@ testSuite(
                         'company',
                         'company.contacts.person'
                     ], $limit: 5 });
-
-                    console.log(items5);
 
                     items5.length.should.be.exactly(5);
                 },
