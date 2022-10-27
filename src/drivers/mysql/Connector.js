@@ -937,9 +937,11 @@ class MySQLConnector extends Connector {
             result.countParams = countParams;
         }
 
-        if (needDistinctForLimit) { 
+        if (needDistinctForLimit) {
             const distinctFieldWithAlias = `${distinctField} AS key_`;
-            const keysSql = `WITH records_ AS (SELECT ${distinctFieldWithAlias}${fromAndJoin}${whereClause}${groupByClause}${orderByClause}) SELECT key_ FROM records_ GROUP BY key_${limitOffset}`;
+            const keysSql = orderByClause
+                ? `WITH records_ AS (SELECT ${distinctFieldWithAlias}, ROW_NUMBER() OVER(${orderByClause}) AS row_${fromAndJoin}${whereClause}${groupByClause}) SELECT key_ FROM records_ GROUP BY key_ ORDER BY row_${limitOffset}`
+                : `WITH records_ AS (SELECT ${distinctFieldWithAlias}${fromAndJoin}${whereClause}${groupByClause}) SELECT key_ FROM records_ GROUP BY key_${limitOffset}`;
 
             const keySqlAliasIndex = Object.keys(aliasMap).length;
             const keySqlAnchor = ntol(keySqlAliasIndex);
@@ -979,7 +981,11 @@ class MySQLConnector extends Connector {
                 whereClause +
                 groupByClause +
                 orderByClause;
-            result.params = selectParams.concat(joiningParams, whereParams, groupByParams);
+            result.params = selectParams.concat(
+                joiningParams,
+                whereParams,
+                groupByParams
+            );
         } else {
             result.sql =
                 withTables +
@@ -1392,7 +1398,7 @@ class MySQLConnector extends Connector {
     }
 
     _replaceFieldNameWithAlias(fieldName, mainEntity, aliasMap) {
-        if (fieldName.startsWith("::")) {
+        if (fieldName.startsWith('::')) {
             // ::fieldName for skipping alias padding
             return mysql.escapeId(fieldName.substring(2));
         }

@@ -10,7 +10,7 @@ const SCRIPT_DIR = path.resolve(__dirname);
 
 testSuite(
     function (suite) {
-        suite.testCase('model-ensureFields_', async function () {
+        suite.testCase('model-windowQuery_', async function () {
             await suite.startWorker_(
                 async (app) => {
                     const db = app.db('test');
@@ -90,7 +90,8 @@ testSuite(
                         $projection: ['*'],
                         $query: {},
                         $association: [
-                            {
+                            {                                
+                                type: 'INNER JOIN',
                                 entity: News.meta.name,
                                 dataset: {
                                     $projection: [
@@ -107,7 +108,6 @@ testSuite(
                                         },
                                     ],
                                 },
-                                type: 'INNER JOIN',
                                 key: News.meta.keyField,
                                 alias: 'groupFilter_',
                                 on: {
