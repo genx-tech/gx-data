@@ -831,7 +831,7 @@ class MySQLConnector extends Connector {
         }
 
         // !!!limit or offset with mutiple joining requires group by distinct field to calculate the correct number of records
-        needDistinctForLimit &&= hasJoining;
+        needDistinctForLimit &&= hasJoining && _.isEmpty($groupBy);
 
         // count does not require selectParams
         const countParams = hasTotalCount ? joiningParams.concat() : null;

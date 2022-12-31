@@ -931,7 +931,7 @@ class EntityModel {
             (forSingleRecord || !deleteOptions.$deleteAll)
         ) {
             throw new InvalidArgument(
-                'Empty condition is not allowed for deleting an entity.',
+                'Empty condition is not allowed for deleting or add { $deleteAll: true } to delete all records.',
                 {
                     entity: this.meta.name,
                     deleteOptions,

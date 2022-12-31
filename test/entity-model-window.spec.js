@@ -10,7 +10,7 @@ const SCRIPT_DIR = path.resolve(__dirname);
 
 testSuite(
     function (suite) {
-        suite.testCase('model-windowQuery_', async function () {
+        suite.testCase('model-windowQuery', async function () {
             await suite.startWorker_(
                 async (app) => {
                     const db = app.db('test');
