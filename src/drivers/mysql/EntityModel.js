@@ -1350,4 +1350,9 @@ class MySQLEntityModel extends EntityModel {
     }
 }
 
+const sugar = require('./mixin/sugar');
+for (const key of Object.keys(sugar)) {
+    MySQLEntityModel[key] = sugar[key];
+}
+
 module.exports = MySQLEntityModel;
