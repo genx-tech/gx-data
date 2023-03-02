@@ -14,7 +14,7 @@ Updated on 16/02/2022
     -   async retry_(closure(ok, failed), [times], [interval]) - Try several times (default: 3) to do a transaction in case rollbacked due to competition
     -   async doTransaction_(closure({connection}), errorHandler(error)) - Wrap a transaction block
 
-```
+```javascript
   // Model usage
 
   // inside a entity model
@@ -70,7 +70,7 @@ Updated on 16/02/2022
 
 Write a mixer for customizing a entity model
 
-```
+```javascript
 module.exports = Base => class extends Base {
     static async getStreetTypes_() {
         const streetTypes = require('../../data/streetTypes.json');
@@ -125,7 +125,7 @@ module.exports = Base => class extends Base {
     - $addEnumValues, for enum values to add some fake value which not accepted by db but can be consumed by business logic, e.g. all, none
     - $orAsArray, accept an array of the specified type
 
-```
+```javascript
     // returns a schema object which can be used by @genx/data Types sanitizer
     Message.fieldSchema('type', { optional: true, default: 'info' });
 ```    
@@ -142,7 +142,7 @@ module.exports = Base => class extends Base {
 
 -   $projection
 
-```
+```javascript
 $projection: [ { type: 'function', name: 'MAX', alias: 'max', args: ['order'] } ],
 
 $projection: [ this.db.connector.queryCount() ],
@@ -163,7 +163,7 @@ $projection: [
 
 -   $association - No trailing (s).
 
-```
+```javascript
 // use an associated name inferred by foreign key
 const association = [ 'person' ];
 
@@ -216,9 +216,29 @@ const association = [
 -   $query - Query condition
 
     * Non-KV-Pair query
-```
+```javascript
 // See Lang helper for more details
 $query = Lang.$func('FIND_IN_SET', category, Lang.$col('categories'));
+
+// Complex usage 1
+$query = { // `status` = 'published' AND FIND_IN_SET(category, `categories`)
+    $and: [
+        {
+            status: 'published'
+        },
+        Lang.$func('FIND_IN_SET', category, Lang.$col('categories'));
+    ]
+}
+
+// Complex usage 2
+$query = { // `status` = 'published' OR FIND_IN_SET(category, `categories`)
+    $or: [
+        {
+            status: 'published'
+        },
+        Lang.$func('FIND_IN_SET', category, Lang.$col('categories'));
+    ]
+}
 ```
 
 -   $variables - Variables to interpolate into query condition, will be passed on to associated operation
@@ -226,7 +246,7 @@ $query = Lang.$func('FIND_IN_SET', category, Lang.$col('categories'));
 -   $orderBy - Order by condition, map of column to ascend?
 -   $groupBy - Group by condition
 
-```
+```javascript
 const numDeals = await this.findAll_({
     $projection: ["status", this.db.connector.queryCount(null, "status")],
     $query: {
@@ -243,7 +263,7 @@ const numDeals = await this.findAll_({
 -   $totalCount - Returns total record count when used with $limit, should provide the distinct field name
 
     - Used without association or with reference association which only joins record, just use $totalCount: true
-    ```
+    ```javascript
         const { totalItems /* integer */, items /* array */ } = await findAll_({
             '$query': { template: 1 },
             '$association': [ 'template' ],
@@ -255,7 +275,7 @@ const numDeals = await this.findAll_({
     ```
 
     - Used without association which may joins multiple records, should specify a unqiue field for preventing from counting duplicate records brought by joining, **otherwise the returned totalItems may include duplicate records**
-    ```
+    ```javascript
         const { totalItems /* integer */, items /* array */ } = await findAll_({
             '$query': { template: 1 },
             '$association': [ 'tags.tag', 'template' ],
@@ -289,15 +309,17 @@ const numDeals = await this.findAll_({
 -   $skipFeatures - an array of features to skip
 -   $skipModifiers - Skip field modifiers, usually set upon importing backup data which are exported from db and already been processed by modifiers before
 -   $transformer - Transform results before returning
--   $dryRun - for create only, just do the preparation check and skip the actual db creation call
--   $key - specify the primary key field of and main query table for complex SQL situation, e.g. pagination
 
-```
+```javascript
 $transformer: {
     user: [ '$$CURRENT.:user', { $pick: [ 'email' ] } ],
     agency: [ '$$CURRENT.:agency', { $pick: [ 'name' ] } ]
 }
 ```
+
+-   $dryRun - for create only, just do the preparation check and skip the actual db creation call
+-   $key - specify the primary key field of and main query table for complex SQL situation, e.g. pagination
+
 
 ## Complex usage
 
@@ -319,6 +341,38 @@ $transformer: {
         },
     ]
 }
+```
+
+### Using function as the value of a field to update
+
+```javascript
+const updated = await this.updateOne_({ // data to update
+    score: Lang.$expr(Lang.$col('score'), '+', scoreDelta) // `score` = `score` + scoreDelta
+}, { 
+    $query: { // where
+        id: opportunity.id 
+    }, 
+    $retrieveUpdated: true // select the updated record after update finished
+}, connOpts);
+```
+
+### Using expressions in query
+
+```javascript
+const queryObj = {
+    $query: {
+        status: 'published',
+        $and: [ // `reference` IS NOT NULL AND (TRIM(`reference`) != '')
+            {
+                reference: { $exist: true }
+            },
+            Lang.$expr(Lang.$func('TRIM', Lang.$col('reference')), '!=', '')
+        ]
+    },
+    $orderBy: {
+        createdAt: false
+    }
+};
 ```
 
 ## Connector options
@@ -433,16 +487,14 @@ await EntityA.create_({
 #### Example
 ```
 const schema = {
-    schema: {
-        a: { type: 'text' },
-        b: {
-            type: 'array', elementSchema: {
-            type: 'object',
-            schema: {
-                c: { type: 'text', optional: true },
-                d: { type: 'text', optional: true },
-                e: { validator:()=>{},convertor:()=>{}}
-               }
+    a: { type: 'text' },
+    b: {
+        type: 'array', elementSchema: {
+        type: 'object',
+        schema: {
+            c: { type: 'text', optional: true },
+            d: { type: 'text', optional: true },
+            e: { validator:()=>{},convertor:()=>{}}
             }
         }
     }
