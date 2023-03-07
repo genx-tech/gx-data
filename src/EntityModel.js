@@ -5,6 +5,7 @@ const Convertors = require('./Convertors');
 const Types = require('./types');
 const Features = require('./entityFeatures');
 const Rules = require('./enum/Rules');
+const { excludeColumn_ } = require('./drivers/mysql/mixin/excludeColumn');
 
 const { isNothing, hasValueIn } = require('./utils/lang');
 const JES = require('@genx/jes');
@@ -74,7 +75,7 @@ class EntityModel {
             );
         }
 
-        const schema = _.omit(meta, ['default', 'optional']);        
+        const schema = _.omit(meta, ['default', 'optional']);
 
         if (extra) {
             const { $addEnumValues, $orAsArray, ...others } = extra;
@@ -86,9 +87,9 @@ class EntityModel {
 
             if (meta.type === Types.ENUM.name && $addEnumValues) {
                 schema.values = schema.values.concat($addEnumValues);
-            } 
+            }
 
-            Object.assign(schema, others);                  
+            Object.assign(schema, others);
 
             if ($orAsArray) {
                 return [
@@ -98,8 +99,8 @@ class EntityModel {
                         elementSchema: arrayElem,
                     },
                 ];
-            }    
-        }          
+            }
+        }
 
         return schema;
     }
@@ -137,7 +138,7 @@ class EntityModel {
      * @returns {Array}
      */
     static assocFrom(extraArray, fields) {
-        const result = new Set(extraArray);       
+        const result = new Set(extraArray);
 
         if (fields) {
             fields.forEach(keyPath => {
@@ -310,7 +311,7 @@ class EntityModel {
      * @param {object} [connOptions]
      * @returns {*}
      */
-     static async aggregate_(pipeline, connOptions) {
+    static async aggregate_(pipeline, connOptions) {
         const _pipeline = pipeline.map(q => this._prepareQueries(q));
 
         return this.db.connector.aggregate_(
@@ -431,7 +432,7 @@ class EntityModel {
         await Features.applyRules_(Rules.RULE_BEFORE_FIND, this, context);
 
         let totalCount;
-
+        
         let rows = await this._safeExecute_(async (context) => {
             let records = await this.db.connector.find_(
                 this.meta.name,
@@ -608,7 +609,7 @@ class EntityModel {
                         this.getUniqueKeyFieldsFrom(context.latest),
                         context.connOptions,
                         context.latest
-                    );                    
+                    );
                 } else {
                     context.result = await this.db.connector.create_(
                         this.meta.name,
@@ -772,7 +773,7 @@ class EntityModel {
                 if (!doneUpdateAssocs && !needUpdateAssocs) {
                     throw new InvalidArgument(
                         'Cannot do the update with empty record. Entity: ' +
-                            this.meta.name
+                        this.meta.name
                     );
                 }
             } else {
@@ -1050,7 +1051,7 @@ class EntityModel {
             if (containsUniqueKeyOnly) {
                 throw new ValidationError(
                     'One of the unique key field as query condition is null. Condition: ' +
-                        JSON.stringify(condition)
+                    JSON.stringify(condition)
                 );
             }
 
@@ -1140,7 +1141,7 @@ class EntityModel {
                     if (
                         !opOptions.$migration &&
                         (!opOptions.$bypassReadOnly ||
-                        !opOptions.$bypassReadOnly.has(fieldName))
+                            !opOptions.$bypassReadOnly.has(fieldName))
                     ) {
                         // read only, not allow to set by input value
                         throw new ValidationError(
@@ -1237,7 +1238,7 @@ class EntityModel {
                     }
 
                     // require generator to refresh auto generated value
-                    if (fieldInfo.auto) {                        
+                    if (fieldInfo.auto) {
                         latest[fieldName] = await Generators.default(
                             fieldInfo,
                             i18n
@@ -1370,7 +1371,7 @@ class EntityModel {
                     : _.hasIn(context, d)
             );
         }
-        
+
         return false;
     }
 
@@ -1458,6 +1459,8 @@ class EntityModel {
      * @returns {object}
      */
     static _prepareQueries(options, forSingleRecord = false) {
+        excludeColumn_(this, this.meta, options);
+
         if (!_.isPlainObject(options)) {
             if (forSingleRecord && Array.isArray(this.meta.keyField)) {
                 throw new InvalidArgument(
@@ -1471,10 +1474,10 @@ class EntityModel {
 
             return options
                 ? {
-                      $query: {
-                          [this.meta.keyField]: this._translateValue(options),
-                      },
-                  }
+                    $query: {
+                        [this.meta.keyField]: this._translateValue(options),
+                    },
+                }
                 : {};
         }
 
