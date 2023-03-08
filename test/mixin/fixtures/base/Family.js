@@ -1,5 +1,5 @@
-module.exports = (Base) => {
-    const StudentSpec = class extends Base {
+module.exports = (Base) => {    
+    const UserSpec = class extends Base {    
         /**
          * Applying predefined modifiers to entity fields.
          * @param context
@@ -10,10 +10,10 @@ module.exports = (Base) => {
             return context;
         }
     };
-
-    StudentSpec.meta = {
+    
+    UserSpec.meta = {
         "schemaName": "test",
-        "name": "student",
+        "name": "Family",
         "keyField": "id",
         "fields": {
             "id": {
@@ -27,10 +27,6 @@ module.exports = (Base) => {
             "age": {
                 "type": "integer",
                 "displayName": "age"
-            },
-            "sex": {
-                "type": "boolean",
-                "displayName": "sex"
             },
             "name": {
                 "type": "text",
@@ -48,22 +44,8 @@ module.exports = (Base) => {
             [
                 "id"
             ]
-        ],
-        "associations": {
-            "family": {
-                "type": "refersTo",
-                "entity": "family",
-                "key": "id",
-                "field": "id",
-                "on": {
-                    "family": {
-                        "oorType": "ColumnReference",
-                        "name": "family.id"
-                    }
-                }
-            }
-        }
+        ]
     };
 
-    return Object.assign(StudentSpec, {});
+    return Object.assign(UserSpec, {});
 };
