@@ -5,7 +5,7 @@ const Convertors = require('./Convertors');
 const Types = require('./types');
 const Features = require('./entityFeatures');
 const Rules = require('./enum/Rules');
-const { excludeColumn_ } = require('./drivers/mysql/mixin/excludeColumn');
+const { excludeColumn } = require('./drivers/mysql/mixin/excludeColumn');
 
 const { isNothing, hasValueIn } = require('./utils/lang');
 const JES = require('@genx/jes');
@@ -1459,7 +1459,7 @@ class EntityModel {
      * @returns {object}
      */
     static _prepareQueries(options, forSingleRecord = false) {
-        excludeColumn_(this, this.meta, options);
+        excludeColumn(this, this.meta, options);
 
         if (!_.isPlainObject(options)) {
             if (forSingleRecord && Array.isArray(this.meta.keyField)) {

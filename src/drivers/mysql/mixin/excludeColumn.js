@@ -35,7 +35,7 @@ function getModelFields(EF, meta, associations) {
 }
 
 module.exports = {
-    excludeColumn_: function (EF, meta, findOptions) {
+    excludeColumn: function (EF, meta, findOptions) {
 
         if (findOptions) {
             const { $projection, $association } = findOptions;
