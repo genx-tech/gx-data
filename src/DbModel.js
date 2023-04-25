@@ -1,4 +1,6 @@
-const { _, naming, sleep_ } = require('@genx/july');
+const path = require('node:path');
+const { createRequire } = require('node:module')
+const { _, naming, sleep_, text } = require('@genx/july');
 const { fs } = require('@genx/sys');
 const { InvalidArgument } = require('@genx/error');
 
@@ -6,6 +8,19 @@ const retryFailed = (error) => [false, error];
 const retryOK = (result) => [true, result];
 
 const directReturn = (a) => a;
+
+const tryRequire = (ownerApp, modulePath) => {
+    try {
+        const requireLocal = createRequire(text.ensureEndsWith(ownerApp.workingPath, path.sep));
+        return requireLocal(modulePath);
+    } catch (error) {
+        if (error.code === 'MODULE_NOT_FOUND') {
+            return undefined;
+        }
+
+        throw error;
+    }
+}
 
 class DbModel {
     constructor(app, connector, i18n) {
@@ -68,8 +83,9 @@ class DbModel {
     }
 
     loadPackageModel(packagePath, modelClassName) { 
-        const customModelPath = this.ownerApp.toAbsolutePath(packagePath,  (process.env.NODE_RT && process.env.NODE_RT === 'babel') ? 'src' : 'lib', 'models', `${modelClassName}.js`);           
-        return fs.existsSync(customModelPath) && require(customModelPath);
+        const packageModelPath = path.join(packagePath,  (process.env.NODE_RT && process.env.NODE_RT === 'babel') ? 'src' : 'lib', 'models', `${modelClassName}.js`);
+        const customModelPath = this.ownerApp.toAbsolutePath(packageModelPath);           
+        return fs.existsSync(customModelPath) ? require(customModelPath) : tryRequire(this.ownerApp, packageModelPath);
     }
 
     entitiesOfType(baseEntityName) {
