@@ -1,6 +1,6 @@
 {
     "name": "@genx/data",
-    "version": "2.1.13",
+    "version": "2.1.14",
     "description": "Gen-X Suite data abstract layer.",
     "main": "lib/index.js",
     "publishConfig": {
@@ -76,8 +76,8 @@
     "dependencies": {
         "@genx/error": "^1.1.2",
         "@genx/jes": "^2.1.4",
-        "@genx/july": "^1.1.1",
-        "@genx/sys": "^0.1.7",
+        "@genx/july": "^1.2.1",
+        "@genx/sys": "^0.1.8",
         "luxon": "^3.2.1",
         "number-to-letter": "^1.0.1",
         "randomstring": "^1.1.5",

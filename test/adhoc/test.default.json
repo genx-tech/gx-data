@@ -1,0 +1,30 @@
+{
+    "timezone": "Australia/Sydney",
+    "dataSource": {
+        "mysql": {
+            "test": {
+                "connection": "mysql://root:root@localhost/ffs_demo",
+                "logStatement": true
+            }
+        }
+    },
+    "useDb": {        
+        "ffsDemo": {
+            "dataSource": "mysql.test"
+        }
+    },
+    "settings": {
+        "geml": {
+            "gemlPath": "mt4",
+            "modelPath": "src/models",
+            "scriptPath": "scripts",
+            "manifestPath": "manifests",
+            "saveIntermediate": false,
+            "schemas": {
+                "ffsDemo": {
+                    "dataSource": "mysql.test"
+                }
+            }
+        }
+    }
+}

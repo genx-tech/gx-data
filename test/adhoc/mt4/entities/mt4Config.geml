@@ -1,0 +1,9 @@
+entity mt4Config
+  -- "Mt 4 Config"
+
+  has
+    config : integer code("CONFIG") digits(10) bytes(4) -- "Mt 4 Config"
+    valueInt : integer code("VALUE_INT") digits(10) bytes(4) optional -- "Mt 4 Config Value Int"
+    valueStr : text code("VALUE_STR") fixedLength(255) optional -- "Mt 4 Config Value Str"
+
+  key config

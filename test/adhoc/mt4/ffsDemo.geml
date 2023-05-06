@@ -1,0 +1,11 @@
+import
+  'entities/**'
+
+schema 'ffsDemo'
+  entities
+    mt4Config
+    mt4Daily
+    mt4Prices
+    mt4Trades
+    mt4Users
+

@@ -1,0 +1,16 @@
+entity mt4Prices
+  -- "Mt 4 Prices"
+
+  has
+    symbol : text code("SYMBOL") fixedLength(16) -- "Mt 4 Prices Symbol"
+    time : datetime code("TIME") -- "Mt 4 Prices Time"
+    bid : number code("BID") bytes(8) totalDigits(22) -- "Mt 4 Prices Bid"
+    ask : number code("ASK") bytes(8) totalDigits(22) -- "Mt 4 Prices Ask"
+    low : number code("LOW") bytes(8) totalDigits(22) -- "Mt 4 Prices Low"
+    high : number code("HIGH") bytes(8) totalDigits(22) -- "Mt 4 Prices High"
+    direction : integer code("DIRECTION") digits(10) bytes(4) -- "Mt 4 Prices Direction"
+    digits : integer code("DIGITS") digits(10) bytes(4) -- "Mt 4 Prices Digits"
+    spread : integer code("SPREAD") digits(10) bytes(4) -- "Mt 4 Prices Spread"
+    modifyTime : datetime code("MODIFY_TIME") -- "Mt 4 Prices Modify Time"
+
+  key symbol

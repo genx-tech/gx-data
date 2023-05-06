@@ -16,7 +16,7 @@ exports.toText = (value, noTrim) => {
 };
 
 exports.toInt = (value, radix) =>
-    _.isInteger(value) ? value : parseInt(value, radix);
+    _.isInteger(value) ? value : (typeof value === 'string' ? parseInt(value, radix) : NaN);
 
 exports.toFloat = (value) =>
     _.isFinite(value) ? value : validator.toFloat(value);

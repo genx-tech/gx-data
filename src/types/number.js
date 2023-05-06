@@ -19,5 +19,7 @@ module.exports = {
         'exact',
         'totalDigits',
         'decimalDigits',
+        'bytes',
+        'double'
     ]),
 };

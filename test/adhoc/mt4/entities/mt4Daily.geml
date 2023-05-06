@@ -1,0 +1,20 @@
+entity mt4Daily
+  -- "Mt 4 Daily"
+
+  has
+    login : integer code("LOGIN") digits(10) bytes(4) -- "Mt 4 Daily Login"
+    time : datetime code("TIME") -- "Mt 4 Daily Time"
+    group : text code("GROUP") fixedLength(16) -- "Mt 4 Daily Group"
+    bank : text code("BANK") fixedLength(64) -- "Mt 4 Daily Bank"
+    balancePrev : number code("BALANCE_PREV") bytes(8) totalDigits(22) -- "Mt 4 Daily Balance Prev"
+    balance : number code("BALANCE") bytes(8) totalDigits(22) -- "Mt 4 Daily Balance"
+    deposit : number code("DEPOSIT") bytes(8) totalDigits(22) -- "Mt 4 Daily Deposit"
+    credit : number code("CREDIT") bytes(8) totalDigits(22) -- "Mt 4 Daily Credit"
+    profitClosed : number code("PROFIT_CLOSED") bytes(8) totalDigits(22) -- "Mt 4 Daily Profit Closed"
+    profit : number code("PROFIT") bytes(8) totalDigits(22) -- "Mt 4 Daily Profit"
+    equity : number code("EQUITY") bytes(8) totalDigits(22) -- "Mt 4 Daily Equity"
+    margin : number code("MARGIN") bytes(8) totalDigits(22) -- "Mt 4 Daily Margin"
+    marginFree : number code("MARGIN_FREE") bytes(8) totalDigits(22) -- "Mt 4 Daily Margin Free"
+    modifyTime : datetime code("MODIFY_TIME") -- "Mt 4 Daily Modify Time"
+
+  key [ login, time ]

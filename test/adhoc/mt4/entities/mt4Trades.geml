@@ -1,0 +1,43 @@
+entity mt4Trades
+  -- "Mt 4 Trades"
+
+  has
+    ticket : integer code("TICKET") digits(10) bytes(4) -- "Mt 4 Trades Ticket"
+    login : integer code("LOGIN") digits(10) bytes(4) -- "Mt 4 Trades Login"
+    symbol : text code("SYMBOL") fixedLength(16) -- "Mt 4 Trades Symbol"
+    digits : integer code("DIGITS") digits(10) bytes(4) -- "Mt 4 Trades Digits"
+    cmd : integer code("CMD") digits(10) bytes(4) -- "Mt 4 Trades Cmd"
+    volume : integer code("VOLUME") digits(10) bytes(4) -- "Mt 4 Trades Volume"
+    openTime : datetime code("OPEN_TIME") -- "Mt 4 Trades Open Time"
+    openPrice : number code("OPEN_PRICE") bytes(8) totalDigits(22) -- "Mt 4 Trades Open Price"
+    sl : number code("SL") bytes(8) totalDigits(22) -- "Mt 4 Trades Sl"
+    tp : number code("TP") bytes(8) totalDigits(22) -- "Mt 4 Trades Tp"
+    closeTime : datetime code("CLOSE_TIME") -- "Mt 4 Trades Close Time"
+    expiration : datetime code("EXPIRATION") -- "Mt 4 Trades Expiration"
+    reason : integer code("REASON") digits(10) bytes(4) default("0") -- "Mt 4 Trades Reason"
+    convRate1 : number code("CONV_RATE1") bytes(8) totalDigits(22) -- "Mt 4 Trades Conv Rate 1"
+    convRate2 : number code("CONV_RATE2") bytes(8) totalDigits(22) -- "Mt 4 Trades Conv Rate 2"
+    commission : number code("COMMISSION") bytes(8) totalDigits(22) -- "Mt 4 Trades Commission"
+    commissionAgent : number code("COMMISSION_AGENT") bytes(8) totalDigits(22) -- "Mt 4 Trades Commission Agent"
+    swaps : number code("SWAPS") bytes(8) totalDigits(22) -- "Mt 4 Trades Swaps"
+    closePrice : number code("CLOSE_PRICE") bytes(8) totalDigits(22) -- "Mt 4 Trades Close Price"
+    profit : number code("PROFIT") bytes(8) totalDigits(22) -- "Mt 4 Trades Profit"
+    taxes : number code("TAXES") bytes(8) totalDigits(22) -- "Mt 4 Trades Taxes"
+    comment : text code("COMMENT") fixedLength(32) -- "Mt 4 Trades Comment"
+    internalId : integer code("INTERNAL_ID") digits(10) bytes(4) -- "Mt 4 Trades Internal Id"
+    marginRate : number code("MARGIN_RATE") bytes(8) totalDigits(22) -- "Mt 4 Trades Margin Rate"
+    timestamp : integer code("TIMESTAMP") digits(10) bytes(4) -- "Mt 4 Trades Timestamp"
+    magic : integer code("MAGIC") digits(10) bytes(4) default("0") -- "Mt 4 Trades Magic"
+    gwVolume : integer code("GW_VOLUME") digits(10) bytes(4) default("0") -- "Mt 4 Trades Gw Volume"
+    gwOpenPrice : integer code("GW_OPEN_PRICE") digits(10) bytes(4) default("0") -- "Mt 4 Trades Gw Open Price"
+    gwClosePrice : integer code("GW_CLOSE_PRICE") digits(10) bytes(4) default("0") -- "Mt 4 Trades Gw Close Price"
+    modifyTime : datetime code("MODIFY_TIME") -- "Mt 4 Trades Modify Time"
+
+  key ticket
+
+  index
+    [login]
+    [cmd]
+    [openTime]
+    [closeTime]
+    [timestamp]
