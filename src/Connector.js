@@ -101,12 +101,19 @@ class Connector {
      * @returns {string}
      */
     getConnectionStringWithoutCredential(connStr) {
-        const url = new URL(connStr || this.connectionString);
+        const strOrObj = connStr || this.connectionString;
+        if (typeof strOrObj === 'string') {
+            const url = new URL(strOrObj);
 
-        url.username = '';
-        url.password = '';
+            url.username = '';
+            url.password = '';
 
-        return url.href;
+            return url.href;
+        } else {
+            const { user, password, host, database } = strOrObj;
+            return `mysql://${user}:${password}@${host}/${database}`
+        }
+
     }
 
     /**
