@@ -5,6 +5,8 @@ const Connector = require('../../Connector');
 const { ApplicationError, InvalidArgument } = require('../../utils/Errors');
 const { isQuoted } = require('../../utils/lang');
 const ntol = require('number-to-letter');
+const assert = require('assert');
+const validator = require('../../Validators');
 
 const connSym = Symbol.for('conn');
 
@@ -120,6 +122,15 @@ class MySQLConnector extends Connector {
      * @property {boolean} [options.logStatement] - Flag to log executed SQL statement.
      */
     constructor(connectionString, options) {
+        if(typeof connectionString === 'object'){
+            assert(connectionString.host,'Connection host is required.');
+            assert(connectionString.user,'Connection username is required.');
+            assert(connectionString.password,'Connection password is required.');
+            assert(connectionString.database,'Connection database name is required.');
+
+            if(!connectionString.port) connectionString.port = 3306;
+        }
+        
         super('mysql', connectionString, options);
 
         this.relational = true;
